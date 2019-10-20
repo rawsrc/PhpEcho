@@ -13,6 +13,7 @@ The class will manage :
 * extracting and escaping values from the locally stored key-values pairs
 * escaping any value on demand
 * returning raw values (when you know what you're doing)
+* the possibility tu write directly plain html code instead of file inclusion
 
 If you read french, you will find a complete tutorial with tons of explanations on my blog : [rawsrc](https://www.developpez.net/forums/blogs/32058-rawsrc/b8215/phpecho-moteur-rendu-php-classe-gouverner/)
  
@@ -21,7 +22,7 @@ If you read french, you will find a complete tutorial with tons of explanations 
 2. Using the function notation will return the escaped value (with `htmlspecialchars('string', ENT_QUOTES, 'utf-8')`)
 3. To escape any value on demand, you must use the function notation with 2 parameters :
 first, `'hsc'`, second, `'the value you would like to escape'`
-4. **Please note that inside the view file, the instance of the class PhpEcho is always available through `$this`**
+4. **Please note that inside the external view file, the instance of the class PhpEcho is always available through `$this`**
 
 ```php
 $php_echo        = new PhpEcho();
@@ -102,7 +103,7 @@ $page = new PhpEcho('Layout.php', [
     'meta'  => ['<meta name="keywords" content="PhpEcho, PHP template engine, easy to learn and use" />']
 ]);
 
-// here we define the needed values inside the html code before injecting them 
+// here we define the needed values inside the plain html code before injecting them 
 // another way to declare key-value pairs
 $body               = new PhpEcho();
 $body['url_submit'] = 'any/path/for/connection';
@@ -120,7 +121,8 @@ $body->setCode(<<<html
 </form>
 html
     );
-// Note how it's coded, in this use case : `$body` replace `$this`
+// Note how it's coded, in this use case : `$body` replace `$this`, always the difference between 
+// the array notation and function notation
 ```
 
 That's all folks, nothing more to know.
