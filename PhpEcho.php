@@ -41,6 +41,10 @@ class PhpEcho
      * @var string
      */
     private $file = '';
+    /**
+     * @var string
+     */
+    private $code = '';
 
     /**
      * Interface ArrayAccess
@@ -99,17 +103,15 @@ class PhpEcho
      *
      * Rule R001 : Any space inside a name will be automatically converted to DIRECTORY_SEPARATOR
      *
-     * For strings :
-     * Example :
-     * $parts = 'www user view login.php';
+     * For strings : $parts = 'www user view login.php';
      *  - become "www/user/view/login.php"  if DIRECTORY_SEPARATOR = '/'
      *  - become "www\user\view\login.php"  if DIRECTORY_SEPARATOR = '\'
      *
-     * For arrays, same rule (R001) for all values inside
-     * Example :
-     * $parts = ['www/user', 'view login.php'];
+     * For arrays, same rule (R001) for all values inside : $parts = ['www/user', 'view login.php'];
      *  - become "www/user/view/login.php"  if DIRECTORY_SEPARATOR = '/'
      *  - become "www/user\view\login.php"  if DIRECTORY_SEPARATOR = '\'
+     *
+     * File inclusion remove the inline code
      *
      * @param mixed $parts string|array
      */
@@ -121,6 +123,23 @@ class PhpEcho
             $file[] = str_replace(' ', DIRECTORY_SEPARATOR, $p);
         }
         $this->file = str_replace(DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR, implode(DIRECTORY_SEPARATOR, $file));
+        $this->code = '';
+    }
+
+    /**
+     * Instead on including an external file, use inline code for the view
+     *
+     * CAREFUL : when you use inline code with dynamic values from the array $vars, you must
+     * be absolutely sure that the values are already defined before, otherwise you will only have empty strings
+     *
+     * Inline code remove the included file
+     *
+     * @param string $code
+     */
+    public function setCode(string $code)
+    {
+        $this->code = $code;
+        $this->file = '';
     }
 
     /**
@@ -150,7 +169,7 @@ class PhpEcho
     }
 
     /**
-     * Magic method that returns a string instead of current instance of the class in string context
+     * Magic method that returns a string instead of current instance of the class in a string context
      */
     public function __toString()
     {
@@ -159,7 +178,7 @@ class PhpEcho
             include $this->file;
             return ob_get_clean();
         } else {
-            return '';
+            return $this->code;
         }
     }
 }
