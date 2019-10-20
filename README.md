@@ -10,11 +10,13 @@ Basically, you just need to define the path of a view file to include and pass t
 instance a set of key-values pairs that will be available on rendering.
 
 The class will manage :
-* including the files
-* escaping values from the stored key-values pairs
+* files inclusions
+* extracting and escaping values from the locally stored key-values pairs
 * escaping any value on demand
 * returning raw values (when you know what you're doing)
 
+If you read french, you will find a complete tutorial with tons of explanations on my blog : [rawsrc](https://www.developpez.net/forums/blogs/32058-rawsrc/b8215/phpecho-moteur-rendu-php-classe-gouverner/)
+ 
 **What you must know to use it**
 1. Using array access notation will return the raw value (no escaping)
 2. Using the function notation will return the escaped value (with `htmlspecialchars('string', ENT_QUOTES, 'utf-8')`)
