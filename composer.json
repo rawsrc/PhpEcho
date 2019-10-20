@@ -1,6 +1,6 @@
 {
   "name": "rawsrc/PhpEcho",
-  "description": "A PHP template in one class : One class to rule them all",
+  "description": "A PHP template engine in one class : One class to rule them all",
   "keywords": ["PHP Template engine"],
   "license": "MIT",
   "authors": [
