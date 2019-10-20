@@ -88,6 +88,6 @@ $page = new PhpEcho('Layout.php', [
 echo $page;
 ```
 
-That's all folks, nothing more to know.
+That's it guys, nothing more to know.
 
 Enjoy :D
