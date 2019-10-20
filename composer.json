@@ -1,0 +1,23 @@
+{
+  "name": "rawsrc/PhpEcho",
+  "description": "A PHP template in one class : One class to rule them all",
+  "keywords": ["PHP Template engine"],
+  "license": "MIT",
+  "authors": [
+    {
+      "name": "Martin Lacroix",
+      "email": "rawsrc@gmail.com",
+      "homepage": "https://www.developpez.net/forums/blogs/32058-rawsrc/b8215/phpecho-moteur-rendu-php-classe-gouverner/",
+      "role": "Creator"
+    }
+  ],
+  "require": {
+    "php": ">=7.0"
+  },
+  "autoload": {
+    "psr-4": {
+      "rawsrc\PhpEcho\\": "PhpEcho/"
+    }
+  },
+  "minimum-stability": "stable"
+}
