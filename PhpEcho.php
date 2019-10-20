@@ -63,7 +63,7 @@ class PhpEcho
      */
     public function offsetGet($offset)
     {
-        return $this->vars[$offset] ?? null;
+        return isset($this->vars[$offset]) ? $this->vars[$offset] : null;
     }
 
     /**
@@ -136,7 +136,7 @@ class PhpEcho
      *
      * @param string $code
      */
-    public function setCode(string $code)
+    public function setCode($code)
     {
         $this->code = $code;
         $this->file = '';
@@ -155,9 +155,9 @@ class PhpEcho
      * @param        $value
      * @return string
      */
-    public function __invoke(string $key, $value = null)
+    public function __invoke($key, $value = null)
     {
-        $hsc = function($p): string { return htmlspecialchars($p, ENT_QUOTES, 'utf-8'); };
+        $hsc = function($p) { return htmlspecialchars($p, ENT_QUOTES, 'utf-8'); };
 
         if (($key === 'hsc') && ($value !== null) && is_scalar($value)) {
             return $hsc($value);
