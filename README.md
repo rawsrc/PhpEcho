@@ -2,8 +2,7 @@
 
 `2019-10-20` `PHP 7+`
 
-##**A PHP template engine : One class to rule them all**
-
+## **A PHP template engine : One class to rule them all**
 
 PhpEcho is very simple to use, it's very close to the native PHP way of rendering views.
 Basically, you just need to define the path of a view file to include and pass to the
