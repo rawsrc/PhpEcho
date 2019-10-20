@@ -121,6 +121,7 @@ $body->setCode(<<<html
 </form>
 html
     );
+echo $page;
 // Note how it's coded, in this use case : `$body` replace `$this`, always the difference between 
 // the array notation and function notation
 ```
