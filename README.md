@@ -2,7 +2,7 @@
 
 `2019-10-20` `PHP 7+`
 
-####**A PHP template engine : One class to rule them all**
+##**A PHP template engine : One class to rule them all**
 
 
 PhpEcho is very simple to use, it's very close to the native PHP way of rendering views.
@@ -36,7 +36,7 @@ $y = $php_echo('foo');   // $y = 'abc &quot; &lt; &gt;'  function notation, esca
 $z = $pho_echo('hsc', 'any value to escape');
 ```
 
-#### **How to**
+## **How to**
 Here's a very simple example
 
 1. First, we create a html file called `Layout.php`
@@ -54,7 +54,7 @@ Note the expected values for keys inside `$this[]` or `$this()`
 </body>
 </html>
 ```
-Note the different way of extracting the data from `$this` (array notation vs function notation)
+Note also the different ways of extracting the data from `$this` (array notation vs function notation)
 
 Then, we prepare the body of the page `LoginForm.php` :
 ```php
