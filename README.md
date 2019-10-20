@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2019-10-20` `PHP 7+`
+`2019-10-20` `PHP 5.3+`
 
 ## **A PHP template engine : One class to rule them all**
 
