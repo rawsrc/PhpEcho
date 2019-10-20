@@ -65,8 +65,6 @@ Then, we prepare the body of the page `LoginForm.php` :
     <input type="password" name="pwd" value=""><br>
     <input type="submit" name="submit" value="CONNECT">
 </form>
-<br>
-<p style="display:<?= $this['show_error'] ?? 'none' ?>"><strong><?= $this('err_msg') ?></strong></p>
 ```
 And finally, we're going to create the main file that will prepare the view to be sent :
 ```php
@@ -78,7 +76,7 @@ include __DIR__.'/vendor/rawsrc/PhpEcho/PhpEcho.php';
 
 $page = new PhpEcho('Layout.php', [
     'title' => 'My first use case of PhpEcho',
-    'meta'  => ['<meta name="keywords" content="PhpEcho, PHP template engine, easy to use" />'],
+    'meta'  => ['<meta name="keywords" content="PhpEcho, PHP template engine, easy to learn and use" />'],
     'body'  => new PhpEcho('LoginForm.php', [
         'login' => 'rawsrc',
         'url_submit' => 'any/path/for/connection'
@@ -86,6 +84,43 @@ $page = new PhpEcho('Layout.php', [
 ]);
 
 echo $page;
+```
+
+## **Use HEREDOC instead of file inclusion**
+
+It's possible to use directly plain html code instead of file inclusion.
+Because of PHP early binding value upon calling you must be sure that the values are defined before using them in the code.
+
+We are going to omit the file `LoginForm.php` and inject directly the source code to the page builder `Login.php` : 
+```php
+<?php
+
+include __DIR__.'/vendor/rawsrc/PhpEcho/PhpEcho.php';
+
+$page = new PhpEcho('Layout.php', [
+    'title' => 'My first use case of PhpEcho',
+    'meta'  => ['<meta name="keywords" content="PhpEcho, PHP template engine, easy to learn and use" />']
+]);
+
+// here we define the needed values inside the html code before injecting them 
+// another way to declare key-value pairs
+$body               = new PhpEcho();
+$body['url_submit'] = 'any/path/for/connection';
+$body['login']      = 'rawsrc';
+
+// and now we set directly the plain html code
+$body->setCode(<<<html
+<p>Please login : </p>
+<form method=post action="{$body['url_submit']}>">
+    <label>User</label>
+    <input type="text" name="login" value="{$body('login')}"><br>
+    <label>Password</label>
+    <input type="password" name="pwd" value=""><br>
+    <input type="submit" name="submit" value="CONNECT">
+</form>
+html
+    );
+// Note how it's coded, in this use case : `$body` replace `$this`
 ```
 
 That's all folks, nothing more to know.
