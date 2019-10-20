@@ -16,7 +16,7 @@
   },
   "autoload": {
     "psr-4": {
-      "rawsrc\PhpEcho\\": "PhpEcho/"
+      "rawsrc\\PhpEcho\\": "PhpEcho/"
     }
   },
   "minimum-stability": "stable"
