@@ -13,7 +13,7 @@ The class will manage :
 * extracting and escaping values from the locally stored key-values pairs
 * escaping any value on demand
 * returning raw values (when you know what you're doing)
-* the possibility tu write directly plain html code instead of file inclusion
+* the possibility to write directly plain html code instead of file inclusion
 
 If you read french, you will find a complete tutorial with tons of explanations on my blog : [rawsrc](https://www.developpez.net/forums/blogs/32058-rawsrc/b8215/phpecho-moteur-rendu-php-classe-gouverner/)
  
