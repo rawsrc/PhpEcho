@@ -40,6 +40,7 @@ $z = $pho_echo('hsc', 'any value to escape');
 Here's a very simple example
 
 1. First, we create a html file called `Layout.php`
+Note the expected values for keys inside `$this[]` or `$this()`  
 ```php
 <!DOCTYPE html>
 <html>
@@ -78,10 +79,8 @@ include __DIR__.'/vendor/rawsrc/PhpEcho/PhpEcho.php';
 
 $page = new PhpEcho('Layout.php', [
     'title' => 'My first use case of PhpEcho',
-    'meta'  => [
-        '<meta name="keywords" content="PhpEcho, PHP template engine, easy to use" />'
-    ],
-    'body' => new PhpEcho('LoginForm.php', [
+    'meta'  => ['<meta name="keywords" content="PhpEcho, PHP template engine, easy to use" />'],
+    'body'  => new PhpEcho('LoginForm.php', [
         'login' => 'rawsrc',
         'url_submit' => 'any/path/for/connection'
     ])
@@ -90,6 +89,4 @@ $page = new PhpEcho('Layout.php', [
 echo $page;
 ```
 
-That's it guys, nothing more to know.
-
-Enjoy :D
+That's all folks, nothing more to know.
