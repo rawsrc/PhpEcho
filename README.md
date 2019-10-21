@@ -33,7 +33,7 @@ $x = $php_echo['foo'];   // $x = 'abc " < >'             array notation, no esca
 $y = $php_echo('foo');   // $y = 'abc &quot; &lt; &gt;'  function notation, escaped value
 
 // escape on demand
-$z = $pho_echo('hsc', 'any value to escape');
+$z = $php_echo('hsc', 'any value to escape');
 ```
 
 ## **How to**
