@@ -133,7 +133,7 @@ Every instance of PhpEcho has an auto-generated id that can be linked to any htm
 context that will allow us to work with the current block without interfering with others.
 
 How to use it: we will update the LoginForm.php file to see how to use this new feature.
-For example, w'd like to test some new CSS on the block without changing the rendering of other parts of the page.
+For example, we'd like to test some new CSS on the block without changing the rendering of other parts of the page.
 ```php
 <?php $id = $this->id() ?>
 <style>
@@ -148,18 +148,54 @@ For example, w'd like to test some new CSS on the block without changing the ren
 }
 </style>
 <div id="<?= $id ?>">
-  <p>Veuillez vous identifier</p>
+  <p>Please login</p>
   <form method="post" action="<?= $this['url_submit'] ?>>">
-    <label>Identifiant</label>
+    <label>Login</label>
     <input type="text" name="login" value="<?= $this('login') ?>"><br>
-    <label>Mot de passe</label>
+    <label>Password</label>
     <input type="password" name="pwd" value=""><br>
-    <input type="submit" name="submit" value="SE CONNECTER">
+    <input type="submit" name="submit" value="CONNECT">
   </form><br>
   <p style="display:<?= $this['show_error'] ?? 'none' ?>"><strong><?= $this('err_msg') ?></strong></p>
 </div>
 ```
 See how it is possible to use the PhpEcho's id in the HTML context: we have now a closed context defined by `<div id="<?= $id ?>">`, that will let us to lead 
 our css tests without interfering with others parts of HTML. It's also possible to use it for any javascript code related to the current instance of PhpEcho.
+
+Here's exactly the same code omitting the file inclusion mechanism : 
+```php
+<?php
+
+// previous code
+
+$id = $body->id();
+$body->setCode(<<<html
+<style>
+#{$id} > p {
+    font-weight: bold;
+}
+#{$id} label {
+    color: blue;
+    float: left;
+    font-weight: bold;
+    width: 30%;
+}
+#{$id} input {
+    float: right;
+}
+</style>
+<div id="{$id}">
+  <p>Please login:</p>
+  <form method="post" action="{$body['url_submit']}>">
+    <label>Login</label>
+    <input type="text" name="login" value="{$body('login')}"><br>
+    <label>Password</label>
+    <input type="password" name="pwd" value=""><br>
+    <input type="submit" name="submit" value="CONNECT">
+  </form>
+</div>
+html
+    );
+```
 
 That's all folks, nothing more to know.
