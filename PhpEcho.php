@@ -63,6 +63,8 @@ implements \ArrayAccess
 
         if ($id === '') {
             $this->generateId();
+        } else {
+            $this->id = $id;
         }
 
         $this->vars = $vars;
