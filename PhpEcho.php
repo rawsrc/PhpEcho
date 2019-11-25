@@ -33,6 +33,10 @@ class PhpEcho
     implements \ArrayAccess
 {
     /**
+     * @var string
+     */
+    private $id = '';
+    /**
      * @var array
      */
     private $vars = [];
@@ -45,6 +49,52 @@ class PhpEcho
      * @var string
      */
     private $code = '';
+
+    /**
+     * @param mixed  $file   see setFile() below
+     * @param array  $vars
+     * @param string $id     if empty then auto-generated
+     */
+    public function __construct($file = '', array $vars = [], $id = '')
+    {
+        if ($file !== '') {
+            $this->setFile($file);
+        }
+
+        if ($id === '') {
+            $this->generateId();
+        } else {
+            $this->id = $id;
+        }
+
+        $this->vars = $vars;
+    }
+
+    /**
+     * @param string $id
+     */
+    public function setId($id)
+    {
+        $this->id = $id;
+    }
+
+    /**
+     * @return string
+     */
+    public function id()
+    {
+        return $this->id;
+    }
+
+    /**
+     * Generate an unique execution id based on random_bytes()
+     * Always start with a letter
+     */
+    public function generateId()
+    {
+        $alnum    = 'abcdefghiklmnopqrstuvwxyzABCDEFGHIKLMNOPQRSTUVWXYZ0123456789';
+        $this->id = chr(mt_rand(97, 122)).substr(str_shuffle($alnum), 8);
+    }
 
     /**
      * Interface ArrayAccess
@@ -83,19 +133,6 @@ class PhpEcho
     public function offsetUnset($offset)
     {
         unset($this->vars[$offset]);
-    }
-
-    /**
-     * @param       $file   see setFile() below
-     * @param array $vars
-     */
-    public function __construct($file = '', array $vars = [])
-    {
-        if ($file !== '') {
-            $this->setFile($file);
-        }
-
-        $this->vars = $vars;
     }
 
     /**

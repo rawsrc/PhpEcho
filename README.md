@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2019-10-20` `PHP 5.3+`
+`2019-11-25` `PHP 5.3+`
 
 ## **A PHP template engine : One class to rule them all**
 
@@ -125,5 +125,41 @@ echo $page;
 // Note how it's coded, in this use case : `$body` replace `$this`, always the difference between 
 // the array notation and function notation
 ```
+
+## **Use id**
+
+It's possible now to define automatically a closed context in the rendered view by using a html tag's id
+Every instance of PhpEcho has an auto-generated id that can be linked to any html tag. This link will define a closed
+context that will allow us to work with the current block without interfering with others.
+
+How to use it: we will update the LoginForm.php file to see how to use this new feature.
+For example, w'd like to test some new CSS on the block without changing the rendering of other parts of the page.
+```php
+<?php $id = $this->id() ?>
+<style>
+#<?= $id ?> label {
+    color: blue;
+    float: left;
+    font-weight: bold;
+    width: 30%;
+}
+#<?= $id ?> input {
+    float: right;
+}
+</style>
+<div id="<?= $id ?>">
+  <p>Veuillez vous identifier</p>
+  <form method="post" action="<?= $this['url_submit'] ?>>">
+    <label>Identifiant</label>
+    <input type="text" name="login" value="<?= $this('login') ?>"><br>
+    <label>Mot de passe</label>
+    <input type="password" name="pwd" value=""><br>
+    <input type="submit" name="submit" value="SE CONNECTER">
+  </form><br>
+  <p style="display:<?= $this['show_error'] ?? 'none' ?>"><strong><?= $this('err_msg') ?></strong></p>
+</div>
+```
+See how it is possible to use the PhpEcho's id in the HTML context: we have now a closed context defined by ```<div id="<?= $id ?>">```, that will let us to lead 
+our css tests without interfering with others parts of HTML. It's also possible to use it for any javascript code related to the current instance of PhpEcho.
 
 That's all folks, nothing more to know.
