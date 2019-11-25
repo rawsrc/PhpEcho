@@ -193,7 +193,7 @@ implements \ArrayAccess
      */
     public function __invoke(string $key, $value = null)
     {
-        $hsc = function($p): string { return htmlspecialchars($p, ENT_QUOTES, 'utf-8'); };
+        $hsc = function($p): string { return htmlspecialchars((string)$p, ENT_QUOTES, 'utf-8'); };
 
         if (($key === 'hsc') && ($value !== null) && is_scalar($value)) {
             return $hsc($value);
