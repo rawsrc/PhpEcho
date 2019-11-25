@@ -155,8 +155,7 @@ For example, we'd like to test some new CSS on the block without changing the re
     <label>Password</label>
     <input type="password" name="pwd" value=""><br>
     <input type="submit" name="submit" value="CONNECT">
-  </form><br>
-  <p style="display:<?= isset($this['show_error']) ? $this['show_error'] : 'none' ?>"><strong><?= $this('err_msg') ?></strong></p>
+  </form>
 </div>
 ```
 See how it is possible to use the PhpEcho's id in the HTML context: we have now a closed context defined by `<div id="<?= $id ?>">`, that will let us to lead 
