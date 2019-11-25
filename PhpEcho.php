@@ -55,7 +55,7 @@ class PhpEcho
      * @param array  $vars
      * @param string $id     if empty then auto-generated
      */
-    public function __construct($file = '', array $vars = [], $id = '')
+    public function __construct($file = '', array $vars = array(), $id = '')
     {
         if ($file !== '') {
             $this->setFile($file);
@@ -194,7 +194,7 @@ class PhpEcho
      */
     public function __invoke($key, $value = null)
     {
-        $hsc = function($p) { return htmlspecialchars($p, ENT_QUOTES, 'utf-8'); };
+        $hsc = function($p) { return htmlspecialchars((string)$p, ENT_QUOTES, 'utf-8'); };
 
         if (($key === 'hsc') && ($value !== null) && is_scalar($value)) {
             return $hsc($value);
