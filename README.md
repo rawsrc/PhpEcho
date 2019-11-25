@@ -159,7 +159,7 @@ For example, w'd like to test some new CSS on the block without changing the ren
   <p style="display:<?= $this['show_error'] ?? 'none' ?>"><strong><?= $this('err_msg') ?></strong></p>
 </div>
 ```
-See how it is possible to use the PhpEcho's id in the HTML context: we have now a closed context defined by ```<div id="<?= $id ?>">```, that will let us to lead 
+See how it is possible to use the PhpEcho's id in the HTML context: we have now a closed context defined by `<div id="<?= $id ?>">`, that will let us to lead 
 our css tests without interfering with others parts of HTML. It's also possible to use it for any javascript code related to the current instance of PhpEcho.
 
 That's all folks, nothing more to know.
