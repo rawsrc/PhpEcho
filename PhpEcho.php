@@ -87,7 +87,7 @@ class PhpEcho
     }
 
     /**
-     * Generate an unique execution id based on random_bytes()
+     * Generate an unique execution id
      * Always start with a letter
      */
     public function generateId()
