@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2019-11-25` `PHP 7+`
+`2020-03-18` `PHP 7+`
 
 ## **A PHP template engine : One class to rule them all**
 
@@ -14,6 +14,8 @@ The class will manage :
 * escaping any value on demand
 * returning raw values (when you know what you're doing)
 * the possibility to write directly plain html code instead of file inclusion
+* escaping recursively keys and values in any array
+* managing and rendering instance of class that implements the magic function `__toString()`
 
 If you read french, you will find a complete tutorial with tons of explanations on my blog : [rawsrc](https://www.developpez.net/forums/blogs/32058-rawsrc/b8215/phpecho-moteur-rendu-php-classe-gouverner/)
  
@@ -197,4 +199,4 @@ html
     );
 ```
 
-That's all folks, nothing more to know.
+That's all folks, nothing more to learn.
