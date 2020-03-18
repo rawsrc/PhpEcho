@@ -9,7 +9,7 @@ namespace rawsrc\PhpEcho;
  * @author      rawsrc - https://www.developpez.net/forums/u32058/rawsrc/
  * @copyright   MIT License
  *
- *              Copyright (c) 2019 rawsrc
+ *              Copyright (c) 2020 rawsrc
  *
  *              Permission is hereby granted, free of charge, to any person obtaining a copy
  *              of this software and associated documentation files (the "Software"), to deal
@@ -182,23 +182,72 @@ implements \ArrayAccess
      * This function return always escaped value with htmlspecialchars() from the array $vars
      *
      * You escape on demand anywhere in your code by calling this class like this :
-     * $this('hsc', 'any value you would like to escape');
+     * $this('hsc', 'any scalar value you would like to escape');
      *
-     * The key 'hsc' is reserved and if a second value is passed, then the function adapt itself
-     * to that context and return the second value escaped
+     * NOTE : a scalar value is a value that return true on PHP is_scalar() function
+     * or an instance of class that implements the magic function __toString()
      *
-     * @param string $key
-     * @param        $value
-     * @return string
+     * @param  array  $args
+     * @return mixed
      */
-    public function __invoke(string $key, $value = null)
+    public function __invoke(...$args)
     {
-        $hsc = function($p): string { return htmlspecialchars((string)$p, ENT_QUOTES, 'utf-8'); };
+        $nb = count($args);
 
-        if (($key === 'hsc') && ($value !== null) && is_scalar($value)) {
+        if (empty($args) || ($nb > 2)) {
+            return '';
+        }
+
+        /**
+         * @param $p
+         * @return bool
+         */
+        $is_scalar = function($p): bool {
+            return is_scalar($p) || (is_object($p) && method_exists($p, '__toString'));
+        };
+
+        /**
+         * @param  $p
+         * @return string
+         */
+        $hsc = function($p): string {
+            return htmlspecialchars((string)$p, ENT_QUOTES, 'utf-8');
+        };
+
+        /**
+         * Return an array of escaped values with htmlspecialchars(ENT_QUOTES, 'utf-8') for both keys and values
+         * Works for scalar and array type and transform any object having __toString() function implemented to a escaped string
+         * Otherwise, keep the object as it
+         *
+         * @param  array $part
+         * @return array
+         */
+        $hsc_array = function(array $part) use (&$hsc_array, $hsc, $is_scalar): array {
+            $data = [];
+            foreach ($part as $k => $v) {
+                $sk = $hsc($k);
+                if (is_array($v)) {
+                    $data[$sk] = $hsc_array($v);
+                } elseif ($is_scalar($v)) {
+                    $data[$sk] = $hsc($v);
+                } else {
+                    $data[$sk] = $v;
+                }
+            }
+            return $data;
+        };
+
+        $value = null;
+        if (($nb === 1) && isset($this->vars[$args[0]])) {
+            $value = $this->vars[$args[0]];
+        } elseif ($args[0] === 'hsc') {
+            $value = $args[1];
+        }
+
+        if ($is_scalar($value)) {
             return $hsc($value);
-        } elseif (isset($this->vars[$key]) && is_scalar($this->vars[$key])) {
-            return $hsc($this->vars[$key]);
+        } elseif (is_array($value)) {
+            return $hsc_array($value);
         } else {
             return '';
         }
