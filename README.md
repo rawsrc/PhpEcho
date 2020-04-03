@@ -29,15 +29,15 @@ The class will manage :
 
 
 **What you must know to use it**
-1. Using array access notation or function notation will always return an escaped value
+1. Using array access notation or function notation will always return escaped values
 2. Please note that inside an external view file, the instance of the class PhpEcho is always available through `$this`
 
 **SHORT EXAMPLE**
 ```php
 $block        = new PhpEcho();
-$block['foo'] = 'abc " < >';   // store a key-value pair inside the the instance
+$block['foo'] = 'abc " < >';   // store a key-value pair inside the instance
 
-// get the escaped value stored in the block, simply ask it :
+// get the escaped value stored in the block, simply ask for it :
 $x = $block['foo'];   // $x = 'abc &quot; &lt; &gt;'
 
 // escape on demand using a helper
