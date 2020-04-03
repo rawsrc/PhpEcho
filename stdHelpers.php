@@ -85,7 +85,7 @@ $helpers['$hsc'] = [$hsc, HELPER_RETURN_ESCAPED_DATA];
  * @return string
  */
 $selected = function($p, $ref) use ($is_scalar): string {
-    return $is_scalar($p) && $is_scalar($ref) && ($p == $ref) ? ' selected ' : '';
+    return $is_scalar($p) && $is_scalar($ref) && ((string)$p === (string)$ref) ? ' selected ' : '';
 };
 $helpers['$selected'] = [$selected, HELPER_RETURN_ESCAPED_DATA];
 
@@ -99,7 +99,7 @@ $helpers['$selected'] = [$selected, HELPER_RETURN_ESCAPED_DATA];
  * @return string
  */
 $checked = function($p, $ref) use ($is_scalar): string {
-    return $is_scalar($p) && $is_scalar($ref) && ($p == $ref) ? ' checked ' : '';
+    return $is_scalar($p) && $is_scalar($ref) && ((string)$p ===  (string)$ref) ? ' checked ' : '';
 };
 $helpers['$checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
 
