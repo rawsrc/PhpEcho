@@ -101,4 +101,6 @@ $checked = function($p, $ref) use ($is_scalar): string {
 };
 $helpers['$checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
 
+
+// return the array of helpers to PhpEcho
 return $helpers;
