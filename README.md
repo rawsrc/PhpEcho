@@ -5,7 +5,7 @@
 ## **A PHP template engine : One class to rule them all**
 
 PhpEcho is very simple to use, it's very close to the native PHP way of rendering HTML/CSS/JS.<br>
-**This very lightweight engine will automatically secure all your data.** 
+**This very lightweight engine will automatically secure all your data.**<br> 
 It is based on an OOP approach using one single class to get the job done.<br>
 As you can imagine, using native PHP syntax, it's fast, really fast.<br>
 No additional parsing, no additional syntax to learn !<br>
@@ -71,6 +71,7 @@ $helpers['$checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
 This helper is a standalone closure, there's no need to have an access to an instance of PhpEcho.
 As everything is escaped by default in PhpEcho, we can consider that the word "checked" is safe and does not need to be escaped again, 
 this is why, with the helper definition, you have the flag `HELPER_RETURN_ESCAPED_DATA`.
+To call this helper inside your code : `$this('$checked', 'your value', 'ref value')`<br>
   
 Now, have a look at the helper that return the raw value from the stored key-value pair `$raw`:
 ```php
