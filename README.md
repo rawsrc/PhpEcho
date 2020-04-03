@@ -1,10 +1,16 @@
 # **PhpEcho**
 
-`2020-03-18` `PHP 7+`
+`2020-04-03` `PHP 7+` `v.2.0.0`
 
 ## **A PHP template engine : One class to rule them all**
 
-PhpEcho is very simple to use, it's very close to the native PHP way of rendering views.
+PhpEcho is very simple to use, it's very close to the native PHP way of rendering HTML/CSS/JS.<br>
+**This very lightweight engine will automatically secure all your data.** 
+It is based on an OOP approach using one single class to get the job done.<br>
+As you can imagine, using native PHP syntax, it's fast, really fast.<br>
+No additional parsing, no additional syntax to learn !<br>
+If you already have some basic knowledge with PHP, that's enough to use it out of the box.<br> 
+ 
 Basically, you just need to define the path of a view file to include and pass to the
 instance a set of key-values pairs that will be available on rendering.
 
@@ -17,29 +23,76 @@ The class will manage :
 * escaping recursively keys and values in any array
 * managing and rendering instance of class that implements the magic function `__toString()`
 
-If you read french, you will find a complete tutorial with tons of explanations on my blog : [rawsrc](https://www.developpez.net/forums/blogs/32058-rawsrc/b8215/phpecho-moteur-rendu-php-classe-gouverner/)
- 
+**NEW FEATURE IN PhpEcho v.2.0.0:**<br>
+1. It's now possible to create, inject and use your own personal helpers (code snippet) to easily render your HTML/CSS/JS code.
+2. Everything is secured and escaped by default. To get a raw value from a key, you must ask it explicitly using the helper `"$raw"` as shown below.   
+
+
 **What you must know to use it**
-1. Using array access notation will return the raw value (no escaping)
-2. Using the function notation will return the escaped value (with `htmlspecialchars('string', ENT_QUOTES, 'utf-8')`)
-3. To escape any value on demand, you must use the function notation with 2 parameters :
-first, `'hsc'`, second, `'the value you would like to escape'`
-4. **Please note that inside the external view file, the instance of the class PhpEcho is always available through `$this`**
+1. Using array access notation or function notation will always return an escaped value
+2. Please note that inside an external view file, the instance of the class PhpEcho is always available through `$this`
 
+**SHORT EXAMPLE**
 ```php
-$php_echo        = new PhpEcho();
-$php_echo['foo'] = 'abc " < >';   // store a key-value pair inside the the instance
+$block        = new PhpEcho();
+$block['foo'] = 'abc " < >';   // store a key-value pair inside the the instance
 
-// now, look
-$x = $php_echo['foo'];   // $x = 'abc " < >'             array notation, no escaping
-$y = $php_echo('foo');   // $y = 'abc &quot; &lt; &gt;'  function notation, escaped value
+// get the escaped value stored in the block, simply ask it :
+$x = $block['foo'];   // $x = 'abc &quot; &lt; &gt;'
 
-// escape on demand
-$z = $php_echo('hsc', 'any value to escape');
+// escape on demand using a helper
+$y = $block('$hsc', 'any value to escape');
+
+// extract the raw value on demand using a helper
+$z = $block('$raw', 'foo'); // $z = 'abc " < >'
 ```
 
+## **Defining and using your own code snippets as helpers**
+This version give you the possibility to use your own code generator as simply as a `Closure`.<br>
+You have a small standard library of helpers that comes with PhpEcho : `stdHelpers.php`<br>
+
+**The principle:**<br> 
+Every helper is a `Closure` that can produce whatever you want.<br>
+Every helper can be linked to an instance of PhpEcho or remain a standalone helper.<br>
+If linked to an instance, inside the closure you can use `$this` to get an access to the caller's execution context.<br>
+If standalone, this is just a simply function with parameters.<br>
+It's possible for every helper to define 2 properties:
+- if linked to a class instance use the constant `HELPER_BINDED_TO_CLASS_INSTANCE`
+- if the generated code is already escaped (to avoid double quote) use the constant : `HELPER_RETURN_ESCAPED_DATA`  
+  
+For example, have a look at the helper that returns the HTML attribute `checked`:
+This helper compares two values and if they are equal return the string `" checked "`
+```php
+$checked = function($p, $ref) use ($is_scalar): string {
+    return $is_scalar($p) && $is_scalar($ref) && ((string)$p === (string)$ref) ? ' checked ' : '';
+};
+$helpers['$checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
+```
+This helper is a standalone closure, there's no need to have an access to an instance of PhpEcho.
+As everything is escaped by default in PhpEcho, we can consider that the word "checked" is safe and does not need to be escaped again, 
+this is why, with the helper definition, you have the flag `HELPER_RETURN_ESCAPED_DATA`.
+  
+Now, have a look at the helper that return the raw value from the stored key-value pair `$raw`:
+```php
+$raw = function(string $key) {
+    return $this->vars[$key] ?? null;
+};
+$helpers['$raw'] = [$raw, HELPER_RETURN_ESCAPED_DATA, HELPER_BINDED_TO_CLASS_INSTANCE];
+```
+As this helper extract data from the stored key-value pairs defined in every instance of PhpEcho, it needs an access to the caller's execution context (instance of PhpEcho)
+that's why the helper definition has the flag `HELPER_BINDED_TO_CLASS_INSTANCE`.<br>
+And as we want to get the value unescaped, we must tell the engine that the return value by the closure is already escaped.
+We know that is not but this is goal of that helper.
+
+To define a helper, there's 3 ways:
+* `$helpers['$helper's id'] = $helper_closure`
+* `$helpers['$helper's id'] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA]`
+* `$helpers['$helper's id'] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA, HELPER_BINDED_TO_CLASS_INSTANCE]`
+
+
+
 ## **How to**
-Here's a very simple example
+Here's a very simple example of login from:
 
 1. First, we create a html file called `Layout.php`
 Note the expected values for keys inside `$this[]` or `$this()`  
@@ -48,22 +101,22 @@ Note the expected values for keys inside `$this[]` or `$this()`
 <html>
 <head>
     <meta charset="UTF-8">
-    <?= implode('', $this['meta'] ?? []) ?>
-    <title><?= $this('title') ?></title>
+    <?= implode('', $this('$raw', 'meta') ?? []) ?>
+    <title><?= $this['title'] ?></title>
 </head>
 <body>
-<?= $this['body'] ?>
+<?= $this('$raw', 'body') ?>
 </body>
 </html>
 ```
-Note also the different ways of extracting the data from `$this` (array notation vs function notation)
+Note also the different ways of extracting the data from `$this` (array notation vs function notation (helpers))
 
 Then, we prepare the body of the page `LoginForm.php` :
 ```php
 <p>Please login : </p>
-<form method=post action="<?= $this['url_submit'] ?>>">
+<form method=post action="<?= $this['url_submit'] ?>">
     <label>User</label>
-    <input type="text" name="login" value="<?= $this('login') ?>"><br>
+    <input type="text" name="login" value="<?= $this['login'] ?>"><br>
     <label>Password</label>
     <input type="password" name="pwd" value=""><br>
     <input type="submit" name="submit" value="CONNECT">
@@ -116,7 +169,7 @@ $body->setCode(<<<html
 <p>Please login : </p>
 <form method=post action="{$body['url_submit']}>">
     <label>User</label>
-    <input type="text" name="login" value="{$body('login')}"><br>
+    <input type="text" name="login" value="{$body['login']}"><br>
     <label>Password</label>
     <input type="password" name="pwd" value=""><br>
     <input type="submit" name="submit" value="CONNECT">
@@ -124,8 +177,7 @@ $body->setCode(<<<html
 html
     );
 echo $page;
-// Note how it's coded, in this use case : `$body` replace `$this`, always the difference between 
-// the array notation and function notation
+// Note how it's coded, in this use case : `$body` replace `$this`
 ```
 
 ## **Use id**
@@ -153,7 +205,7 @@ For example, we'd like to test some new CSS on the block without changing the re
   <p>Please login</p>
   <form method="post" action="<?= $this['url_submit'] ?>>">
     <label>Login</label>
-    <input type="text" name="login" value="<?= $this('login') ?>"><br>
+    <input type="text" name="login" value="<?= $this['login'] ?>"><br>
     <label>Password</label>
     <input type="password" name="pwd" value=""><br>
     <input type="submit" name="submit" value="CONNECT">
@@ -189,7 +241,7 @@ $body->setCode(<<<html
   <p>Please login:</p>
   <form method="post" action="{$body['url_submit']}>">
     <label>Login</label>
-    <input type="text" name="login" value="{$body('login')}"><br>
+    <input type="text" name="login" value="{$body['login']}"><br>
     <label>Password</label>
     <input type="password" name="pwd" value=""><br>
     <input type="submit" name="submit" value="CONNECT">

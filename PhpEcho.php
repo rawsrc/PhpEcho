@@ -2,6 +2,16 @@
 
 namespace rawsrc\PhpEcho;
 
+use ArrayAccess;
+
+if ( ! defined('HELPER_BINDED_TO_CLASS_INSTANCE')) {
+    define('HELPER_BINDED_TO_CLASS_INSTANCE', 1);
+}
+
+if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
+    define('HELPER_RETURN_ESCAPED_DATA', 2);
+}
+
 /**
  * PhpEcho : PHP Template engine : One class to rule them all ;-)
  *
@@ -30,7 +40,7 @@ namespace rawsrc\PhpEcho;
  *              SOFTWARE.
  */
 class PhpEcho
-implements \ArrayAccess
+implements ArrayAccess
 {
     /**
      * @var string
@@ -68,6 +78,7 @@ implements \ArrayAccess
         }
 
         $this->vars = $vars;
+        self::addPathToHelperFile(__DIR__.DIRECTORY_SEPARATOR.'stdHelpers.php');
     }
 
     /**
@@ -107,12 +118,18 @@ implements \ArrayAccess
 
     /**
      * Interface ArrayAccess
+     * Return escaped value
+     *
      * @param mixed $offset
      * @return mixed|null
      */
     public function offsetGet($offset)
     {
-        return $this->vars[$offset] ?? null;
+        if (isset($this->vars[$offset])) {
+            return $this('$hsc', $this->vars[$offset]);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -179,78 +196,32 @@ implements \ArrayAccess
     }
 
     /**
-     * This function return always escaped value with htmlspecialchars() from the array $vars
+     * This function call a helper defined elsewhere or dynamically
+     * Auto-escape if necessary
      *
-     * You escape on demand anywhere in your code by calling this class like this :
-     * $this('hsc', 'any scalar value you would like to escape');
-     *
-     * NOTE : a scalar value is a value that return true on PHP is_scalar() function
-     * or an instance of class that implements the magic function __toString()
-     *
-     * @param  array  $args
+     * @param string $helper
+     * @param array  $args
      * @return mixed
      */
-    public function __invoke(...$args)
+    public function __invoke(string $helper, ...$args)
     {
-        $nb = count($args);
-
-        if (empty($args) || ($nb > 2)) {
-            return '';
-        }
-
-        /**
-         * @param $p
-         * @return bool
-         */
-        $is_scalar = function($p): bool {
-            return is_scalar($p) || (is_object($p) && method_exists($p, '__toString'));
-        };
-
-        /**
-         * @param  $p
-         * @return string
-         */
-        $hsc = function($p): string {
-            return htmlspecialchars((string)$p, ENT_QUOTES, 'utf-8');
-        };
-
-        /**
-         * Return an array of escaped values with htmlspecialchars(ENT_QUOTES, 'utf-8') for both keys and values
-         * Works for scalar and array type and transform any object having __toString() function implemented to a escaped string
-         * Otherwise, keep the object as it
-         *
-         * @param  array $part
-         * @return array
-         */
-        $hsc_array = function(array $part) use (&$hsc_array, $hsc, $is_scalar): array {
-            $data = [];
-            foreach ($part as $k => $v) {
-                $sk = $hsc($k);
-                if (is_array($v)) {
-                    $data[$sk] = $hsc_array($v);
-                } elseif ($is_scalar($v)) {
-                    $data[$sk] = $hsc($v);
+        if ($helper !== '') {
+            self::injectHelpers();
+            if (self::isHelper($helper)) {
+                self::bindHelpersTo($this);
+                $escaped = self::isHelperOfType($helper, HELPER_RETURN_ESCAPED_DATA);
+                $helper  = self::$helpers[$helper];
+                $result  = $helper(...$args);
+                // being in a HTML context: in any case, the returned data should be escaped
+                // if you don't want so, use the specific helper '$raw'
+                if ($escaped) {
+                    return $result;
                 } else {
-                    $data[$sk] = $v;
+                    return $this('$hsc', $result);
                 }
             }
-            return $data;
-        };
-
-        $value = null;
-        if (($nb === 1) && isset($this->vars[$args[0]])) {
-            $value = $this->vars[$args[0]];
-        } elseif ($args[0] === 'hsc') {
-            $value = $args[1];
         }
-
-        if ($is_scalar($value)) {
-            return $hsc($value);
-        } elseif (is_array($value)) {
-            return $hsc_array($value);
-        } else {
-            return '';
-        }
+        return null;
     }
 
     /**
@@ -266,6 +237,155 @@ implements \ArrayAccess
             return $this->code;
         }
     }
+
+    //region HELPER ZONE
+    /**
+     * @var array  [name => closure]
+     */
+    private static $helpers = [];
+    /**
+     * @var array  [path to the helpers file to include]
+     */
+    private static $helpers_file_path = [];
+    /**
+     * @var array [helper's name => [type]]
+     */
+    private static $helpers_types = [];
+
+    /**
+     * @param string   $name
+     * @param \Closure $closure
+     * @param int      ...$types  HELPER_RETURN_ESCAPED_DATA HELPER_BINDED_TO_CLASS_INSTANCE
+     */
+    public static function addHelper(string $name, \Closure $closure, int ...$types)
+    {
+        self::$helpers[$name] = $closure;
+        foreach ($types as $t) {
+            self::$helpers_types[$name][] = $t; // HELPER_BINDED_TO_CLASS_INSTANCE HELPER_RETURN_ESCAPED_DATA
+        }
+    }
+
+    /**
+     * @param array $helpers [name => Closure | name => [Closure, ...type]]
+     */
+    public static function addHelpers(array $helpers)
+    {
+        foreach ($helpers as $name => $h) {
+            if ($h instanceof \Closure) {
+                self::$helpers[$name] = $h;
+            } elseif (is_array($h)) {
+                self::addHelper($name, array_shift($h), ...$h);
+            }
+        }
+    }
+
+    /**
+     * @return array [name => closure]
+     */
+    public static function helpers(): array
+    {
+        return self::$helpers;
+    }
+
+    /**
+     * Path to the file that contains helpers closure definition
+     * The helpers are common to all instances and will be included only once
+     *
+     * @param string ...$path
+     */
+    public static function addPathToHelperFile(string ...$path)
+    {
+        foreach ($path as $p) {
+            if ( ! isset(self::$helpers_file_path[$p])) {
+                self::$helpers_file_path[$p] = true;
+            }
+        }
+    }
+
+    /**
+     * Read the paths and inject only once all the helpers
+     */
+    public static function injectHelpers()
+    {
+        foreach (self::$helpers_file_path as $path => &$to_inject) {
+            if ($to_inject && is_file($path)) {
+                self::addHelpers(include $path);
+                $to_inject = false;
+            }
+        }
+    }
+
+    /**
+     * @param  string   $helper_name
+     * @return array    [int]
+     */
+    public static function getHelperTypes(string $helper_name): array
+    {
+        return self::$helpers_types[$helper_name] ?? [];
+    }
+
+    /**
+     * @param  string $helper_name
+     * @return bool
+     */
+    public static function isHelper(string $helper_name): bool
+    {
+        return isset(self::$helpers[$helper_name]);
+    }
+
+    /**
+     * Check if the helper has the defined type
+     *
+     * @param  string $helper_name
+     * @param  int    $type
+     * @return bool
+     */
+    public static function isHelperOfType(string $helper_name, int $type): bool
+    {
+        return isset(self::$helpers_types[$helper_name])
+            ? in_array($type, self::$helpers_types[$helper_name])
+            : false;
+    }
+
+    /**
+     * @param  array $type      array of types [type]
+     * @param  bool  $strict    when match, check if the helper has only the asked types
+     * @return array            [helper's name => closure]
+     */
+    public static function getHelpersByType(array $type, bool $strict = false): array
+    {
+        $data = [];
+        foreach (self::$helpers_types as $name => $v) {
+            $intersect = array_intersect($type, $v);
+            if (( ! empty($intersect)) && (count($type) === count($intersect))) {
+                if ($strict) {
+                    if  (count($type) === count($v)) {
+                        $data[$name] = self::$helpers[$name];
+                    }
+                } else {
+                    $data[$name] = self::$helpers[$name];
+                }
+            }
+        }
+        return $data;
+    }
+
+    /**
+     * Change the helper's binding context to the given one in parameter
+     * Only for helpers binded to a class instance
+     *
+     * @param object $p
+     */
+    public static function bindHelpersTo(object $p)
+    {
+        // link all helpers to the current context
+        $helpers = self::$helpers;
+        foreach (self::getHelpersByType([HELPER_BINDED_TO_CLASS_INSTANCE], false) as $name => $hlp) {
+            $helpers[$name] = $hlp->bindTo($p, $p);
+        }
+        self::$helpers = $helpers;
+    }
+    //endregion
 }
 
 // make the class directly available on the global namespace
