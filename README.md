@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2020-04-03` `PHP 7+`
+`2020-04-03` `PHP 7+` `v.2.0.0`
 
 ## **A PHP template engine : One class to rule them all**
 
