@@ -110,8 +110,8 @@ trait HelperTrait
      */
     public static function injectHelpers()
     {
-        foreach (array_filter(self::$helpers_file_path) as $path => &$to_inject) {
-            if (is_file($path)) {
+        foreach (self::$helpers_file_path as $path => &$to_inject) {
+            if ($to_inject && is_file($path)) {
                 self::addHelpers(include $path);
                 $to_inject = false;
             }
@@ -184,7 +184,7 @@ trait HelperTrait
     {
         // link all helpers to the current context
         $helpers = self::$helpers;
-        foreach (self::getHelpersByType([HELPER_BINDED_TO_CLASS_INSTANCE], true) as $name => $hlp) {
+        foreach (self::getHelpersByType([HELPER_BINDED_TO_CLASS_INSTANCE], false) as $name => $hlp) {
             $helpers[$name] = $hlp->bindTo($p, $p);
         }
         self::$helpers = $helpers;

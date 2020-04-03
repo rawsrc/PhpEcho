@@ -3,6 +3,7 @@
 namespace rawsrc\PhpEcho;
 
 use ArrayAccess;
+use rawsrc\PhpEcho\HelperTrait;
 
 /**
  * PhpEcho : PHP Template engine : One class to rule them all ;-)
@@ -73,7 +74,7 @@ implements ArrayAccess
 
         $this->vars = $vars;
 
-        self::addPathToHelperFile('./stdHelpers.php');
+        self::addPathToHelperFile(__DIR__.DIRECTORY_SEPARATOR.'stdHelpers.php');
     }
 
     /**
@@ -204,14 +205,15 @@ implements ArrayAccess
             self::injectHelpers();
             if (self::isHelper($helper)) {
                 self::bindHelpersTo($this);
-                $helper = self::$helpers[$helper];
-                $result = $helper(...$args);
+                $escaped = self::isHelperOfType($helper, HELPER_RETURN_ESCAPED_DATA);
+                $helper  = self::$helpers[$helper];
+                $result  = $helper(...$args);
                 // being in a HTML context: in any case, the returned data should be escaped
                 // if you don't want so, use the specific helper '$raw'
-                if ( ! self::isHelperOfType($helper, HELPER_RETURN_ESCAPED_DATA)) {
-                    return $this('$hsc', $result);
-                } else {
+                if ($escaped) {
                     return $result;
+                } else {
+                    return $this('$hsc', $result);
                 }
             }
         }

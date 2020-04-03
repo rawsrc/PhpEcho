@@ -45,11 +45,11 @@ $helpers['$is_scalar'] = [$is_scalar, HELPER_RETURN_ESCAPED_DATA];
 $hsc_array = function(array $part) use (&$hsc_array, $is_scalar): array {
     $data = [];
     foreach ($part as $k => $v) {
-        $sk = htmlspecialchars($k, ENT_QUOTES, 'utf-8');
+        $sk = htmlspecialchars((string)$k, ENT_QUOTES, 'utf-8');
         if (is_array($v)) {
             $data[$sk] = $hsc_array($v);
         } elseif ($is_scalar($v)) {
-            $data[$sk] = htmlspecialchars($v, ENT_QUOTES, 'utf-8');
+            $data[$sk] = htmlspecialchars((string)$v, ENT_QUOTES, 'utf-8');
         } else {
             $data[$sk] = $v;
         }
