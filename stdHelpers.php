@@ -80,7 +80,7 @@ $helpers['$hsc'] = [$hsc, HELPER_RETURN_ESCAPED_DATA];
  * This is a standalone helper
  *
  * @param $p        value to check
- * @param $ref      selected value
+ * @param $ref      selected value ref
  * @return string
  */
 $selected = function($p, $ref) use ($is_scalar): string {
@@ -93,7 +93,7 @@ $helpers['$selected'] = [$selected, HELPER_RETURN_ESCAPED_DATA];
  * This is a standalone helper
  *
  * @param $p        value to check
- * @param $ref      selected value
+ * @param $ref      checked value ref
  * @return string
  */
 $checked = function($p, $ref) use ($is_scalar): string {
