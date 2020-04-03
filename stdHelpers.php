@@ -77,6 +77,7 @@ $helpers['$hsc'] = [$hsc, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
+ * Return the html attribute "selected" if $p == $ref
  * This is a standalone helper
  *
  * @param $p        value to check
@@ -90,6 +91,7 @@ $helpers['$selected'] = [$selected, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
+ * Return the html attribute "checked" if $p == $ref
  * This is a standalone helper
  *
  * @param $p        value to check
