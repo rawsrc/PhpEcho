@@ -2,6 +2,8 @@
 
 namespace rawsrc\PhpEcho;
 
+use ArrayAccess;
+
 /**
  * PhpEcho : PHP Template engine : One class to rule them all ;-)
  *
@@ -30,8 +32,10 @@ namespace rawsrc\PhpEcho;
  *              SOFTWARE.
  */
 class PhpEcho
-implements \ArrayAccess
+implements ArrayAccess
 {
+    use HelperTrait;
+
     /**
      * @var string
      */
@@ -68,6 +72,8 @@ implements \ArrayAccess
         }
 
         $this->vars = $vars;
+
+        self::addPathToHelperFile('./stdHelpers.php');
     }
 
     /**
@@ -107,12 +113,18 @@ implements \ArrayAccess
 
     /**
      * Interface ArrayAccess
+     * Return escaped value
+     *
      * @param mixed $offset
      * @return mixed|null
      */
     public function offsetGet($offset)
     {
-        return $this->vars[$offset] ?? null;
+        if (isset($this->vars[$offset])) {
+            return $this('$hsc', $this->vars[$offset]);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -179,78 +191,31 @@ implements \ArrayAccess
     }
 
     /**
-     * This function return always escaped value with htmlspecialchars() from the array $vars
+     * This function call a helper defined elsewhere or dynamically
+     * Auto-escape if necessary
      *
-     * You escape on demand anywhere in your code by calling this class like this :
-     * $this('hsc', 'any scalar value you would like to escape');
-     *
-     * NOTE : a scalar value is a value that return true on PHP is_scalar() function
-     * or an instance of class that implements the magic function __toString()
-     *
-     * @param  array  $args
+     * @param string $helper
+     * @param array  $args
      * @return mixed
      */
-    public function __invoke(...$args)
+    public function __invoke(string $helper, ...$args)
     {
-        $nb = count($args);
-
-        if (empty($args) || ($nb > 2)) {
-            return '';
-        }
-
-        /**
-         * @param $p
-         * @return bool
-         */
-        $is_scalar = function($p): bool {
-            return is_scalar($p) || (is_object($p) && method_exists($p, '__toString'));
-        };
-
-        /**
-         * @param  $p
-         * @return string
-         */
-        $hsc = function($p): string {
-            return htmlspecialchars((string)$p, ENT_QUOTES, 'utf-8');
-        };
-
-        /**
-         * Return an array of escaped values with htmlspecialchars(ENT_QUOTES, 'utf-8') for both keys and values
-         * Works for scalar and array type and transform any object having __toString() function implemented to a escaped string
-         * Otherwise, keep the object as it
-         *
-         * @param  array $part
-         * @return array
-         */
-        $hsc_array = function(array $part) use (&$hsc_array, $hsc, $is_scalar): array {
-            $data = [];
-            foreach ($part as $k => $v) {
-                $sk = $hsc($k);
-                if (is_array($v)) {
-                    $data[$sk] = $hsc_array($v);
-                } elseif ($is_scalar($v)) {
-                    $data[$sk] = $hsc($v);
+        if ($helper !== '') {
+            self::injectHelpers();
+            if (self::isHelper($helper)) {
+                self::bindHelpersTo($this);
+                $helper = self::$helpers[$helper];
+                $result = $helper(...$args);
+                // being in a HTML context: in any case, the returned data should be escaped
+                // if you don't want so, use the specific helper '$raw'
+                if ( ! self::isHelperOfType($helper, HELPER_RETURN_ESCAPED_DATA)) {
+                    return $this('$hsc', $result);
                 } else {
-                    $data[$sk] = $v;
+                    return $result;
                 }
             }
-            return $data;
-        };
-
-        $value = null;
-        if (($nb === 1) && isset($this->vars[$args[0]])) {
-            $value = $this->vars[$args[0]];
-        } elseif ($args[0] === 'hsc') {
-            $value = $args[1];
         }
-
-        if ($is_scalar($value)) {
-            return $hsc($value);
-        } elseif (is_array($value)) {
-            return $hsc_array($value);
-        } else {
-            return '';
-        }
+        return null;
     }
 
     /**
