@@ -57,7 +57,7 @@ Every helper can be linked to an instance of PhpEcho or remain a standalone help
 If linked to an instance, inside the closure you can use `$this` to get an access to the caller's execution context.<br>
 If standalone, this is just a simply function with parameters.<br>
 It's possible for every helper to define 2 properties:
-- if linked to a class instance use the constant `HELPER_BINDED_TO_CLASS_INSTANCE`
+- if linked to a class instance use the constant `HELPER_BOUND_TO_CLASS_INSTANCE`
 - if the generated code is already escaped (to avoid double quote) use the constant : `HELPER_RETURN_ESCAPED_DATA`  
   
 For example, have a look at the helper that returns the HTML attribute `checked`:<br>
@@ -78,7 +78,7 @@ Now, have a look at the helper that return the raw value from the stored key-val
 $raw = function(string $key) {
     return $this->vars[$key] ?? null;
 };
-$helpers['$raw'] = [$raw, HELPER_RETURN_ESCAPED_DATA, HELPER_BINDED_TO_CLASS_INSTANCE];
+$helpers['$raw'] = [$raw, HELPER_RETURN_ESCAPED_DATA, HELPER_BOUND_TO_CLASS_INSTANCE];
 ```
 As this helper extract data from the stored key-value pairs defined in every instance of PhpEcho, it needs an access to the caller's execution context (instance of PhpEcho)
 that's why the helper definition has the flag `HELPER_BINDED_TO_CLASS_INSTANCE`.<br>
@@ -88,7 +88,7 @@ We know that is not but this is goal of that helper.
 To define a helper, there's 3 ways:
 * `$helpers['$helper's id'] = $helper_closure`
 * `$helpers['$helper's id'] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA]`
-* `$helpers['$helper's id'] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA, HELPER_BINDED_TO_CLASS_INSTANCE]`
+* `$helpers['$helper's id'] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA, HELPER_BOUND_TO_CLASS_INSTANCE]`
 
 
 

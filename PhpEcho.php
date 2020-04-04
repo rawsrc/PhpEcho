@@ -4,8 +4,8 @@ namespace rawsrc\PhpEcho;
 
 use ArrayAccess;
 
-if ( ! defined('HELPER_BINDED_TO_CLASS_INSTANCE')) {
-    define('HELPER_BINDED_TO_CLASS_INSTANCE', 1);
+if ( ! defined('HELPER_BOUND_TO_CLASS_INSTANCE')) {
+    define('HELPER_BOUND_TO_CLASS_INSTANCE', 1);
 }
 
 if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
@@ -380,7 +380,7 @@ implements ArrayAccess
     {
         // link all helpers to the current context
         $helpers = self::$helpers;
-        foreach (self::getHelpersByType([HELPER_BINDED_TO_CLASS_INSTANCE], false) as $name => $hlp) {
+        foreach (self::getHelpersByType([HELPER_BOUND_TO_CLASS_INSTANCE], false) as $name => $hlp) {
             $helpers[$name] = $hlp->bindTo($p, $p);
         }
         self::$helpers = $helpers;

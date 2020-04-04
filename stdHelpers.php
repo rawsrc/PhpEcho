@@ -16,7 +16,7 @@ $helpers = [];
 $raw = function(string $key) {
     return $this->vars[$key] ?? null;
 };
-$helpers['$raw'] = [$raw, HELPER_BINDED_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+$helpers['$raw'] = [$raw, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
