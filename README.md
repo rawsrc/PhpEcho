@@ -81,7 +81,7 @@ $raw = function(string $key) {
 $helpers['$raw'] = [$raw, HELPER_RETURN_ESCAPED_DATA, HELPER_BOUND_TO_CLASS_INSTANCE];
 ```
 As this helper extract data from the stored key-value pairs defined in every instance of PhpEcho, it needs an access to the caller's execution context (instance of PhpEcho)
-that's why the helper definition has the flag `HELPER_BINDED_TO_CLASS_INSTANCE`.<br>
+that's why the helper definition has the flag `HELPER_BOUND_TO_CLASS_INSTANCE`.<br>
 And as we want to get the value unescaped, we must tell the engine that the return value by the closure is already escaped.
 We know that is not but this is goal of that helper.
 

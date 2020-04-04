@@ -255,13 +255,13 @@ implements ArrayAccess
     /**
      * @param string   $name
      * @param \Closure $closure
-     * @param int      ...$types  HELPER_RETURN_ESCAPED_DATA HELPER_BINDED_TO_CLASS_INSTANCE
+     * @param int      ...$types  HELPER_RETURN_ESCAPED_DATA HELPER_BOUND_TO_CLASS_INSTANCE
      */
     public static function addHelper(string $name, \Closure $closure, int ...$types)
     {
         self::$helpers[$name] = $closure;
         foreach ($types as $t) {
-            self::$helpers_types[$name][] = $t; // HELPER_BINDED_TO_CLASS_INSTANCE HELPER_RETURN_ESCAPED_DATA
+            self::$helpers_types[$name][] = $t; // HELPER_BOUND_TO_CLASS_INSTANCE HELPER_RETURN_ESCAPED_DATA
         }
     }
 
