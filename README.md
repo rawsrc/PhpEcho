@@ -86,9 +86,9 @@ And as we want to get the value unescaped, we must tell the engine that the retu
 We know that is not but this is goal of that helper.
 
 To define a helper, there's 3 ways:
-* `$helpers['$helper's id'] = $helper_closure`
-* `$helpers['$helper's id'] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA]`
-* `$helpers['$helper's id'] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA, HELPER_BOUND_TO_CLASS_INSTANCE]`
+* `$helpers["$helper's id"] = $helper_closure`
+* `$helpers["$helper's id"] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA]`
+* `$helpers["$helper's id"] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA, HELPER_BOUND_TO_CLASS_INSTANCE]`
 
 
 
