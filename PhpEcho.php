@@ -15,7 +15,7 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
 /**
  * PhpEcho : PHP Template engine : One class to rule them all ;-)
  *
- * @link        https://www.developpez.net/forums/blogs/32058-rawsrc/b8215/phpecho-moteur-rendu-php-classe-gouverner/
+ * @link        https://www.developpez.net/forums/blogs/32058-rawsrc/b9154/phpecho-version-2-0-0/
  * @author      rawsrc - https://www.developpez.net/forums/u32058/rawsrc/
  * @copyright   MIT License
  *
