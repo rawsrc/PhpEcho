@@ -60,7 +60,7 @@ It's possible for every helper to define 2 properties:
 - if linked to a class instance use the constant `HELPER_BINDED_TO_CLASS_INSTANCE`
 - if the generated code is already escaped (to avoid double quote) use the constant : `HELPER_RETURN_ESCAPED_DATA`  
   
-For example, have a look at the helper that returns the HTML attribute `checked`:
+For example, have a look at the helper that returns the HTML attribute `checked`:<br>
 This helper compares two values and if they are equal return the string `" checked "`
 ```php
 $checked = function($p, $ref) use ($is_scalar): string {
@@ -70,7 +70,7 @@ $helpers['$checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
 ```
 This helper is a standalone closure, there's no need to have an access to an instance of PhpEcho.
 As everything is escaped by default in PhpEcho, we can consider that the word "checked" is safe and does not need to be escaped again, 
-this is why, with the helper definition, you have the flag `HELPER_RETURN_ESCAPED_DATA`.
+this is why, with the helper definition, you have the flag `HELPER_RETURN_ESCAPED_DATA`.<br>
 To call this helper inside your code : `$this('$checked', 'your value', 'ref value')`<br>
   
 Now, have a look at the helper that return the raw value from the stored key-value pair `$raw`:
@@ -177,6 +177,7 @@ $body->setCode(<<<html
 </form>
 html
     );
+$page['body'] = $body;
 echo $page;
 // Note how it's coded, in this use case : `$body` replace `$this`
 ```
