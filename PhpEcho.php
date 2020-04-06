@@ -60,7 +60,7 @@ implements ArrayAccess
      */
     private $code = '';
     /**
-     * @var array [helper's id => closure]
+     * @var array [helper's id => bound closure]
      */
     private $bound_helpers = [];
 
