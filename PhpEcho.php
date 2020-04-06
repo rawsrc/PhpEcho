@@ -389,7 +389,7 @@ implements ArrayAccess
      * Only for helpers bound to a class instance
      *
      * @param object $p
-     * @return array        [helper's id => closure]
+     * @return array        [helper's id => bound closure]
      */
     public static function bindHelpersTo(object $p): array
     {
