@@ -59,6 +59,10 @@ implements ArrayAccess
      * @var string
      */
     private $code = '';
+    /**
+     * @var array [helper's id => closure]
+     */
+    private $bound_helpers = [];
 
     /**
      * @param mixed  $file   see setFile() below
@@ -208,9 +212,12 @@ implements ArrayAccess
         if ($helper !== '') {
             self::injectHelpers();
             if (self::isHelper($helper)) {
-                self::bindHelpersTo($this);
+                if (empty($this->bound_helpers)) {
+                    $this->bound_helpers = self::bindHelpersTo($this);
+                }
                 $escaped = self::isHelperOfType($helper, HELPER_RETURN_ESCAPED_DATA);
-                $helper  = self::$helpers[$helper];
+                $helpers = $this->bound_helpers + self::$helpers;
+                $helper  = $helpers[$helper];
                 $result  = $helper(...$args);
                 // being in a HTML context: in any case, the returned data should be escaped
                 // if you don't want so, use the specific helper '$raw'
@@ -251,10 +258,6 @@ implements ArrayAccess
      * @var array [helper's name => [type]]
      */
     private static $helpers_types = [];
-    /**
-     * @var array   [instance's hash => true]
-     */
-    private static $already_bound = [];
 
     /**
      * @param string   $name
@@ -378,31 +381,16 @@ implements ArrayAccess
      * Change the helper's binding context to the given one in parameter
      * Only for helpers bound to a class instance
      *
-     * Avoid multiple bindTo() for the same instance
-     *
      * @param object $p
+     * @return array        [helper's id => closure]
      */
-    public static function bindHelpersTo(object $p)
+    public static function bindHelpersTo(object $p): array
     {
-        $hash = spl_object_hash($p);
-        if ( ! isset(self::$already_bound[$hash])) {
-            // link all helpers bound to a class instance to the current context
-            $helpers = self::$helpers;
-            foreach (self::getHelpersByType([HELPER_BOUND_TO_CLASS_INSTANCE], false) as $name => $hlp) {
-                $helpers[$name] = $hlp->bindTo($p, $p);
-            }
-            self::$helpers = $helpers;
-            self::$already_bound[$hash] = true;
+        $helpers = [];
+        foreach (self::getHelpersByType([HELPER_BOUND_TO_CLASS_INSTANCE], false) as $name => $hlp) {
+            $helpers[$name] = $hlp->bindTo($p, $p);
         }
-    }
-
-    /**
-     * To avoid this pitfall : "When an object is destroyed, its hash may be reused for other objects."
-     * We have to manage manually the $already_bound list
-     */
-    public function __destruct()
-    {
-        unset(self::$already_bound[spl_object_hash($this)]);
+        return $helpers;
     }
     //endregion
 }
