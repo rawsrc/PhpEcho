@@ -251,6 +251,10 @@ implements ArrayAccess
      * @var array [helper's name => [type]]
      */
     private static $helpers_types = [];
+    /**
+     * @var array   [instance's hash => true]
+     */
+    private static $already_bound = [];
 
     /**
      * @param string   $name
@@ -372,18 +376,33 @@ implements ArrayAccess
 
     /**
      * Change the helper's binding context to the given one in parameter
-     * Only for helpers binded to a class instance
+     * Only for helpers bound to a class instance
+     *
+     * Avoid multiple bindTo() for the same instance
      *
      * @param object $p
      */
     public static function bindHelpersTo(object $p)
     {
-        // link all helpers to the current context
-        $helpers = self::$helpers;
-        foreach (self::getHelpersByType([HELPER_BOUND_TO_CLASS_INSTANCE], false) as $name => $hlp) {
-            $helpers[$name] = $hlp->bindTo($p, $p);
+        $hash = spl_object_hash($p);
+        if ( ! isset(self::$already_bound[$hash])) {
+            // link all helpers bound to a class instance to the current context
+            $helpers = self::$helpers;
+            foreach (self::getHelpersByType([HELPER_BOUND_TO_CLASS_INSTANCE], false) as $name => $hlp) {
+                $helpers[$name] = $hlp->bindTo($p, $p);
+            }
+            self::$helpers = $helpers;
+            self::$already_bound[$hash] = true;
         }
-        self::$helpers = $helpers;
+    }
+
+    /**
+     * To avoid this pitfall : "When an object is destroyed, its hash may be reused for other objects."
+     * We have to manage manually the $already_bound list
+     */
+    public function __destruct()
+    {
+        unset(self::$already_bound[spl_object_hash($this)]);
     }
     //endregion
 }
