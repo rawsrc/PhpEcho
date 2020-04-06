@@ -210,7 +210,7 @@ implements ArrayAccess
     public function __invoke(string $helper, ...$args)
     {
         if ($helper !== '') {
-            if ( ! self::isHelper($helper)) {
+            if ( ! empty(self::$helpers_file_to_inject)) {
                 self::injectHelpers();
             }
             if (self::isHelper($helper)) {
@@ -260,6 +260,10 @@ implements ArrayAccess
      * @var array [helper's name => [type]]
      */
     private static $helpers_types = [];
+    /**
+     * @var array   [helpers filepath to inject]
+     */
+    private static $helpers_file_to_inject = [];
 
     /**
      * @param string   $name
@@ -306,7 +310,8 @@ implements ArrayAccess
     {
         foreach ($path as $p) {
             if ( ! isset(self::$helpers_file_path[$p])) {
-                self::$helpers_file_path[$p] = true;
+                self::$helpers_file_path[$p]    = true;
+                self::$helpers_file_to_inject[] = $p;
             }
         }
     }
@@ -316,12 +321,12 @@ implements ArrayAccess
      */
     public static function injectHelpers()
     {
-        foreach (self::$helpers_file_path as $path => &$to_inject) {
-            if ($to_inject && is_file($path)) {
+        foreach (self::$helpers_file_to_inject as $path) {
+            if (is_file($path)) {
                 self::addHelpers(include $path);
-                $to_inject = false;
             }
         }
+        self::$helpers_file_to_inject = [];
     }
 
     /**
