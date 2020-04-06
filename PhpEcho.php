@@ -210,7 +210,9 @@ implements ArrayAccess
     public function __invoke(string $helper, ...$args)
     {
         if ($helper !== '') {
-            self::injectHelpers();
+            if ( ! self::isHelper($helper)) {
+                self::injectHelpers();
+            }
             if (self::isHelper($helper)) {
                 if (empty($this->bound_helpers)) {
                     $this->bound_helpers = self::bindHelpersTo($this);
