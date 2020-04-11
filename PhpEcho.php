@@ -122,7 +122,13 @@ implements ArrayAccess
 
     /**
      * Interface ArrayAccess
-     * Return escaped value
+     *
+     * Return escaped value for
+     *     - scalars
+     *     - array (escape keys and values)
+     *     - stringifyable instance (class implementing __toString() method)
+     *
+     * If object: return the object
      *
      * @param mixed $offset
      * @return mixed|null
@@ -130,10 +136,14 @@ implements ArrayAccess
     public function offsetGet($offset)
     {
         if (isset($this->vars[$offset])) {
-            return $this('$hsc', $this->vars[$offset]);
-        } else {
-            return null;
+            $v = $this->vars[$offset];
+            if (is_array($v) || $this('$is_scalar', $v)) {
+                return $this('$hsc', $v);
+            } elseif (is_object($v)) {
+                return $v;
+            }
         }
+        return null;
     }
 
     /**
