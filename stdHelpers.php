@@ -29,6 +29,7 @@ $is_scalar = function($p): bool {
     return is_scalar($p) || (is_object($p) && method_exists($p, '__toString'));
 };
 $helpers['$is_scalar'] = [$is_scalar, HELPER_RETURN_ESCAPED_DATA];
+$helpers['isScalar']   = $helpers['$is_scalar']; // alias for method call
 
 
 /**

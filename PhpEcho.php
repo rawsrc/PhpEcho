@@ -38,6 +38,13 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  *              LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
  *              OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *              SOFTWARE.
+ *
+ *
+ * @method mixed  raw($p)       Return the raw value from a PhpEcho block
+ * @method mixed  hsc($p)       Escape the value in parameter (scalar, array, stringifyable)
+ * @method bool   isScalar($p)
+ * @method string selected($p, $ref)    Return " selected " if $p == $ref
+ * @method string checked($p, $ref)     Return " checked "  if $p == $ref
  */
 class PhpEcho
 implements ArrayAccess
@@ -220,9 +227,6 @@ implements ArrayAccess
     public function __invoke(string $helper, ...$args)
     {
         if ($helper !== '') {
-            if ( ! empty(self::$helpers_file_to_inject)) {
-                self::injectHelpers();
-            }
             if (self::isHelper($helper)) {
                 if (empty($this->bound_helpers)) {
                     $this->bound_helpers = self::bindHelpersTo($this);
@@ -241,6 +245,21 @@ implements ArrayAccess
             }
         }
         return null;
+    }
+
+    /**
+     * @param $name
+     * @param $arguments
+     */
+    public function __call($name, $arguments)
+    {
+        if (self::isHelper($name)) {
+            return $this->__invoke($name, ...$arguments);
+        } elseif (self::isHelper('$'.$name)) {
+            return $this->__invoke('$'.$name, ...$arguments);
+        } else {
+            return null;
+        }
     }
 
     /**
@@ -354,7 +373,12 @@ implements ArrayAccess
      */
     public static function isHelper(string $helper_name): bool
     {
-        return isset(self::$helpers[$helper_name]);
+        if (isset(self::$helpers[$helper_name])) {
+            return true;
+        } else {
+            self::injectHelpers();
+            return isset(self::$helpers[$helper_name]);
+        }
     }
 
     /**
