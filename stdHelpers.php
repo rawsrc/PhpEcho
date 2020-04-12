@@ -105,5 +105,151 @@ $checked = function($p, $ref) use ($is_scalar): string {
 $helpers['$checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
 
 
+/**
+ * Format and secure list of tag attributes
+ *
+ * if attribute is an integer then only the value is rendered as it
+ *  - 1 => "async"    => will render async
+ *  - 2 => "selected" => will render selected
+ *
+ * @param  array $p [attribute_name => value]
+ * @return string
+ */
+$attributes = function(array $p): string {
+    $data = [];
+    foreach ($p as $attr => $value) {
+        if (is_int(htmlspecialchars((string)$attr, ENT_QUOTES, 'utf-8'))) {
+            $data[] = $value;
+        } elseif ($value !== '') {
+            $str = null;
+            // consider that href or src are already escaped
+            if (in_array($attr, ['href', 'src'], true)) {
+                $str = $value;
+                // intercept js for DOMEvent : starting with onXXX
+            } elseif (mb_substr($attr, 0, 2, 'utf-8') === 'on') {
+                $str = str_replace('"', '&quot;', $value);
+            } elseif (ctype_alpha($attr) || (mb_substr($attr, 0, 5) === 'data-')) {
+                $str = htmlspecialchars($value, ENT_QUOTES, 'utf-8');
+            }
+            if ($str !== null) {
+                $data[] = $attr.'="'.$str.'"';
+            }
+        }
+    }
+    if (empty($data)) {
+        return '';
+    }
+    $data = implode(' ', $data);
+    return " {$data}";
+};
+
+
+/**
+ * Return the HTML code for a void tag: <tag>
+ * Attributes are escaped
+ *
+ * @param string $tag
+ * @param array  $attr
+ * @return string
+ */
+$void_tag = function(string $tag, array $attr = []) use ($attributes): string {
+    $str = $attributes($attr);
+    if ($str !== '') {
+        $str = ' '.$str;
+    }
+    return "<{$tag}{$str}>";
+};
+$helpers['$void_tag'] = [$void_tag, HELPER_RETURN_ESCAPED_DATA];
+$helpers['voidTag'] = $helpers['$void_tag'];
+
+
+/**
+ * Return the HTML code for a tag: <tag>content</tag>
+ * Attributes are escaped but do not FORGET to escape the content
+ *
+ * @param string $tag
+ * @param string $content   MUST BE ALREADY ESCAPED
+ * @param array  $attr
+ * @return string
+ */
+$tag = function(string $tag, string $content, array $attr = []) use ($void_tag) {
+    return $void_tag($tag, $attr).$content."</{$tag}>";
+};
+$helpers['$tag'] = [$tag, HELPER_RETURN_ESCAPED_DATA];
+$helpers['tag'] = $helpers['$tag'];
+
+
+/**
+ * HTML TAG : <link>
+ *
+ * @param  array $p  [rel => value, attribute => value] as many pair (attribute => value) as necessary
+ * @return string
+ *
+ * @link https://www.w3schools.com/tags/tag_link.asp
+ */
+$link = function(array $p) use ($void_tag): string {
+    if (empty($p['rel'])) {   // rel is required
+        return '';
+    }
+    return $void_tag('link', $p);
+};
+$helpers['$link'] = [$link, HELPER_RETURN_ESCAPED_DATA];
+$helpers['link'] = $helpers['$link'];
+
+
+/**
+ * HTML TAG : <style></style>
+ *
+ * The url if defined goes over the plain code
+ * @param  array $p  [href => url | code => plain css definition, attribute => value] as many pair (attribute => value) as necessary
+ * @return string
+ *
+ * @link https://www.w3schools.com/tags/tag_style.asp
+ */
+$style = function(array $p) use ($tag, $link): string {
+    if (empty($p['href']) && empty($p['code'])) {
+        return '';
+    }
+
+    $attr = ['type' => 'text/css'];
+
+    if (isset($p['href'])) {
+        $attr += ['rel' => 'stylesheet', 'href' => $p['href']];
+        unset ($p['rel'], $p['href']);
+        return $link($attr + $p);
+    }
+
+    $code = $p['code'];
+    unset ($p['code'], $p['rel'], $p['href']);
+    return $tag('style', $code, $attr + $p);
+};
+$helpers['$style'] = [$style, HELPER_RETURN_ESCAPED_DATA];
+$helpers['style'] = $helpers['$style'];
+
+/**
+ * HTML TAG : <script></script>
+ *
+ * The url if defined goes over the plain code
+ * @param  array $p  [src => url | code => plain javascript, attribute => value] as many pair (attribute => value) as necessary
+ * @return string
+ *
+ * @link https://www.w3schools.com/tags/tag_script.asp
+ */
+$script = function(array $p) use ($tag): string {
+    if (empty($p['src']) && empty($p['code'])) {
+        return '';
+    }
+    if (isset($p['src'])) {
+        $code = '';
+    } else {
+        $code = $p['code'];
+        unset ($p['code'], $p['src']);
+    }
+    return $tag('script', $code, $p);
+};
+$helpers['$script'] = [$style, HELPER_RETURN_ESCAPED_DATA];
+$helpers['script'] = $helpers['$script'];
+
+
 // return the array of helpers to PhpEcho
 return $helpers;

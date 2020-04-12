@@ -40,11 +40,18 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  *              SOFTWARE.
  *
  *
- * @method mixed  raw($p)       Return the raw value from a PhpEcho block
- * @method mixed  hsc($p)       Escape the value in parameter (scalar, array, stringifyable)
+ * @method mixed  raw(string $key)      Return the raw value from a PhpEcho block
+ * @method mixed  hsc($p)               Escape the value in parameter (scalar, array, stringifyable)
  * @method bool   isScalar($p)
+ *
+ * HTML HELPERS
  * @method string selected($p, $ref)    Return " selected " if $p == $ref
  * @method string checked($p, $ref)     Return " checked "  if $p == $ref
+ * @method string voidTag(string $tag, array $attributes = [])
+ * @method string tag(string $tag, array $attributes = [])
+ * @method string link(array $attributes)   [rel => required]
+ * @method string style(array $attributes)  [href => url | code => plain css definition, attribute => value]
+ * @method string script(array $attributes) [src => url | code => plain javascript, attribute => value]
  */
 class PhpEcho
 implements ArrayAccess
@@ -57,6 +64,10 @@ implements ArrayAccess
      * @var array
      */
     private $vars = [];
+    /**
+     * @var array
+     */
+    private $head = [];
     /**
      * Full resolved filepath to the external view file
      * @var string
@@ -214,6 +225,45 @@ implements ArrayAccess
     {
         $this->code = $code;
         $this->file = '';
+    }
+
+    /**
+     * @param $p
+     */
+    public function addHToHead($p)
+    {
+        $this->head[] = $p;
+    }
+
+    /**
+     * @return string
+     */
+    public function head(): string
+    {
+        return $this->head;
+    }
+
+    /**
+     * @return string
+     */
+    public function renderHead(): string
+    {
+        $data = $this->compileHead($this->head);
+        $data = array_unique($data);
+        return implode('', $data);
+    }
+
+    /**
+     * @return array
+     */
+    private function compileHead(array $data): array
+    {
+        array_walk_recursive($this->vars, function($v, $k) use (&$data) {
+            if ($v instanceof PhpEcho) {
+                $data = array_merge($data, $v->compileHead($data));
+            }
+        });
+        return $data;
     }
 
     /**
