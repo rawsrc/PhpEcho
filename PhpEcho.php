@@ -47,14 +47,14 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  * HTML HELPERS
  * @method string selected($p, $ref)    Return " selected " if $p == $ref
  * @method string checked($p, $ref)     Return " checked "  if $p == $ref
- * @method string voidTag(string $tag, array $attributes = [])
- * @method string tag(string $tag, array $attributes = [])
- * @method string link(array $attributes)   [rel => required]
+ * @method string voidTag(string $tag, array $attributes = [])  Build a <tag/>
+ * @method string tag(string $tag, array $attributes = [])      Build a <tag></tag>
+ * @method string link(array $attributes)   [rel => required, attribute => value]
  * @method string style(array $attributes)  [href => url | code => plain css definition, attribute => value]
  * @method string script(array $attributes) [src => url | code => plain javascript, attribute => value]
  */
 class PhpEcho
-implements ArrayAccess
+    implements ArrayAccess
 {
     /**
      * @var string
@@ -81,6 +81,11 @@ implements ArrayAccess
      * @var array [helper's id => bound closure]
      */
     private $bound_helpers = [];
+    /*
+     * Indicates if the current instance contains in its vars other PhpEcho instance(s)
+     * @var bool
+     */
+    private $has_leafs = false;
 
     /**
      * @param mixed  $file   see setFile() below
@@ -172,6 +177,9 @@ implements ArrayAccess
     public function offsetSet($offset, $value)
     {
         $this->vars[$offset] = $value;
+        if ($value instanceof PhpEcho) {
+            $this->has_leafs = true;
+        }
     }
 
     /**
@@ -228,43 +236,97 @@ implements ArrayAccess
     }
 
     /**
-     * @param $p
+     * Indicates if the current instance contains in its vars other PhpEcho instance(s)
+     * @return bool
      */
-    public function addHToHead($p)
+    public function hasLeafs(): bool
     {
-        $this->head[] = $p;
+        return $this->has_leafs;
     }
 
+    //region HEAD ZONE
     /**
-     * @return string
+     * @return object
      */
-    public function head(): string
+    public function head(): object
     {
-        return $this->head;
-    }
+        return new class($this->head, $this->vars, $this) {
+            private $head;
+            private $vars;
+            /**
+             * @var PhpEcho
+             */
+            private $parent;
 
-    /**
-     * @return string
-     */
-    public function renderHead(): string
-    {
-        $data = $this->compileHead($this->head);
-        $data = array_unique($data);
-        return implode('', $data);
-    }
-
-    /**
-     * @return array
-     */
-    private function compileHead(array $data): array
-    {
-        array_walk_recursive($this->vars, function($v, $k) use (&$data) {
-            if ($v instanceof PhpEcho) {
-                $data = array_merge($data, $v->compileHead($data));
+            public function __construct(&$head, $vars, $parent)
+            {
+                $this->head   =& $head;
+                $this->vars   =  $vars;
+                $this->parent =  $parent;
             }
-        });
-        return $data;
+
+            /**
+             * If  = 1 arg  => plain html code
+             * If >= 2 args => first=helper + the rest=helper's params
+             * @param $args
+             */
+            public function add(...$args)
+            {
+                $nb = count($args);
+                if ($nb === 1) {
+                    if (is_string($args[0])) {
+                        $this->head[] = $args[0];
+                    } elseif (is_array($args[0])) {
+                        array_push($this->head, ...$args[0]);
+                    }
+                } elseif ($nb >= 2) {
+                    // the first param should be a helper
+                    $helper = array_shift($args);
+                    if (PhpEcho::isHelper($helper)) {
+                        $parent       = $this->parent;
+                        $this->head[] = $parent($helper, ...$args);
+                    }
+                }
+            }
+
+            /**
+             * @return array
+             */
+            public function get(): array
+            {
+                return $this->head;
+            }
+
+            /**
+             * Render the full tree of head defined in each PhpEcho Block
+             * @return string
+             */
+            public function render(): string
+            {
+                $data = $this->compile($this->head);
+                $data = array_unique($data);
+                return implode('', $data);
+            }
+
+            /**
+             * @return array
+             */
+            private function compile(array $data): array
+            {
+                array_walk_recursive($this->vars, function($v, $k) use (&$data) {
+                    if ($v instanceof PhpEcho) {
+                        $v->render(); // force the block to render
+                        array_push($data, ...$v->head()->get());
+                        if ($v->hasLeafs()) {
+                            $v->head()->compile($data);
+                        }
+                    }
+                });
+                return $data;
+            }
+        };
     }
+    //endregion
 
     /**
      * This function call a helper defined elsewhere or dynamically
@@ -317,12 +379,21 @@ implements ArrayAccess
      */
     public function __toString()
     {
-        if (($this->file !== '') && is_file($this->file)) {
-            ob_start();
-            include $this->file;
-            return ob_get_clean();
-        } else {
-            return $this->code;
+        $this->render();
+        return $this->code;
+    }
+
+    /**
+     * Manually render the block
+     */
+    public function render()
+    {
+        if ($this->code === '') {
+            if (($this->file !== '') && is_file($this->file)) {
+                ob_start();
+                include $this->file;
+                $this->code = ob_get_clean();
+            }
         }
     }
 

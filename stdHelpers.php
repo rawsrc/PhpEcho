@@ -140,7 +140,7 @@ $attributes = function(array $p): string {
         return '';
     }
     $data = implode(' ', $data);
-    return " {$data}";
+    return "{$data}";
 };
 
 
@@ -160,23 +160,29 @@ $void_tag = function(string $tag, array $attr = []) use ($attributes): string {
     return "<{$tag}{$str}>";
 };
 $helpers['$void_tag'] = [$void_tag, HELPER_RETURN_ESCAPED_DATA];
-$helpers['voidTag'] = $helpers['$void_tag'];
+$helpers['voidTag']   = $helpers['$void_tag'];
 
 
 /**
  * Return the HTML code for a tag: <tag>content</tag>
- * Attributes are escaped but do not FORGET to escape the content
+ * Attributes and content are escaped
+ *
+ * To avoid double escaping on content : set $attr['escaped'] = true
  *
  * @param string $tag
- * @param string $content   MUST BE ALREADY ESCAPED
+ * @param string $content
  * @param array  $attr
  * @return string
  */
-$tag = function(string $tag, string $content, array $attr = []) use ($void_tag) {
+$tag = function(string $tag, string $content, array $attr = []) use ($void_tag, $hsc) {
+    if (( ! isset($attr['escaped'])) || ($attr['escaped'] !== true)) {
+        $content = $hsc($content);
+    }
+    unset($attr['escaped']);
     return $void_tag($tag, $attr).$content."</{$tag}>";
 };
 $helpers['$tag'] = [$tag, HELPER_RETURN_ESCAPED_DATA];
-$helpers['tag'] = $helpers['$tag'];
+$helpers['tag']  = $helpers['$tag'];
 
 
 /**
@@ -194,7 +200,7 @@ $link = function(array $p) use ($void_tag): string {
     return $void_tag('link', $p);
 };
 $helpers['$link'] = [$link, HELPER_RETURN_ESCAPED_DATA];
-$helpers['link'] = $helpers['$link'];
+$helpers['link']  = $helpers['$link'];
 
 
 /**
@@ -224,7 +230,7 @@ $style = function(array $p) use ($tag, $link): string {
     return $tag('style', $code, $attr + $p);
 };
 $helpers['$style'] = [$style, HELPER_RETURN_ESCAPED_DATA];
-$helpers['style'] = $helpers['$style'];
+$helpers['style']  = $helpers['$style'];
 
 /**
  * HTML TAG : <script></script>
@@ -248,7 +254,7 @@ $script = function(array $p) use ($tag): string {
     return $tag('script', $code, $p);
 };
 $helpers['$script'] = [$style, HELPER_RETURN_ESCAPED_DATA];
-$helpers['script'] = $helpers['$script'];
+$helpers['script']  = $helpers['$script'];
 
 
 // return the array of helpers to PhpEcho
