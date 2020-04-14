@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2020-04-03` `PHP 7+` `v.2.0.0`
+`2020-04-14` `PHP 7+` `v.2.2.0`
 
 ## **A PHP template engine : One class to rule them all**
 
@@ -15,18 +15,20 @@ Basically, you just need to define the path of a view file to include and pass t
 instance a set of key-values pairs that will be available on rendering.
 
 The class will manage :
-* files inclusions
+* file inclusions
 * extracting and escaping values from the locally stored key-values pairs
 * escaping any value on demand
 * returning raw values (when you know what you're doing)
-* the possibility to write directly plain html code instead of file inclusion
+* the possibility to write directly plain html code instead of using the file inclusion mechanism
 * escaping recursively keys and values in any array
 * managing and rendering instance of class that implements the magic function `__toString()`
+* let you access to the global HTML `<head></head>` from any child block
+* let your IDE to list all your helpers natively just using PHPDoc syntax (see the PHPDoc of the class)
 
-**NEW FEATURE IN PhpEcho v.2.0.0:**<br>
-1. It's now possible to create, inject and use your own personal helpers (code snippet) to easily render your HTML/CSS/JS code.
-2. Everything is secured and escaped by default. To get a raw value from a key, you must ask it explicitly using the helper `"$raw"` as shown below.   
-
+**NEW FEATURE IN PhpEcho v.2.2.0:**<br>
+1. You have now access to the global `<head></head>` from any PhpEcho child block
+2. New helpers rendering HTML tags in a secure way
+3. Use a relative path from the current instance to target any child PhpEcho file 
 
 **What you must know to use it**
 1. Using array access notation or function notation will always return escaped values
@@ -41,22 +43,24 @@ $block['foo'] = 'abc " < >';   // store a key-value pair inside the instance
 $x = $block['foo'];   // $x = 'abc &quot; &lt; &gt;'
 
 // escape on demand using a helper
-$y = $block('$hsc', 'any value to escape');
+$y = $block('$hsc', 'any value to escape'); // or
+$y = $block->hsc('any value to escape');    // since PhpEcho 2.1.0
 
 // extract the raw value on demand using a helper
-$z = $block('$raw', 'foo'); // $z = 'abc " < >'
+$z = $block('$raw', 'foo'); // $z = 'abc " < >' or
+$z = $block->raw('foo');    // $z = 'abc " < >' since PhpEcho 2.1.0
 ```
 
 ## **Defining and using your own code snippets as helpers**
-This version give you the possibility to use your own code generator as simply as a `Closure`.<br>
-You have a small standard library of helpers that comes with PhpEcho : `stdHelpers.php`<br>
+You have the possibility to use your own code generator as simply as a `Closure`.<br>
+There's a small standard library of helpers that comes with PhpEcho : `stdHelpers.php`<br>
 
-**The principle:**<br> 
-Every helper is a `Closure` that can produce whatever you want.<br>
-Every helper can be linked to an instance of PhpEcho or remain a standalone helper.<br>
+**About helpers:**<br> 
+Each helper is a `Closure` that can produce whatever you want.<br>
+Each helper can be linked to an instance of PhpEcho or remain a standalone helper.<br>
 If linked to an instance, inside the closure you can use `$this` to get an access to the caller's execution context.<br>
 If standalone, this is just a simply function with parameters.<br>
-It's possible for every helper to define 2 properties:
+It's possible for each helper to define 2 properties:
 - if linked to a class instance use the constant `HELPER_BOUND_TO_CLASS_INSTANCE`
 - if the generated code is already escaped (to avoid double quote) use the constant : `HELPER_RETURN_ESCAPED_DATA`  
   
@@ -71,8 +75,10 @@ $helpers['$checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
 This helper is a standalone closure, there's no need to have an access to an instance of PhpEcho.
 As everything is escaped by default in PhpEcho, we can consider that the word "checked" is safe and does not need to be escaped again, 
 this is why, with the helper definition, you have the flag `HELPER_RETURN_ESCAPED_DATA`.<br>
-To call this helper inside your code : `$this('$checked', 'your value', 'ref value')`<br>
-  
+To call this helper inside your code (2 ways) : <br>
+* `$this('$checked', 'your value', 'ref value');`
+* `$this->checked('your value', 'ref value');    // since PhpEcho 2.1.0`
+ 
 Now, have a look at the helper that return the raw value from the stored key-value pair `$raw`:
 ```php
 $raw = function(string $key) {
@@ -80,24 +86,28 @@ $raw = function(string $key) {
 };
 $helpers['$raw'] = [$raw, HELPER_RETURN_ESCAPED_DATA, HELPER_BOUND_TO_CLASS_INSTANCE];
 ```
-As this helper extract data from the stored key-value pairs defined in every instance of PhpEcho, it needs an access to the caller's execution context (instance of PhpEcho)
+As this helper extract data from the stored key-value pairs defined in each instance of PhpEcho, it needs an access to the caller's execution context (instance of PhpEcho)
 that's why the helper definition has the flag `HELPER_BOUND_TO_CLASS_INSTANCE`.<br>
 And as we want to get the value unescaped, we must tell the engine that the return value by the closure is already escaped.
-We know that is not but this is goal of that helper.
+We know that is not but this is goal of that helper.<br>
+To call this helper inside your code (2 ways) : <br>
+* `$this('$raw', 'key');`
+* `$this->raw('key');    // since PhpEcho 2.1.0`
 
-To define a helper, there's 3 ways:
-* `$helpers["$helper's id"] = $helper_closure`
-* `$helpers["$helper's id"] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA]`
-* `$helpers["$helper's id"] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA, HELPER_BOUND_TO_CLASS_INSTANCE]`
-
+To define a helper, there're 3 ways:
+* `$helpers["$helper's name"] = $helper_closure`
+* `$helpers["$helper's name"] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA]`
+* `$helpers["$helper's name"] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA, HELPER_BOUND_TO_CLASS_INSTANCE]`
 
 
 ## **How to**
 Here's a very simple example of login from:
 
-1. First, we create a html file called `Layout.php`
-Note the expected values for keys inside `$this[]` or `$this()`  
+1. First, we create a view file called `Layout.php`
+Note the expected values for keys inside `$this[]` or `$this()`.<br>
+Do not forget that all values returned by the array notation (`$this[]`) are safe in HTML context
 ```php
+<?php /** @var PhpEcho $this */ ?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -110,6 +120,9 @@ Note the expected values for keys inside `$this[]` or `$this()`
 </body>
 </html>
 ```
+To get a handy help from your IDE, you can also write the code above (since PhpEcho 2.1.0) like this: `<?= $this->raw('body') ?>`<br> 
+To get the IDE autocompletion, just add as the first line of your view file `<?php /** @var PhpEcho $this */ ?>` to tell the IDE the 
+right type for `$this`.<br> 
 Note also the different ways of extracting the data from `$this` (array notation vs function notation (helpers))
 
 Then, we prepare the body of the page `LoginForm.php` :
@@ -253,4 +266,69 @@ html
     );
 ```
 
-That's all folks, nothing more to learn.
+## **Let's play with helpers**
+As mentioned above, there's some new helpers that have been added to the standard helpers library `stdHelpers.php`.
+These helpers will help you to render any HTML code and/or interact with any PhpEcho instance.
+By default, everything in PhpEcho is escaped, so this is also true for the HTML code generated by the helpers.
+
+As helpers are small snippets of code, you can read their source code to understand easily what they will return.
+The helpers are also documented, so RTFM ;-) 
+ 
+Examples:
+* You need to create a `<input>` tag 
+```php
+$this->voidTag('input', ['type' => 'text', 'name' => 'name', 'required', 'value' => ' < > " <script></script>']);
+```
+You do not have to worry about any dangerous character in this tag, all are escaped. Here's the rendered HTML code:<br>
+```html
+<input type="text" name="name" required value=" &lt; &gt; &quot; &lt;script&gt;&lt;/script&gt;">
+```
+It is also possible to do like this:
+```php
+<input <?= $this->attributes(['type' => 'text', 'name' => 'name', 'required', 'value' => ' < > " <script></script>']) ?>>
+```
+As you see, there're tons of methods to get the expected result, just using and creating your own helpers.
+It's higly recommended creating and using your own helpers and ask to get them included by default in the package for the next release. 
+
+  
+## **Accessing the top `<head></head>` from any child PhpEcho block**
+
+When you code the view part of a website, you will create plenty of small blocks that will be inserted at their right place on rendering.
+As everybody knows, the best design is to keep your blocks in the most independent way from the others. Sometimes you will need to add some dependencies
+directly in the header of the page. This is also possible using PhpEcho as your main template engine.
+
+In any instance of PhpEcho, you have a method named `head()` which is designed for this purpose.
+
+Now, imagine you're in the depth of the DOM, you're coding a view block and need to tell the header to declare a link to your library.
+In the current block, you will do:
+```php
+<?php $this->head()->add('<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous">') ?>
+```  
+or using a helper `script` that will secure all your values
+```php
+<?php $this->head()->add('script', [
+    'src'         => "https://code.jquery.com/jquery-3.4.1.min.js", 
+    'integrity'   => "sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=", 
+    'crossorigin' => "anonymous"]) ?>
+```
+Now in the block that renders the `<head></head>`, you just have to code:
+```php
+<head>
+    <?= $this->head()->render(); ?>
+</head>
+``` 
+The engine will compile all the `<head></head>` parameters from all the child blocks to render the header.
+
+The concept of child block is easy to understand: when you define a PhpEcho class as a variable of one another, you create a child block.
+```php
+$page = new PhpEcho('Layout.php');
+$page['body'] = new PhpEcho('Body.php');    // here's the child block 
+```
+
+## **Using a relative path to target any child PhpEcho block**
+When you create a PhpEcho instance, usually you will pass to the constructor the filepath of the view file.
+You can get directly the last template directory using `templateDirectory()` and use it as a root to build other dynamics paths 
+
+Enjoy!
+
+**rawrsc**

@@ -106,9 +106,9 @@ $helpers['$checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
- * Format and secure list of tag attributes
+ * Format and secure a list of tag attributes
  *
- * if attribute is an integer then only the value is rendered as it
+ * if attribute_name is a true integer then the value is rendered as it
  *  - 1 => "async"    => will render async
  *  - 2 => "selected" => will render selected
  *
@@ -118,7 +118,7 @@ $helpers['$checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
 $attributes = function(array $p): string {
     $data = [];
     foreach ($p as $attr => $value) {
-        if (is_int(htmlspecialchars((string)$attr, ENT_QUOTES, 'utf-8'))) {
+        if (is_int($attr)) {
             $data[] = $value;
         } elseif ($value !== '') {
             $str = null;
@@ -136,12 +136,9 @@ $attributes = function(array $p): string {
             }
         }
     }
-    if (empty($data)) {
-        return '';
-    }
-    $data = implode(' ', $data);
-    return "{$data}";
+    return implode(' ', $data);
 };
+$helpers['$attributes'] = [$attributes, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -160,7 +157,7 @@ $void_tag = function(string $tag, array $attr = []) use ($attributes): string {
     return "<{$tag}{$str}>";
 };
 $helpers['$void_tag'] = [$void_tag, HELPER_RETURN_ESCAPED_DATA];
-$helpers['voidTag']   = $helpers['$void_tag'];
+$helpers['voidTag']   = $helpers['$void_tag'];  // alias for method call
 
 
 /**
@@ -182,7 +179,6 @@ $tag = function(string $tag, string $content, array $attr = []) use ($void_tag, 
     return $void_tag($tag, $attr).$content."</{$tag}>";
 };
 $helpers['$tag'] = [$tag, HELPER_RETURN_ESCAPED_DATA];
-$helpers['tag']  = $helpers['$tag'];
 
 
 /**
@@ -200,7 +196,6 @@ $link = function(array $p) use ($void_tag): string {
     return $void_tag('link', $p);
 };
 $helpers['$link'] = [$link, HELPER_RETURN_ESCAPED_DATA];
-$helpers['link']  = $helpers['$link'];
 
 
 /**
@@ -230,7 +225,6 @@ $style = function(array $p) use ($tag, $link): string {
     return $tag('style', $code, $attr + $p);
 };
 $helpers['$style'] = [$style, HELPER_RETURN_ESCAPED_DATA];
-$helpers['style']  = $helpers['$style'];
 
 /**
  * HTML TAG : <script></script>
@@ -254,7 +248,6 @@ $script = function(array $p) use ($tag): string {
     return $tag('script', $code, $p);
 };
 $helpers['$script'] = [$style, HELPER_RETURN_ESCAPED_DATA];
-$helpers['script']  = $helpers['$script'];
 
 
 // return the array of helpers to PhpEcho

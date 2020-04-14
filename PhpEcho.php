@@ -45,6 +45,7 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  * @method bool   isScalar($p)
  *
  * HTML HELPERS
+ * @method string attributes(array $p)  Return the values as escaped attributes: attribute="..."
  * @method string selected($p, $ref)    Return " selected " if $p == $ref
  * @method string checked($p, $ref)     Return " checked "  if $p == $ref
  * @method string voidTag(string $tag, array $attributes = [])  Build a <tag/>
@@ -220,6 +221,14 @@ class PhpEcho
     }
 
     /**
+     * @return string
+     */
+    public function templateDirectory(): string
+    {
+        return $this->file === '' ? '' : dirname($this->file);
+    }
+
+    /**
      * Instead on including an external file, use inline code for the view
      *
      * CAREFUL : when you use inline code with dynamic values from the array $vars, you must
@@ -244,7 +253,7 @@ class PhpEcho
         return $this->has_leafs;
     }
 
-    //region HEAD ZONE
+    //region HTML HEAD ZONE
     /**
      * @return object
      */
