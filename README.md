@@ -331,4 +331,4 @@ You can get directly the last template directory using `templateDirectory()` and
 
 Enjoy!
 
-**rawrsc**
+**rawsrc**
