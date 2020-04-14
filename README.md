@@ -287,8 +287,8 @@ It is also possible to do like this:
 ```php
 <input <?= $this->attributes(['type' => 'text', 'name' => 'name', 'required', 'value' => ' < > " <script></script>']) ?>>
 ```
-As you see, there're tons of methods to get the expected result, just using and creating your own helpers.
-It's higly recommended creating and using your own helpers and ask to get them included by default in the package for the next release. 
+As you see, there're tons of methods to get the expected result.
+It's highly recommended creating and using your own helpers and ask to get them included by default in the package for the next release. 
 
   
 ## **Accessing the top `<head></head>` from any child PhpEcho block**
