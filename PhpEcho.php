@@ -48,7 +48,7 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  * @method string attributes(array $p)  Return the values as escaped attributes: attribute="..."
  * @method string selected($p, $ref)    Return " selected " if $p == $ref
  * @method string checked($p, $ref)     Return " checked "  if $p == $ref
- * @method string voidTag(string $tag, array $attributes = [])  Build a <tag/>
+ * @method string voidTag(string $tag, array $attributes = [])  Build a <tag>
  * @method string tag(string $tag, array $attributes = [])      Build a <tag></tag>
  * @method string link(array $attributes)   [rel => required, attribute => value]
  * @method string style(array $attributes)  [href => url | code => plain css definition, attribute => value]
