@@ -222,6 +222,7 @@ $style = function(array $p) use ($tag, $link): string {
 
     $code = $p['code'];
     unset ($p['code'], $p['rel'], $p['href']);
+    $p['escaped'] = true;
     return $tag('style', $code, $attr + $p);
 };
 $helpers['$style'] = [$style, HELPER_RETURN_ESCAPED_DATA];
@@ -245,6 +246,7 @@ $script = function(array $p) use ($tag): string {
         $code = $p['code'];
         unset ($p['code'], $p['src']);
     }
+    $p['escaped'] = true;
     return $tag('script', $code, $p);
 };
 $helpers['$script'] = [$style, HELPER_RETURN_ESCAPED_DATA];
