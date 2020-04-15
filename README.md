@@ -299,7 +299,7 @@ directly in the header of the page. This is also possible using PhpEcho as your 
 
 In any instance of PhpEcho, you have a method named `head()` which is designed for this purpose.
 
-Now, imagine you're in the depths of the DOM, you're coding a view block and need to tell the header to declare a link to your library.
+Now, imagine you're in the depths of the DOM, you're coding a block and need to tell the header to declare a link to your library.
 In the current block, you will do:
 ```php
 <?php $this->head()->add('<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous">') ?>
