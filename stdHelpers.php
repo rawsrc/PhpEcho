@@ -33,7 +33,7 @@ $helpers['isScalar']   = $helpers['$is_scalar']; // alias for method call
 
 
 /**
- * Tell if the value in parameter should be escaped or not
+ * Check if the value in parameter should be escaped or not
  *
  * @param $p
  * @return bool
@@ -52,7 +52,6 @@ $to_escape = function($p) use ($is_scalar): bool  {
     }
 };
 $helpers['$to_escape'] = [$to_escape, HELPER_RETURN_ESCAPED_DATA];
-
 
 /**
  * Return an array of escaped values with htmlspecialchars(ENT_QUOTES, 'utf-8') for both keys and values
@@ -284,12 +283,12 @@ $helpers['$script'] = [$style, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
- * This helper will climb the tree of PhpEcho instances from the current while the key match
+ * This helper will climb the tree of PhpEcho instances from the current block while the key match
  *
  * A string will be split in parts using the space for delimiter
  * If one of the keys contains a space, use an array of keys instead
  *
- * If $strict_match === true then every key must be found in the parent block as they are listed
+ * If $strict_match === true then every key must be found in the parent blocks tree as they are listed
  * If $strict_match === false then if the current key is not found in the parent block, then the search will continue
  * until reaching the root or stop at the first match
  *
@@ -334,29 +333,38 @@ $helpers['keyUp']   = $helpers['$key_up'];
 
 
 /**
- * This helper will extract a value from a key stored in the root of the tree of PhpEcho instances
- * and go down while the key match.
- *
- * This function does not render the PhpEcho blocks. So, if you target a PhpEcho block that has not been rendered yet,
- * the key might not be available.
- *
- * A string will be split in parts using the space for delimiter
- * If one of the keys contains a space, use an array of keys instead
- *
- * @param string|array $keys
- * @return mixed|null                   null if not found
+ * @return PhpEcho
  */
-$root_key = function($keys) use ($to_escape, $hsc) {
+$root = function(): PhpEcho {
     // climbing to the root
     /** @var PhpEcho $block */
     $block = $this;
     while ($block->hasParent()) {
         $block = $block->parent;
     }
+    return $block;
+};
+$helpers['$root'] = [$root, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 
-    $keys = is_string($keys) ? explode(' ', $keys) : $keys;
-    $nb   = count($keys);
-    $i    = 0;
+
+/**
+ * This helper will extract a value from a key stored in the root of the tree of PhpEcho instances
+ * and go down while the key match. This function does not render the PhpRcho blocks
+ *
+ * A string will be split in parts using the space for delimiter
+ * If one of the keys contains a space, use an array of keys instead
+ *
+ * @param string|array $keys
+ * @return mixed|null          null if not found
+ */
+$root_key = function($keys) use ($to_escape, $hsc) {
+    /** @var PhpEcho $this */
+    $root  = $this->bound_helpers['$root'];
+    /** @var PhpEcho $block */
+    $block = $root();   // get the root PhpEcho block
+    $keys  = is_string($keys) ? explode(' ', $keys) : $keys;
+    $nb    = count($keys);
+    $i     = 0;
     while ($i < $nb) {
         $k = $keys[$i];
         if (isset($block[$k])) {
