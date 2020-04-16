@@ -334,7 +334,11 @@ $helpers['keyUp']   = $helpers['$key_up'];
 
 
 /**
- * This helper will start from the root of the tree of PhpEcho instances and go down while the key match
+ * This helper will extract a value from a key stored in the root of the tree of PhpEcho instances
+ * and go down while the key match.
+ *
+ * This function does not render the PhpEcho blocks. So, if you target a PhpEcho block that has not been rendered yet,
+ * the key might not be available.
  *
  * A string will be split in parts using the space for delimiter
  * If one of the keys contains a space, use an array of keys instead
@@ -342,7 +346,7 @@ $helpers['keyUp']   = $helpers['$key_up'];
  * @param string|array $keys
  * @return mixed|null                   null if not found
  */
-$key_down = function($keys) use ($to_escape, $hsc) {
+$root_key = function($keys) use ($to_escape, $hsc) {
     // climbing to the root
     /** @var PhpEcho $block */
     $block = $this;
@@ -371,9 +375,9 @@ $key_down = function($keys) use ($to_escape, $hsc) {
         }
     }
 };
-$helpers['$key_down'] = [$key_down, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
-$helpers['keyDown']   = $helpers['$key_down'];  // alias for method call
-$helpers['param']     = $helpers['$key_down'];  // alias for method call
+$helpers['$root_key'] = [$root_key, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+$helpers['rootKey']   = $helpers['$root_key'];  // alias for method call
+$helpers['param']     = $helpers['$root_key'];  // alias for method call
 
 
 // return the array of helpers to PhpEcho
