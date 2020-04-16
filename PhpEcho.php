@@ -310,10 +310,17 @@ class PhpEcho
     public function head(bool $escape): string
     {
         // generate a token that will be replaced after rendering the whole HTML
-        $token = str_shuffle(self::$ALPHANUM).mt_rand(100000000, 999999999);
-        $this->head_token  = $token;
+        $this->head_token  = self::token();
         $this->head_escape = $escape;
-        return $token;
+        return $this->head_token;
+    }
+
+    /**
+     * @return string
+     */
+    private static function token(): string
+    {
+        return str_shuffle(self::$ALPHANUM).mt_rand(100000000, 999999999);
     }
 
     /**
