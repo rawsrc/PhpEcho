@@ -49,6 +49,11 @@ $y = $block->hsc('any value to escape');    // since PhpEcho 2.1.0
 // extract the raw value on demand using a helper
 $z = $block('$raw', 'foo'); // $z = 'abc " < >' or
 $z = $block->raw('foo');    // $z = 'abc " < >' since PhpEcho 2.1.0
+
+// since PhpEcho 2.2.1
+// if you store an object you retrieve your object (even if the class implements __toString())
+$block['bar'] = new stdClass();
+$bar = $block['bar'];
 ```
 
 ## **Defining and using your own code snippets as helpers**
