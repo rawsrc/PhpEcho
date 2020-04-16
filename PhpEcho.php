@@ -108,6 +108,10 @@ class PhpEcho
      * @var PhpEcho
      */
     private $parent;
+    /**
+     * @var string
+     */
+    private $render_token = '';
 
     /**
      * @param mixed  $file   see setFile() below
@@ -128,6 +132,8 @@ class PhpEcho
 
         $this->vars = $vars;
         self::addPathToHelperFile(__DIR__.DIRECTORY_SEPARATOR.'stdHelpers.php');
+
+        $this->render_token = self::token();
     }
 
     /**
@@ -274,6 +280,24 @@ class PhpEcho
     public function hasChildren(): bool
     {
         return $this->has_children;
+    }
+
+    /**
+     * Create a new instance of PhpEcho using the current directory template as root for the file to include
+     *
+     * @param string $file
+     * @param array  $vars
+     * @param string $id
+     * @return PhpEcho      Return the new instance
+     */
+    public function addChild($file = '', array $vars = [], string $id = ''): PhpEcho
+    {
+        $parts = is_string($file) ? explode(' ', $file) : $file;
+        array_unshift($parts, $this->templateDirectory());
+        $block = new PhpEcho($parts, $vars, $id);
+        $block->parent      = $this;
+        $this->has_children = true;
+        return $block;
     }
 
     /**
