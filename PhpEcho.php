@@ -39,23 +39,23 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  *              OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *              SOFTWARE.
  *
- *
- * @method mixed  raw(string $key)      Return the raw value from a PhpEcho block
- * @method mixed  hsc($p)               Escape the value in parameter (scalar, array, stringifyable)
- * @method bool   isScalar($p)
+ * PhpEcho HELPERS
+ * @method mixed   raw(string $key)                 Return the raw value from a PhpEcho block
+ * @method bool    isScalar($p)
+ * @method mixed   keyUp($keys, bool $strict_match) Climb the tree of PhpEcho instances while keys match
+ * @method mixed   param($keys)                     Extract a value from the root PhpEcho instance of the tree
+ * @method PhpEcho root()                           Return the root PhpEcho instance of the tree
  *
  * HTML HELPERS
- * @method string attributes(array $p)  Return the values as escaped attributes: attribute="..."
- * @method string selected($p, $ref)    Return " selected " if $p == $ref
- * @method string checked($p, $ref)     Return " checked "  if $p == $ref
- * @method string voidTag(string $tag, array $attributes = [])  Build a <tag>
- * @method string tag(string $tag, array $attributes = [])      Build a <tag></tag>
- * @method string link(array $attributes)   [rel => required, attribute => value]
- * @method string style(array $attributes)  [href => url | code => plain css definition, attribute => value]
- * @method string script(array $attributes) [src => url | code => plain javascript, attribute => value]
- * @method mixed  keyUp($keys, bool $strict_match) Climb the tree of PhpEcho instances while keys match
- * @method mixed  param($keys)              Extract a value from the root PhpEcho instance of the tree
- * @method PhpEcho root()                   Return the root PhpEcho instance of the tree
+ * @method mixed   hsc($p)                          Escape the value in parameter (scalar, array, stringifyable)
+ * @method string  attributes(array $p)             Return the values as escaped attributes: attribute="..."
+ * @method string  selected($p, $ref)               Return " selected " if $p == $ref
+ * @method string  checked($p, $ref)                Return " checked "  if $p == $ref
+ * @method string  voidTag(string $tag, array $attributes = [])  Build a <tag>
+ * @method string  tag(string $tag, array $attributes = [])      Build a <tag></tag>
+ * @method string  link(array $attributes)          [rel => required, attribute => value]
+ * @method string  style(array $attributes)         [href => url | code => plain css definition, attribute => value]
+ * @method string  script(array $attributes)        [src => url | code => plain javascript, attribute => value]
  */
 class PhpEcho
     implements ArrayAccess
