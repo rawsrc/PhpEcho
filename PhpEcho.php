@@ -53,12 +53,15 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  * @method string link(array $attributes)   [rel => required, attribute => value]
  * @method string style(array $attributes)  [href => url | code => plain css definition, attribute => value]
  * @method string script(array $attributes) [src => url | code => plain javascript, attribute => value]
- * @method mixed  keyUp($keys, bool $strict_match)
- * @method mixed  param($keys)
+ * @method mixed  keyUp($keys, bool $strict_match) Climb the tree of PhpEcho instances while keys match
+ * @method mixed  param($keys)              Extract a value from the root PhpEcho instance of the tree
+ * @method PhpEcho root()                   Return the root PhpEcho instance of the tree
  */
 class PhpEcho
     implements ArrayAccess
 {
+    private static $ALPHANUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
     /**
      * @var string
      */
@@ -71,6 +74,14 @@ class PhpEcho
      * @var array
      */
     private $head = [];
+    /**
+     * @var string
+     */
+    private $head_token = '';
+    /**
+     * @var bool
+     */
+    private $head_escape = true;
     /**
      * Full resolved filepath to the external view file
      * @var string
@@ -267,89 +278,43 @@ class PhpEcho
         return ($this->parent instanceof PhpEcho);
     }
 
-    //region HTML HEAD ZONE
     /**
-     * @return object
+     * If  = 1 arg  => plain html code (string or array of html code)
+     * If >= 2 args => first=helper + the rest=helper's params
+     * @param mixed ...$args
      */
-    public function head(): object
+    public function addHead(...$args)
     {
-        return new class($this->head, $this->vars, $this) {
-            private $head;
-            private $vars;
-            /**
-             * @var PhpEcho
-             */
-            private $parent;
-
-            public function __construct(&$head, $vars, $parent)
-            {
-                $this->head   =& $head;
-                $this->vars   =  $vars;
-                $this->parent =  $parent;
+        // the head is only stored in the root of the tree
+        $root = $this->root();
+        $nb   = count($args);
+        if ($nb === 1) {
+            if (is_string($args[0])) {
+                $root->head[] = $args[0];
+            } elseif (is_array($args[0])) {
+                array_push($root->head, ...$args[0]);
             }
-
-            /**
-             * If  = 1 arg  => plain html code
-             * If >= 2 args => first=helper + the rest=helper's params
-             * @param $args
-             */
-            public function add(...$args)
-            {
-                $nb = count($args);
-                if ($nb === 1) {
-                    if (is_string($args[0])) {
-                        $this->head[] = $args[0];
-                    } elseif (is_array($args[0])) {
-                        array_push($this->head, ...$args[0]);
-                    }
-                } elseif ($nb >= 2) {
-                    // the first param should be a helper
-                    $helper = array_shift($args);
-                    if (PhpEcho::isHelper($helper)) {
-                        $parent       = $this->parent;
-                        $this->head[] = $parent($helper, ...$args);
-                    }
-                }
+        } elseif ($nb >= 2) {
+            // the first param should be a helper
+            $helper = array_shift($args);
+            if (self::isHelper($helper)) {
+                $root->head[] = $this($helper, ...$args);
             }
-
-            /**
-             * @return array
-             */
-            public function get(): array
-            {
-                return $this->head;
-            }
-
-            /**
-             * Render the full tree of head defined in each PhpEcho Block
-             * @return string
-             */
-            public function render(): string
-            {
-                $data = $this->compile($this->head);
-                $data = array_unique($data);
-                return implode('', $data);
-            }
-
-            /**
-             * @return array
-             */
-            private function compile(array $data): array
-            {
-                array_walk_recursive($this->vars, function($v, $k) use (&$data) {
-                    if ($v instanceof PhpEcho) {
-                        $v->render(); // force the block to render
-                        array_push($data, ...$v->head()->get());
-                        if ($v->hasChildren()) {
-                            $v->head()->compile($data);
-                        }
-                    }
-                });
-                return $data;
-            }
-        };
+        }
     }
-    //endregion
+
+    /**
+     * @param bool $escape  If you dont want to escape the head, set it to false
+     * @return string
+     */
+    public function head(bool $escape): string
+    {
+        // generate a token that will be replaced after rendering the whole HTML
+        $token = str_shuffle(self::$ALPHANUM).mt_rand(100000000, 999999999);
+        $this->head_token  = $token;
+        $this->head_escape = $escape;
+        return $token;
+    }
 
     /**
      * This function call a helper defined elsewhere or dynamically
@@ -403,7 +368,17 @@ class PhpEcho
     public function __toString()
     {
         $this->render();
-        return $this->code;
+        $root = $this('$root');
+        if (($root === $this) && $this->head_token) {
+            if ($this->head_escape) {
+                $head = implode('', $this('$hsc', $this->head));
+            } else {
+                $head = implode('', $this->head);
+            }
+            return str_replace($this->head_token, $head, $this->code);
+        } else {
+            return $this->code;
+        }
     }
 
     /**
