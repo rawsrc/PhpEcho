@@ -151,6 +151,7 @@ class PhpEcho
         $this->id = chr(mt_rand(97, 122)).bin2hex(random_bytes(4));
     }
 
+    //region ARRAY ACCESS
     /**
      * Interface ArrayAccess
      * @param mixed $offset
@@ -208,6 +209,7 @@ class PhpEcho
     {
         unset($this->vars[$offset]);
     }
+    //endregion
 
     /**
      * Define the filepath to the external view file to include
@@ -323,6 +325,7 @@ class PhpEcho
         return str_shuffle(self::$ALPHANUM).mt_rand(100000000, 999999999);
     }
 
+    //region MAGIC METHODS
     /**
      * This function call a helper defined elsewhere or dynamically
      * Auto-escape if necessary
@@ -387,6 +390,7 @@ class PhpEcho
             return $this->code;
         }
     }
+    //endregion
 
     /**
      * Manually render the block
