@@ -291,7 +291,7 @@ $helpers['$script'] = [$style, HELPER_RETURN_ESCAPED_DATA];
  * If $strict_match === false then if the current key is not found in the parent block, then the search will continue
  * until reaching the root or stop at the first match
  *
- * @param string|array $key
+ * @param string|array $keys
  * @param bool         $strict_match
  * @return mixed|null                   null if not found
  */
