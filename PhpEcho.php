@@ -165,7 +165,7 @@ class PhpEcho
     {
         if (isset($this->vars[$offset])) {
             $v = $this->vars[$offset];
-            if (is_object($v)) {
+            if (is_object($v) || is_bool($v) || is_int($v) || is_float($v)) {
                 return $v;
             } elseif (is_array($v) || $this('$is_scalar', $v)) {
                 return $this('$hsc', $v);
