@@ -150,11 +150,10 @@ class PhpEcho
 
     /**
      * Interface ArrayAccess
+     * The returned value is escaped
      *
-     * Return escaped value for
-     *     - scalars
-     *     - array (escape keys and values)
-     *     - stringifyable instance (class implementing __toString() method)
+     * Some types are preserved : true bool, true int, true float, PhpEcho instance, object without __toString()
+     * Otherwise, the value is cast to a string and escaped
      *
      * If object: return the object
      *
@@ -165,10 +164,14 @@ class PhpEcho
     {
         if (isset($this->vars[$offset])) {
             $v = $this->vars[$offset];
-            if (is_object($v) || is_bool($v) || is_int($v) || is_float($v)) {
-                return $v;
-            } elseif (is_array($v) || $this('$is_scalar', $v)) {
+            if (is_string($v) || is_array($v)) {
                 return $this('$hsc', $v);
+            } elseif (is_bool($v) || is_int($v) || is_float($v) || ($v instanceof PhpEcho)) {
+                return $v;
+            } elseif ($this('$is_scalar', $v)) {
+                return $this('$hsc', $v);
+            } else {
+                return $v;
             }
         }
         return null;
@@ -184,7 +187,7 @@ class PhpEcho
         $this->vars[$offset] = $value;
         if ($value instanceof PhpEcho) {
             $this->has_children = true;
-            $value->parent   = $this;
+            $value->parent      = $this;
         }
     }
 
