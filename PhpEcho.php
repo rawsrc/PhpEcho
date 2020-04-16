@@ -54,7 +54,6 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  * @method string style(array $attributes)  [href => url | code => plain css definition, attribute => value]
  * @method string script(array $attributes) [src => url | code => plain javascript, attribute => value]
  * @method mixed  keyUp($keys, bool $strict_match)
- * @method mixed  keyDown($keys)
  * @method mixed  param($keys)
  */
 class PhpEcho

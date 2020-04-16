@@ -376,7 +376,6 @@ $root_key = function($keys) use ($to_escape, $hsc) {
     }
 };
 $helpers['$root_key'] = [$root_key, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
-$helpers['rootKey']   = $helpers['$root_key'];  // alias for method call
 $helpers['param']     = $helpers['$root_key'];  // alias for method call
 
 
