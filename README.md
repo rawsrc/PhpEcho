@@ -101,7 +101,7 @@ To define a helper, there're 3 ways:
 
 
 ## **How to**
-Here's a very simple example of login from:
+Here's a very simple example of login form:
 
 1. First, we create a view file called `Layout.php`
 Note the expected values for keys inside `$this[]` or `$this()`.<br>
