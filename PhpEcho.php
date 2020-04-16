@@ -53,6 +53,9 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  * @method string link(array $attributes)   [rel => required, attribute => value]
  * @method string style(array $attributes)  [href => url | code => plain css definition, attribute => value]
  * @method string script(array $attributes) [src => url | code => plain javascript, attribute => value]
+ * @method mixed  keyUp($keys, bool $strict_match)
+ * @method mixed  keyDown($keys)
+ * @method mixed  param($keys)
  */
 class PhpEcho
     implements ArrayAccess
@@ -164,11 +167,7 @@ class PhpEcho
     {
         if (isset($this->vars[$offset])) {
             $v = $this->vars[$offset];
-            if (is_string($v) || is_array($v)) {
-                return $this('$hsc', $v);
-            } elseif (is_bool($v) || is_int($v) || is_float($v) || ($v instanceof PhpEcho)) {
-                return $v;
-            } elseif ($this('$is_scalar', $v)) {
+            if ($this('$to_escape', $v)) {
                 return $this('$hsc', $v);
             } else {
                 return $v;

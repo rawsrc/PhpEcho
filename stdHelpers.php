@@ -38,7 +38,7 @@ $helpers['isScalar']   = $helpers['$is_scalar']; // alias for method call
  * @param $p
  * @return bool
  */
-$escape = function($p) use ($is_scalar): bool  {
+$to_escape = function($p) use ($is_scalar): bool  {
     if (is_string($p)) {
         return true;
     } elseif (is_bool($p) || is_int($p) || is_float($p) || ($p instanceof PhpEcho)) {
@@ -51,6 +51,8 @@ $escape = function($p) use ($is_scalar): bool  {
         return true;
     }
 };
+$helpers['$to_escape'] = [$to_escape, HELPER_RETURN_ESCAPED_DATA];
+
 
 /**
  * Return an array of escaped values with htmlspecialchars(ENT_QUOTES, 'utf-8') for both keys and values
@@ -64,11 +66,11 @@ $escape = function($p) use ($is_scalar): bool  {
  * @param  array $part
  * @return array
  */
-$hsc_array = function(array $part) use (&$hsc_array, $escape): array {
+$hsc_array = function(array $part) use (&$hsc_array, $to_escape): array {
     $data = [];
     foreach ($part as $k => $v) {
         $sk = htmlspecialchars((string)$k, ENT_QUOTES, 'utf-8');
-        if ($escape($v)) {
+        if ($to_escape($v)) {
             if (is_array($v)) {
                 $data[$sk] = $hsc_array($v);
             } else {
@@ -295,7 +297,7 @@ $helpers['$script'] = [$style, HELPER_RETURN_ESCAPED_DATA];
  * @param bool         $strict_match
  * @return mixed|null                   null if not found
  */
-$key_up = function($keys, bool $strict_match = true) use ($escape, $hsc) {
+$key_up = function($keys, bool $strict_match = true) use ($to_escape, $hsc) {
     /** @var PhpEcho $this */
     if ( ! $this->hasParent()) {
         return null;
@@ -309,7 +311,7 @@ $key_up = function($keys, bool $strict_match = true) use ($escape, $hsc) {
         $k = $keys[$i];
         if (isset($block[$k])) {
             if ($i + 1 >= $nb) {
-                if ($escape($block[$k])) {
+                if ($to_escape($block[$k])) {
                     return $hsc($block[$k]);
                 } else {
                     return $block[$k];
@@ -340,7 +342,7 @@ $helpers['keyUp']   = $helpers['$key_up'];
  * @param string|array $keys
  * @return mixed|null                   null if not found
  */
-$key_down = function($keys) use ($escape, $hsc) {
+$key_down = function($keys) use ($to_escape, $hsc) {
     // climbing to the root
     /** @var PhpEcho $block */
     $block = $this;
@@ -355,7 +357,7 @@ $key_down = function($keys) use ($escape, $hsc) {
         $k = $keys[$i];
         if (isset($block[$k])) {
             if ($i + 1 >= $nb) {
-                if ($escape($block[$k])) {
+                if ($to_escape($block[$k])) {
                     return $hsc($block[$k]);
                 } else {
                     return $block[$k];
