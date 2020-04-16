@@ -34,8 +34,9 @@ $helpers['isScalar']   = $helpers['$is_scalar']; // alias for method call
 
 /**
  * Return an array of escaped values with htmlspecialchars(ENT_QUOTES, 'utf-8') for both keys and values
- * Works for scalar and array type and transform any object having __toString() function implemented to a escaped string
- * Otherwise, keep the object as it
+ *
+ * Preserved types : true bool, true int, true float, PhpEcho instance, object without __toString()
+ * Otherwise, the value is cast to a string and escaped
  *
  * This is a standalone helper that is not directly accessible
  * Use instead the common helper '$hsc' which is compatible with arrays
@@ -47,8 +48,12 @@ $hsc_array = function(array $part) use (&$hsc_array, $is_scalar): array {
     $data = [];
     foreach ($part as $k => $v) {
         $sk = htmlspecialchars((string)$k, ENT_QUOTES, 'utf-8');
-        if (is_array($v)) {
+        if (is_string($v)) {
+            $data[$sk] = htmlspecialchars((string)$v, ENT_QUOTES, 'utf-8');
+        } elseif (is_array($v)) {
             $data[$sk] = $hsc_array($v);
+        } elseif (is_bool($v) || is_int($v) || is_float($v) || ($v instanceof PhpEcho)) {
+            $data[$sk] = $v;
         } elseif ($is_scalar($v)) {
             $data[$sk] = htmlspecialchars((string)$v, ENT_QUOTES, 'utf-8');
         } else {
@@ -62,7 +67,11 @@ $hsc_array = function(array $part) use (&$hsc_array, $is_scalar): array {
 /**
  * This is a standalone helper
  *
- * @param  $p
+ * When $p is an array, some types are preserved:
+ * - true bool, true int, true float, PhpEcho instance, object without __toString()
+ * Otherwise, the value is cast to a string and escaped
+ *
+ * @param  mixed $p
  * @return mixed
  */
 $hsc = function($p) use ($hsc_array, $is_scalar) {
@@ -252,5 +261,15 @@ $script = function(array $p) use ($tag): string {
 $helpers['$script'] = [$style, HELPER_RETURN_ESCAPED_DATA];
 
 
+/**
+ * This helper will climb the tree of PhpEcho
+ *
+ * @param $key
+ */
+$seek_asc = function($key) {
+
+};
+$helpers['$seek_asc'] = [$seek_asc, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+$helpers['seekAsc']   = $helpers['$seek_asc'];
 // return the array of helpers to PhpEcho
 return $helpers;
