@@ -86,7 +86,11 @@ class PhpEcho
      * Indicates if the current instance contains in its vars other PhpEcho instance(s)
      * @var bool
      */
-    private $has_leafs = false;
+    private $has_children = false;
+    /**
+     * @var PhpEcho
+     */
+    private $parent;
 
     /**
      * @param mixed  $file   see setFile() below
@@ -179,7 +183,8 @@ class PhpEcho
     {
         $this->vars[$offset] = $value;
         if ($value instanceof PhpEcho) {
-            $this->has_leafs = true;
+            $this->has_children = true;
+            $value->parent   = $this;
         }
     }
 
@@ -248,9 +253,17 @@ class PhpEcho
      * Indicates if the current instance contains in its vars other PhpEcho instance(s)
      * @return bool
      */
-    public function hasLeafs(): bool
+    public function hasChildren(): bool
     {
-        return $this->has_leafs;
+        return $this->has_children;
+    }
+
+    /**
+     * @return bool
+     */
+    public function hasParent(): bool
+    {
+        return ($this->parent instanceof PhpEcho);
     }
 
     //region HTML HEAD ZONE
@@ -326,7 +339,7 @@ class PhpEcho
                     if ($v instanceof PhpEcho) {
                         $v->render(); // force the block to render
                         array_push($data, ...$v->head()->get());
-                        if ($v->hasLeafs()) {
+                        if ($v->hasChildren()) {
                             $v->head()->compile($data);
                         }
                     }
