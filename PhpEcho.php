@@ -312,17 +312,18 @@ class PhpEcho
     public function head(bool $escape): string
     {
         // generate a token that will be replaced after rendering the whole HTML
-        $this->head_token  = self::token();
+        $this->head_token  = self::token(26);
         $this->head_escape = $escape;
         return $this->head_token;
     }
 
     /**
+     * @param int $length
      * @return string
      */
-    private static function token(): string
+    private static function token(int $length = 12): string
     {
-        return str_shuffle(self::$ALPHANUM).mt_rand(100000000, 999999999);
+        return substr(str_shuffle(self::$ALPHANUM.mt_rand(100000000, 999999999)), 0, $length);
     }
 
     //region MAGIC METHODS
