@@ -337,7 +337,7 @@ $helpers['keyUp']   = $helpers['$key_up'];
  * A string will be split in parts using the space for delimiter
  * If one of the keys contains a space, use an array of keys instead
  *
- * @param string|array $key
+ * @param string|array $keys
  * @return mixed|null                   null if not found
  */
 $key_down = function($keys) use ($escape, $hsc) {
