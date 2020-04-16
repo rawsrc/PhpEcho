@@ -63,6 +63,10 @@ class PhpEcho
     private static $ALPHANUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
     /**
+     * @var array
+     */
+    private static $tokens = [];
+    /**
      * @var string
      */
     private $id = '';
@@ -318,12 +322,17 @@ class PhpEcho
     }
 
     /**
-     * @param int $length
+     * @param int $length   min = 12 chars
      * @return string
      */
     private static function token(int $length = 12): string
     {
-        return substr(str_shuffle(self::$ALPHANUM.mt_rand(100000000, 999999999)), 0, $length);
+        $length = ($length < 12) ? 12 : $length;
+        do {
+            $token = substr(str_shuffle(self::$ALPHANUM.mt_rand(100000000, 999999999)), 0, $length);
+        } while (isset(self::$tokens[$token]));
+        self::$tokens[$token] = true;
+        return $token;
     }
 
     //region MAGIC METHODS
