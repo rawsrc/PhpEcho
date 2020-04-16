@@ -33,6 +33,26 @@ $helpers['isScalar']   = $helpers['$is_scalar']; // alias for method call
 
 
 /**
+ * Tell if the value in parameter should be escaped or not
+ *
+ * @param $p
+ * @return bool
+ */
+$escape = function($p) use ($is_scalar): bool  {
+    if (is_string($p)) {
+        return true;
+    } elseif (is_bool($p) || is_int($p) || is_float($p) || ($p instanceof PhpEcho)) {
+        return false;
+    } elseif ($is_scalar($p)) {
+        return true;
+    } elseif (is_object($p)) {
+        return false;
+    } else {
+        return true;
+    }
+};
+
+/**
  * Return an array of escaped values with htmlspecialchars(ENT_QUOTES, 'utf-8') for both keys and values
  *
  * Preserved types : true bool, true int, true float, PhpEcho instance, object without __toString()
@@ -44,18 +64,16 @@ $helpers['isScalar']   = $helpers['$is_scalar']; // alias for method call
  * @param  array $part
  * @return array
  */
-$hsc_array = function(array $part) use (&$hsc_array, $is_scalar): array {
+$hsc_array = function(array $part) use (&$hsc_array, $escape): array {
     $data = [];
     foreach ($part as $k => $v) {
         $sk = htmlspecialchars((string)$k, ENT_QUOTES, 'utf-8');
-        if (is_string($v)) {
-            $data[$sk] = htmlspecialchars((string)$v, ENT_QUOTES, 'utf-8');
-        } elseif (is_array($v)) {
-            $data[$sk] = $hsc_array($v);
-        } elseif (is_bool($v) || is_int($v) || is_float($v) || ($v instanceof PhpEcho)) {
-            $data[$sk] = $v;
-        } elseif ($is_scalar($v)) {
-            $data[$sk] = htmlspecialchars((string)$v, ENT_QUOTES, 'utf-8');
+        if ($escape($v)) {
+            if (is_array($v)) {
+                $data[$sk] = $hsc_array($v);
+            } else {
+                $data[$sk] = htmlspecialchars((string)$v, ENT_QUOTES, 'utf-8');
+            }
         } else {
             $data[$sk] = $v;
         }
@@ -66,9 +84,11 @@ $hsc_array = function(array $part) use (&$hsc_array, $is_scalar): array {
 
 /**
  * This is a standalone helper
+ * Alias for htmlspecialchars(), better version
  *
  * When $p is an array, some types are preserved:
  * - true bool, true int, true float, PhpEcho instance, object without __toString()
+ *
  * Otherwise, the value is cast to a string and escaped
  *
  * @param  mixed $p
@@ -262,14 +282,97 @@ $helpers['$script'] = [$style, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
- * This helper will climb the tree of PhpEcho
+ * This helper will climb the tree of PhpEcho instances from the current while the key match
  *
- * @param $key
+ * A string will be split in parts using the space for delimiter
+ * If one of the keys contains a space, use an array of keys instead
+ *
+ * If $strict_match === true then every key must be found in the parent block as they are listed
+ * If $strict_match === false then if the current key is not found in the parent block, then the search will continue
+ * until reaching the root or stop at the first match
+ *
+ * @param string|array $key
+ * @param bool         $strict_match
+ * @return mixed|null                   null if not found
  */
-$seek_asc = function($key) {
-
+$key_up = function($keys, bool $strict_match = true) use ($escape, $hsc) {
+    /** @var PhpEcho $this */
+    if ( ! $this->hasParent()) {
+        return null;
+    }
+    $keys  = is_string($keys) ? explode(' ', $keys) : $keys;
+    /** @var PhpEcho $block */
+    $block = $this->parent;
+    $nb    = count($keys);
+    $i     = 0;
+    while ($i < $nb) {
+        $k = $keys[$i];
+        if (isset($block[$k])) {
+            if ($i + 1 >= $nb) {
+                if ($escape($block[$k])) {
+                    return $hsc($block[$k]);
+                } else {
+                    return $block[$k];
+                }
+            } else {
+                ++$i;
+            }
+        } elseif ($strict_match) {
+            return null;
+        }
+        if ($block->hasParent()) {
+            $block = $block->parent;
+        } else {
+            return null;
+        }
+    }
 };
-$helpers['$seek_asc'] = [$seek_asc, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
-$helpers['seekAsc']   = $helpers['$seek_asc'];
+$helpers['$key_up'] = [$key_up, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+$helpers['keyUp']   = $helpers['$key_up'];
+
+
+/**
+ * This helper will start from the root of the tree of PhpEcho instances and go down while the key match
+ *
+ * A string will be split in parts using the space for delimiter
+ * If one of the keys contains a space, use an array of keys instead
+ *
+ * @param string|array $key
+ * @return mixed|null                   null if not found
+ */
+$key_down = function($keys) use ($escape, $hsc) {
+    // climbing to the root
+    /** @var PhpEcho $block */
+    $block = $this;
+    while ($block->hasParent()) {
+        $block = $block->parent;
+    }
+
+    $keys = is_string($keys) ? explode(' ', $keys) : $keys;
+    $nb   = count($keys);
+    $i    = 0;
+    while ($i < $nb) {
+        $k = $keys[$i];
+        if (isset($block[$k])) {
+            if ($i + 1 >= $nb) {
+                if ($escape($block[$k])) {
+                    return $hsc($block[$k]);
+                } else {
+                    return $block[$k];
+                }
+            } else {
+                $block = $block[$k];
+                ++$i;
+            }
+        } else {
+            return null;
+        }
+    }
+};
+$helpers['$key_down'] = [$key_down, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+$helpers['keyDown']   = $helpers['$key_down'];  // alias for method call
+$helpers['param']     = $helpers['$key_down'];  // alias for method call
+
+
 // return the array of helpers to PhpEcho
 return $helpers;
