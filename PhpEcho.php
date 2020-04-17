@@ -77,6 +77,10 @@ class PhpEcho
     /**
      * @var array
      */
+    private $params = [];
+    /**
+     * @var array
+     */
     private $head = [];
     /**
      * @var string
@@ -150,6 +154,33 @@ class PhpEcho
     public function id(): string
     {
         return $this->id;
+    }
+
+    /**
+     * @param string $name
+     * @param        $value
+     */
+    public function setParam(string $name, $value)
+    {
+        $this->params[$name] = $value;
+    }
+
+    /**
+     * @param string $name
+     * @return |null
+     */
+    public function param(string $name)
+    {
+        return $this->params[$name] ?? null;
+    }
+
+    /**
+     * @param string $name
+     * @return bool
+     */
+    public function hasParam(string $name): bool
+    {
+        return in_array($name, $this->params);
     }
 
     /**
