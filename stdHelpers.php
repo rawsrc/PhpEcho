@@ -33,9 +33,31 @@ $helpers['isScalar']   = $helpers['$is_scalar']; // alias for method call
 
 
 /**
+ * Check if the value in parameter should be escaped or not
+ *
+ * @param $p
+ * @return bool
+ */
+$to_escape = function($p) use ($is_scalar): bool  {
+    if (is_string($p)) {
+        return true;
+    } elseif (is_bool($p) || is_int($p) || is_float($p) || ($p instanceof PhpEcho)) {
+        return false;
+    } elseif ($is_scalar($p)) {
+        return true;
+    } elseif (is_object($p)) {
+        return false;
+    } else {
+        return true;
+    }
+};
+$helpers['$to_escape'] = [$to_escape, HELPER_RETURN_ESCAPED_DATA];
+
+/**
  * Return an array of escaped values with htmlspecialchars(ENT_QUOTES, 'utf-8') for both keys and values
- * Works for scalar and array type and transform any object having __toString() function implemented to a escaped string
- * Otherwise, keep the object as it
+ *
+ * Preserved types : true bool, true int, true float, PhpEcho instance, object without __toString()
+ * Otherwise, the value is cast to a string and escaped
  *
  * This is a standalone helper that is not directly accessible
  * Use instead the common helper '$hsc' which is compatible with arrays
@@ -43,14 +65,16 @@ $helpers['isScalar']   = $helpers['$is_scalar']; // alias for method call
  * @param  array $part
  * @return array
  */
-$hsc_array = function(array $part) use (&$hsc_array, $is_scalar): array {
+$hsc_array = function(array $part) use (&$hsc_array, $to_escape): array {
     $data = [];
     foreach ($part as $k => $v) {
         $sk = htmlspecialchars((string)$k, ENT_QUOTES, 'utf-8');
-        if (is_array($v)) {
-            $data[$sk] = $hsc_array($v);
-        } elseif ($is_scalar($v)) {
-            $data[$sk] = htmlspecialchars((string)$v, ENT_QUOTES, 'utf-8');
+        if ($to_escape($v)) {
+            if (is_array($v)) {
+                $data[$sk] = $hsc_array($v);
+            } else {
+                $data[$sk] = htmlspecialchars((string)$v, ENT_QUOTES, 'utf-8');
+            }
         } else {
             $data[$sk] = $v;
         }
@@ -61,8 +85,14 @@ $hsc_array = function(array $part) use (&$hsc_array, $is_scalar): array {
 
 /**
  * This is a standalone helper
+ * Alias for htmlspecialchars(), better version
  *
- * @param  $p
+ * When $p is an array, some types are preserved:
+ * - true bool, true int, true float, PhpEcho instance, object without __toString()
+ *
+ * Otherwise, the value is cast to a string and escaped
+ *
+ * @param  mixed $p
  * @return mixed
  */
 $hsc = function($p) use ($hsc_array, $is_scalar) {
@@ -250,6 +280,111 @@ $script = function(array $p) use ($tag): string {
     return $tag('script', $code, $p);
 };
 $helpers['$script'] = [$style, HELPER_RETURN_ESCAPED_DATA];
+
+
+/**
+ * This helper will climb the tree of PhpEcho instances from the current block while the key match
+ *
+ * A string will be split in parts using the space for delimiter
+ * If one of the keys contains a space, use an array of keys instead
+ *
+ * If $strict_match === true then every key must be found in the parent blocks tree as they are listed
+ * If $strict_match === false then if the current key is not found in the parent block, then the search will continue
+ * until reaching the root or stop at the first match
+ *
+ * @param string|array $keys
+ * @param bool         $strict_match
+ * @return mixed|null                   null if not found
+ */
+$key_up = function($keys, bool $strict_match = true) use ($to_escape, $hsc) {
+    /** @var PhpEcho $this */
+    if ( ! $this->hasParent()) {
+        return null;
+    }
+    $keys  = is_string($keys) ? explode(' ', $keys) : $keys;
+    /** @var PhpEcho $block */
+    $block = $this->parent;
+    $nb    = count($keys);
+    $i     = 0;
+    while ($i < $nb) {
+        $k = $keys[$i];
+        if (isset($block[$k])) {
+            if ($i + 1 >= $nb) {
+                if ($to_escape($block[$k])) {
+                    return $hsc($block[$k]);
+                } else {
+                    return $block[$k];
+                }
+            } else {
+                ++$i;
+            }
+        } elseif ($strict_match) {
+            return null;
+        }
+        if ($block->hasParent()) {
+            $block = $block->parent;
+        } else {
+            return null;
+        }
+    }
+};
+$helpers['$key_up'] = [$key_up, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+$helpers['keyUp']   = $helpers['$key_up'];
+
+
+/**
+ * @return PhpEcho
+ */
+$root = function(): PhpEcho {
+    // climbing to the root
+    /** @var PhpEcho $block */
+    $block = $this;
+    while ($block->hasParent()) {
+        $block = $block->parent;
+    }
+    return $block;
+};
+$helpers['$root'] = [$root, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+
+
+/**
+ * This helper will extract a value from a key stored in the root of the tree of PhpEcho instances
+ * and go down while the key match. This function does not render the PhpRcho blocks
+ *
+ * A string will be split in parts using the space for delimiter
+ * If one of the keys contains a space, use an array of keys instead
+ *
+ * @param string|array $keys
+ * @return mixed|null          null if not found
+ */
+$root_key = function($keys) use ($to_escape, $hsc) {
+    /** @var PhpEcho $this */
+    $root  = $this->bound_helpers['$root'];
+    /** @var PhpEcho $block */
+    $block = $root();   // get the root PhpEcho block
+    $keys  = is_string($keys) ? explode(' ', $keys) : $keys;
+    $nb    = count($keys);
+    $i     = 0;
+    while ($i < $nb) {
+        $k = $keys[$i];
+        if (isset($block[$k])) {
+            if ($i + 1 >= $nb) {
+                if ($to_escape($block[$k])) {
+                    return $hsc($block[$k]);
+                } else {
+                    return $block[$k];
+                }
+            } else {
+                $block = $block[$k];
+                ++$i;
+            }
+        } else {
+            return null;
+        }
+    }
+};
+$helpers['$root_key'] = [$root_key, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+$helpers['param']     = $helpers['$root_key'];  // alias for method call
 
 
 // return the array of helpers to PhpEcho

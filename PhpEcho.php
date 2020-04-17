@@ -39,24 +39,33 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  *              OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  *              SOFTWARE.
  *
- *
- * @method mixed  raw(string $key)      Return the raw value from a PhpEcho block
- * @method mixed  hsc($p)               Escape the value in parameter (scalar, array, stringifyable)
- * @method bool   isScalar($p)
+ * PhpEcho HELPERS
+ * @method mixed   raw(string $key)                 Return the raw value from a PhpEcho block
+ * @method bool    isScalar($p)
+ * @method mixed   keyUp($keys, bool $strict_match) Climb the tree of PhpEcho instances while keys match
+ * @method mixed   param($keys)                     Extract a value from the root PhpEcho instance of the tree
+ * @method PhpEcho root()                           Return the root PhpEcho instance of the tree
  *
  * HTML HELPERS
- * @method string attributes(array $p)  Return the values as escaped attributes: attribute="..."
- * @method string selected($p, $ref)    Return " selected " if $p == $ref
- * @method string checked($p, $ref)     Return " checked "  if $p == $ref
- * @method string voidTag(string $tag, array $attributes = [])  Build a <tag>
- * @method string tag(string $tag, array $attributes = [])      Build a <tag></tag>
- * @method string link(array $attributes)   [rel => required, attribute => value]
- * @method string style(array $attributes)  [href => url | code => plain css definition, attribute => value]
- * @method string script(array $attributes) [src => url | code => plain javascript, attribute => value]
+ * @method mixed   hsc($p)                          Escape the value in parameter (scalar, array, stringifyable)
+ * @method string  attributes(array $p)             Return the values as escaped attributes: attribute="..."
+ * @method string  selected($p, $ref)               Return " selected " if $p == $ref
+ * @method string  checked($p, $ref)                Return " checked "  if $p == $ref
+ * @method string  voidTag(string $tag, array $attributes = [])  Build a <tag>
+ * @method string  tag(string $tag, array $attributes = [])      Build a <tag></tag>
+ * @method string  link(array $attributes)          [rel => required, attribute => value]
+ * @method string  style(array $attributes)         [href => url | code => plain css definition, attribute => value]
+ * @method string  script(array $attributes)        [src => url | code => plain javascript, attribute => value]
  */
 class PhpEcho
     implements ArrayAccess
 {
+    private static $ALPHANUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
+    /**
+     * @var array
+     */
+    private static $tokens = [];
     /**
      * @var string
      */
@@ -69,6 +78,14 @@ class PhpEcho
      * @var array
      */
     private $head = [];
+    /**
+     * @var string
+     */
+    private $head_token = '';
+    /**
+     * @var bool
+     */
+    private $head_escape = true;
     /**
      * Full resolved filepath to the external view file
      * @var string
@@ -86,7 +103,15 @@ class PhpEcho
      * Indicates if the current instance contains in its vars other PhpEcho instance(s)
      * @var bool
      */
-    private $has_leafs = false;
+    private $has_children = false;
+    /**
+     * @var PhpEcho
+     */
+    private $parent;
+    /**
+     * @var string
+     */
+    private $render_token = '';
 
     /**
      * @param mixed  $file   see setFile() below
@@ -107,6 +132,8 @@ class PhpEcho
 
         $this->vars = $vars;
         self::addPathToHelperFile(__DIR__.DIRECTORY_SEPARATOR.'stdHelpers.php');
+
+        $this->render_token = self::token();
     }
 
     /**
@@ -134,6 +161,7 @@ class PhpEcho
         $this->id = chr(mt_rand(97, 122)).bin2hex(random_bytes(4));
     }
 
+    //region ARRAY ACCESS
     /**
      * Interface ArrayAccess
      * @param mixed $offset
@@ -146,11 +174,10 @@ class PhpEcho
 
     /**
      * Interface ArrayAccess
+     * The returned value is escaped
      *
-     * Return escaped value for
-     *     - scalars
-     *     - array (escape keys and values)
-     *     - stringifyable instance (class implementing __toString() method)
+     * Some types are preserved : true bool, true int, true float, PhpEcho instance, object without __toString()
+     * Otherwise, the value is cast to a string and escaped
      *
      * If object: return the object
      *
@@ -161,10 +188,10 @@ class PhpEcho
     {
         if (isset($this->vars[$offset])) {
             $v = $this->vars[$offset];
-            if (is_object($v)) {
-                return $v;
-            } elseif (is_array($v) || $this('$is_scalar', $v)) {
+            if ($this('$to_escape', $v)) {
                 return $this('$hsc', $v);
+            } else {
+                return $v;
             }
         }
         return null;
@@ -179,7 +206,8 @@ class PhpEcho
     {
         $this->vars[$offset] = $value;
         if ($value instanceof PhpEcho) {
-            $this->has_leafs = true;
+            $this->has_children = true;
+            $value->parent      = $this;
         }
     }
 
@@ -191,6 +219,7 @@ class PhpEcho
     {
         unset($this->vars[$offset]);
     }
+    //endregion
 
     /**
      * Define the filepath to the external view file to include
@@ -248,95 +277,89 @@ class PhpEcho
      * Indicates if the current instance contains in its vars other PhpEcho instance(s)
      * @return bool
      */
-    public function hasLeafs(): bool
+    public function hasChildren(): bool
     {
-        return $this->has_leafs;
+        return $this->has_children;
     }
 
-    //region HTML HEAD ZONE
     /**
-     * @return object
+     * Create a new instance of PhpEcho using the current directory template as root for the file to include
+     *
+     * @param string $file
+     * @param array  $vars
+     * @param string $id
+     * @return PhpEcho      Return the new instance
      */
-    public function head(): object
+    public function addChild($file = '', array $vars = [], string $id = ''): PhpEcho
     {
-        return new class($this->head, $this->vars, $this) {
-            private $head;
-            private $vars;
-            /**
-             * @var PhpEcho
-             */
-            private $parent;
-
-            public function __construct(&$head, $vars, $parent)
-            {
-                $this->head   =& $head;
-                $this->vars   =  $vars;
-                $this->parent =  $parent;
-            }
-
-            /**
-             * If  = 1 arg  => plain html code
-             * If >= 2 args => first=helper + the rest=helper's params
-             * @param $args
-             */
-            public function add(...$args)
-            {
-                $nb = count($args);
-                if ($nb === 1) {
-                    if (is_string($args[0])) {
-                        $this->head[] = $args[0];
-                    } elseif (is_array($args[0])) {
-                        array_push($this->head, ...$args[0]);
-                    }
-                } elseif ($nb >= 2) {
-                    // the first param should be a helper
-                    $helper = array_shift($args);
-                    if (PhpEcho::isHelper($helper)) {
-                        $parent       = $this->parent;
-                        $this->head[] = $parent($helper, ...$args);
-                    }
-                }
-            }
-
-            /**
-             * @return array
-             */
-            public function get(): array
-            {
-                return $this->head;
-            }
-
-            /**
-             * Render the full tree of head defined in each PhpEcho Block
-             * @return string
-             */
-            public function render(): string
-            {
-                $data = $this->compile($this->head);
-                $data = array_unique($data);
-                return implode('', $data);
-            }
-
-            /**
-             * @return array
-             */
-            private function compile(array $data): array
-            {
-                array_walk_recursive($this->vars, function($v, $k) use (&$data) {
-                    if ($v instanceof PhpEcho) {
-                        $v->render(); // force the block to render
-                        array_push($data, ...$v->head()->get());
-                        if ($v->hasLeafs()) {
-                            $v->head()->compile($data);
-                        }
-                    }
-                });
-                return $data;
-            }
-        };
+        $parts = is_string($file) ? explode(' ', $file) : $file;
+        array_unshift($parts, $this->templateDirectory());
+        $block = new PhpEcho($parts, $vars, $id);
+        $block->parent      = $this;
+        $this->has_children = true;
+        return $block;
     }
-    //endregion
 
+    /**
+     * @return bool
+     */
+    public function hasParent(): bool
+    {
+        return ($this->parent instanceof PhpEcho);
+    }
+
+    /**
+     * If  = 1 arg  => plain html code (string or array of html code)
+     * If >= 2 args => first=helper + the rest=helper's params
+     * @param mixed ...$args
+     */
+    public function addHead(...$args)
+    {
+        // the head is only stored in the root of the tree
+        $root = $this->root();
+        $nb   = count($args);
+        if ($nb === 1) {
+            if (is_string($args[0])) {
+                $root->head[] = $args[0];
+            } elseif (is_array($args[0])) {
+                array_push($root->head, ...$args[0]);
+            }
+        } elseif ($nb >= 2) {
+            // the first param should be a helper
+            $helper = array_shift($args);
+            if (self::isHelper($helper)) {
+                $root->head[] = $this($helper, ...$args);
+            }
+        }
+    }
+
+    /**
+     * @param bool $escape  If you dont want to escape the head, set it to false
+     * @return string
+     */
+    public function head(bool $escape): string
+    {
+        // generate a token that will be replaced after rendering the whole HTML
+        $this->head_token  = self::token(26);
+        $this->head_escape = $escape;
+        return $this->head_token;
+    }
+
+    /**
+     * @param int $length   min = 12 chars
+     * @return string
+     */
+    private static function token(int $length = 12): string
+    {
+        $length = ($length < 12) ? 12 : $length;
+        do {
+            $token = substr(str_shuffle(self::$ALPHANUM.mt_rand(100000000, 999999999)), 0, $length);
+        } while (isset(self::$tokens[$token]));
+        self::$tokens[$token] = true;
+        return $token;
+    }
+
+    //region MAGIC METHODS
     /**
      * This function call a helper defined elsewhere or dynamically
      * Auto-escape if necessary
@@ -389,8 +412,19 @@ class PhpEcho
     public function __toString()
     {
         $this->render();
-        return $this->code;
+        $root = $this('$root');
+        if (($root === $this) && $this->head_token) {
+            if ($this->head_escape) {
+                $head = implode('', $this('$hsc', $this->head));
+            } else {
+                $head = implode('', $this->head);
+            }
+            return str_replace($this->head_token, $head, $this->code);
+        } else {
+            return $this->code;
+        }
     }
+    //endregion
 
     /**
      * Manually render the block

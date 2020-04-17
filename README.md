@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2020-04-14` `PHP 7+` `v.2.2.0`
+`2020-04-17` `PHP 7+` `v.2.3.0`
 
 ## **A PHP template engine : One class to rule them all**
 
@@ -25,10 +25,9 @@ The class will manage :
 * let you access to the global HTML `<head></head>` from any child block
 * let your IDE to list all your helpers natively just using PHPDoc syntax (see the PHPDoc of the class)
 
-**NEW FEATURE IN PhpEcho v.2.2.0:**<br>
-1. You have now access to the global `<head></head>` from any PhpEcho child block
-2. New helpers rendering HTML tags in a secure way
-3. Use a relative path from the current instance to target any child PhpEcho file 
+**NEW FEATURE IN PhpEcho v.2.3.0:**<br>
+1. Preserve the type of value using array notation and escaping only when necessary
+2. The way to access to the `<head></head>` is updated : the `head()->add()` is replaced by `addHead()` and `head()->render()` by `head()`
 
 **What you must know to use it**
 1. Using array access notation or function notation will always return escaped values
@@ -44,14 +43,13 @@ $x = $block['foo'];   // $x = 'abc &quot; &lt; &gt;'
 
 // escape on demand using a helper
 $y = $block('$hsc', 'any value to escape'); // or
-$y = $block->hsc('any value to escape');    // since PhpEcho 2.1.0
+$y = $block->hsc('any value to escape');    
 
 // extract the raw value on demand using a helper
 $z = $block('$raw', 'foo'); // $z = 'abc " < >' or
-$z = $block->raw('foo');    // $z = 'abc " < >' since PhpEcho 2.1.0
+$z = $block->raw('foo');    // $z = 'abc " < >' 
 
-// since PhpEcho 2.2.1
-// if you store an object you retrieve your object (even if the class implements __toString())
+// the type of value is preserved, are escaped all strings and objects having __toString()
 $block['bar'] = new stdClass();
 $bar = $block['bar'];
 ```
@@ -82,7 +80,7 @@ As everything is escaped by default in PhpEcho, we can consider that the word "c
 this is why, with the helper definition, you have the flag `HELPER_RETURN_ESCAPED_DATA`.<br>
 To call this helper inside your code (2 ways) : <br>
 * `$this('$checked', 'your value', 'ref value');`
-* `$this->checked('your value', 'ref value');    // since PhpEcho 2.1.0`
+* `$this->checked('your value', 'ref value');`
  
 Now, have a look at the helper that return the raw value from the stored key-value pair `$raw`:
 ```php
@@ -91,18 +89,21 @@ $raw = function(string $key) {
 };
 $helpers['$raw'] = [$raw, HELPER_RETURN_ESCAPED_DATA, HELPER_BOUND_TO_CLASS_INSTANCE];
 ```
-As this helper extract data from the stored key-value pairs defined in each instance of PhpEcho, it needs an access to the caller's execution context (instance of PhpEcho)
+As this helper extract data from the stored key-value pairs defined in each instance of PhpEcho, it needs an access to the caller's execution context
 that's why the helper definition has the flag `HELPER_BOUND_TO_CLASS_INSTANCE`.<br>
 And as we want to get the value unescaped, we must tell the engine that the return value by the closure is already escaped.
-We know that is not but this is goal of that helper.<br>
-To call this helper inside your code (2 ways) : <br>
+We know that is not but this is goal of that helper.<br>    
 * `$this('$raw', 'key');`
-* `$this->raw('key');    // since PhpEcho 2.1.0`
+* `$this->raw('key');`
 
 To define a helper, there're 3 ways:
 * `$helpers["$helper's name"] = $helper_closure`
 * `$helpers["$helper's name"] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA]`
 * `$helpers["$helper's name"] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA, HELPER_BOUND_TO_CLASS_INSTANCE]`
+
+When you write a new helper that will be bound to a class instance and needs to use another bound helper,
+you must use this syntax `$existing_helper = $this->bound_helpers['$existing_helper_name'];` inside your code. 
+Please have a look at the `$root_key` helper (how is created a link to another bound helper: `$root`).
 
 
 ## **How to**
@@ -110,7 +111,11 @@ Here's a very simple example of login form:
 
 1. First, we create a view file called `Layout.php`
 Note the expected values for keys inside `$this[]` or `$this()`.<br>
-Do not forget that all values returned by the array notation (`$this[]`) are safe in HTML context
+Do not forget that all values returned by the array notation (`$this[]`) are safe in HTML context.<br>
+In the layout below, some values are expected:
+* an array of `<meta>` strings
+* a title (string)
+* a PhpEcho block in charge of rendering the body part of the page 
 ```php
 <?php /** @var PhpEcho $this */ ?>
 <!DOCTYPE html>
@@ -121,16 +126,18 @@ Do not forget that all values returned by the array notation (`$this[]`) are saf
     <title><?= $this['title'] ?></title>
 </head>
 <body>
-<?= $this('$raw', 'body') ?>
+<?= $this['body'] ?>
 </body>
 </html>
 ```
-To get a handy help from your IDE, you can also write the code above (since PhpEcho 2.1.0) like this: `<?= $this->raw('body') ?>`<br> 
+As every PhpEcho instances are returned as it and transformed to a string when it's necessary, you can call it directly in your HTML code (as above).
+To get a handy help from your IDE, you can also write the code above like this: `<?= $this->raw('meta') ?>`<br> 
 To get the IDE autocompletion, just add as the first line of your view file `<?php /** @var PhpEcho $this */ ?>` to tell the IDE the 
 right type for `$this`.<br> 
 Note also the different ways of extracting the data from `$this` (array notation vs function notation (helpers))
 
 Then, we prepare the body of the page `LoginForm.php` :
+`$this['url_submit']` and `$this['login']` are automatically escaped 
 ```php
 <p>Please login : </p>
 <form method=post action="<?= $this['url_submit'] ?>">
@@ -153,13 +160,33 @@ $page = new PhpEcho('Layout.php', [
     'title' => 'My first use case of PhpEcho',
     'meta'  => ['<meta name="keywords" content="PhpEcho, PHP template engine, easy to learn and use" />'],
     'body'  => new PhpEcho('LoginForm.php', [
-        'login' => 'rawsrc',
+        'login'      => 'rawsrc',
         'url_submit' => 'any/path/for/connection'
     ])
 ]);
 
 echo $page;
 ```
+You can also use another strategy: injecting the child block directly using the parent directory as a root:
+```php
+<?php /** @var PhpEcho $this */ ?>
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <?= implode('', $this->raw('meta') ?? []) ?>
+    <title><?= $this['title'] ?></title>
+</head>
+<body>
+<?= $this->addChild('LoginForm.php', [
+     'login'      => 'rawsrc',
+     'url_submit' => 'any/path/for/connection'
+ ]) ?>
+</body>
+</html>
+```
+This approach will let you to pilot easily the rendering without a too complex architecture from the start.
+
 
 ## **Use HEREDOC instead of file inclusion**
 
@@ -293,8 +320,53 @@ It is also possible to do like this:
 <input <?= $this->attributes(['type' => 'text', 'name' => 'name', 'required', 'value' => ' < > " <script></script>']) ?>>
 ```
 As you see, there're tons of methods to get the expected result.
-It's highly recommended creating and using your own helpers and ask to get them included by default in the package for the next release. 
+It's highly recommended creating and using your own helpers and ask to get them included by default in the package for 
+the next release. 
 
+There's 3 new helpers:
+
+**Accessing the root**
+
+You can access to the top level of the tree of blocks using the helper `$root` or `$this->root()`. This helper return 
+the top level instance of a PhpEcho class.
+
+**Global parameter**
+
+The first is `$root_key` with the corresponding method : `param()`. It gives you an access from every child block to the 
+very first PhpBlock (the root) of your whole template.
+Now, you can define some global parameters and interact with them from any child block.<br>
+
+To understand clearly, for example you define once a parameter for the whole template : `$page['document.isPopup'] = true`, 
+then in any child block you can read this parameter as simply as `$this->param('document.isPopup')`.<br>
+
+It also possible to use a multidimensional array: `$page['a']['b']['c'] = true` and in the child block: `$this->param('a b c')`.
+Please note: I consider that never a key should contain a space. This is the reason why `'a b c'` becomes an array of keys.    
+If you have a space in you key, use directly an array.
+
+**Climbing the tree of blocks**
+
+The second is `$key_up` with the corresponding method `keyUp()`. 
+From a given list of keys (string or array, string: the delimiter for each key is space), the engine will start to climb the tree 
+of blocks while the key is found. And will return the value corresponding to the last key or null if not found.<br>
+With the parameter `$strict_match`, it possible to tell the engine to continue to climb if the current key is still not found.
+```php
+// imagine you have a tree of PhpEcho blocks corresponding to a part of the DOM
+$block1['abc'] = 'rawsrc';
+$block1['form1'] = $block2;
+    $block2['def'] = 'github';
+    $block2['tab'] = $block3; 
+        $block3['tab_footer'] = $block4; 
+
+// now from the $block4 you want to read the value for the key 'abc'
+// with $strict_match === true you must define the whole path to the block
+$x = $this->keyUp('tab abc', true); 
+// this is equivalent
+$x = $this->keyUp('def abc', true);
+
+// with $strict_match === false you know there's a parent block having the key
+// but you don't know the path to get it out
+$x = $this->keyUp('abc', false);
+```
   
 ## **Accessing the top `<head></head>` from any child PhpEcho block**
 
@@ -302,16 +374,16 @@ When you code the view part of a website, you will create plenty of small blocks
 As everybody knows, the best design is to keep your blocks in the most independent way from the others. Sometimes you will need to add some dependencies
 directly in the header of the page. This is also possible using PhpEcho as your main template engine.
 
-In any instance of PhpEcho, you have a method named `head()` which is designed for this purpose.
+In any instance of PhpEcho, you have a method named `addhead()` which is designed for this purpose.
 
 Now, imagine you're in the depths of the DOM, you're coding a block and need to tell the header to declare a link to your library.
 In the current block, you will do:
 ```php
-<?php $this->head()->add('<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous">') ?>
+<?php $this->addHead('<script src="https://code.jquery.com/jquery-3.4.1.min.js" integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=" crossorigin="anonymous">') ?>
 ```  
 or using a helper `script` that will secure all your values
 ```php
-<?php $this->head()->add('script', [
+<?php $this->addHead('script', [
     'src'         => "https://code.jquery.com/jquery-3.4.1.min.js", 
     'integrity'   => "sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo=", 
     'crossorigin' => "anonymous"]) ?>
@@ -319,7 +391,7 @@ or using a helper `script` that will secure all your values
 Now in the block that renders the `<head></head>`, you just have to code:
 ```php
 <head>
-    <?= $this->head()->render(); ?>
+    <?= $this->head(); ?>
 </head>
 ``` 
 The engine will compile the `<head></head>` parameters from all the child blocks to render the header.
@@ -329,10 +401,11 @@ The concept of child block is easy to understand: when you define a PhpEcho clas
 $page = new PhpEcho('Layout.php');
 $page['body'] = new PhpEcho('Body.php');    // here's the child block 
 ```
+or if you use the method `addChild()`.
 
 ## **Using a relative path to target any child PhpEcho block**
 When you create a PhpEcho instance, usually you will pass to the constructor the filepath of the view file.
-You can get directly the last template directory using `templateDirectory()` and use it as a root to build other dynamics paths 
+You can get directly the last template directory using `templateDirectory()` and use it as a root to build other dynamics paths. 
 
 Enjoy!
 
