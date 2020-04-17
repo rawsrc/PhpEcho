@@ -25,7 +25,7 @@ The class will manage :
 * let you access to the global HTML `<head></head>` from any child block
 * let your IDE to list all your helpers natively just using PHPDoc syntax (see the PHPDoc of the class)
 
-**NEW FEATURE IN PhpEcho v.2.3.0:**<br>
+**NEW FEATURES IN PhpEcho v.2.3.0:**<br>
 1. Preserve the type of value using array notation and escaping only when necessary
 2. The way to access to the `<head></head>` is updated : the `head()->add()` is replaced by `addHead()` and `head()->render()` by `head()`
 
