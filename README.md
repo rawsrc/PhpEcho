@@ -194,6 +194,7 @@ $page = new PhpEcho('Layout.php', [
     'title' => 'My first use case of PhpEcho',
     'meta'  => ['<meta name="keywords" content="PhpEcho, PHP template engine, easy to learn and use" />']
 ]);
+
 $page->addChild('body', 'LoginForm.php', [
     'login'      => 'rawsrc',
     'url_submit' => 'any/path/for/connection'
