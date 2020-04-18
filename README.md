@@ -424,6 +424,8 @@ or if you use the method `addChild()`.
 When you create a PhpEcho instance, usually you will pass to the constructor the filepath of the view file.
 You can get directly the last template directory using `templateDirectory()` and use it as a root to build other dynamics paths. 
 
+When you use the `addChild()` method, the filepath you define as a parameter is automatically prepend with the current `templateDirectory()`  
+
 Enjoy!
 
 **rawsrc**
