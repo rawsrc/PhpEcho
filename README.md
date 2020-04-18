@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2020-04-17` `PHP 7+` `v.2.3.0`
+`2020-04-18` `PHP 7+` `v.2.3.1`
 
 ## **A PHP template engine : One class to rule them all**
 
@@ -25,9 +25,10 @@ The class will manage :
 * let you access to the global HTML `<head></head>` from any child block
 * let your IDE to list all your helpers natively just using PHPDoc syntax (see the PHPDoc of the class)
 
-**NEW FEATURES IN PhpEcho v.2.3.0:**<br>
-1. Preserve the type of value using array notation and escaping only when necessary
-2. The way to access to the `<head></head>` is updated : the `head()->add()` is replaced by `addHead()` and `head()->render()` by `head()`
+**NEW FEATURES IN PhpEcho v.2.3.1:**<br>
+1. Each PhpEcho instance can now define their own parameters. 
+2. Parameters remain raw value and are never escaped. 
+2. The engine will always seek for a parameter value from the current block to the root. 
 
 **What you must know to use it**
 1. Using array access notation or function notation will always return escaped values
@@ -298,6 +299,23 @@ html
     );
 ```
 
+## **Parameters**
+
+Since PhpEcho 2.3.1, each instance of PhpEcho can now have their own parameters.<br>
+Please note that the parameters are never escaped. 
+```php
+// In any block
+// set a parameter
+$this->setParam('document.isPopup', true);
+
+// get the parameter
+$is_popup = $this->param('document.isPopup'); // true
+```
+There's an interesting point to keep in mind, when the parameter is not defined in the current instance
+then the engine will automatically seek for it through the parent PhpEcho instances. It will climb the leaves to the root 
+and stop if the parameter is found or return null.
+
+
 ## **Let's play with helpers**
 As mentioned above, there's some new helpers that have been added to the standard helpers library `stdHelpers.php`.
 These helpers will help you to render any HTML code and/or interact with any PhpEcho instance.
@@ -323,21 +341,20 @@ As you see, there're tons of methods to get the expected result.
 It's highly recommended creating and using your own helpers and ask to get them included by default in the package for 
 the next release. 
 
-There's 3 new helpers:
 
-**Accessing the root**
+New helpers:
 
-You can access to the top level of the tree of blocks using the helper `$root` or `$this->root()`. This helper return 
-the top level instance of a PhpEcho class.
+**Access the root**
 
-**Global parameter**
+The root class is a special object that is available for any child PhpEcho instance.
 
-The first is `$root_key` with the corresponding method : `param()`. It gives you an access from every child block to the 
-very first PhpBlock (the root) of your whole template.
-Now, you can define some global parameters and interact with them from any child block.<br>
+You have a direct access to it using the helper `$root` or `$this->root()`. This helper return the top level instance of a PhpEcho class.
 
-To understand clearly, for example you define once a parameter for the whole template : `$page['document.isPopup'] = true`, 
-then in any child block you can read this parameter as simply as `$this->param('document.isPopup')`.<br>
+**Accessing a value stored in the root**
+
+As any other PhpEcho instance, you can store inside any value and retrieve it from any child block using the helper `$root_key` 
+with the corresponding method : `rootKey()`. Now, you can define some global values and interact with them from any child block.<br>
+These values behave like any standard value and are of course escaped when necessary.
 
 It also possible to use a multidimensional array: `$page['a']['b']['c'] = true` and in the child block: `$this->param('a b c')`.
 Please note: I consider that never a key should contain a space. This is the reason why `'a b c'` becomes an array of keys.    
@@ -345,7 +362,7 @@ If you have a space in you key, use directly an array.
 
 **Climbing the tree of blocks**
 
-The second is `$key_up` with the corresponding method `keyUp()`. 
+The last is `$key_up` with the corresponding method `keyUp()`. 
 From a given list of keys (string or array, string: the delimiter for each key is space), the engine will start to climb the tree 
 of blocks while the key is found. And will return the value corresponding to the last key or null if not found.<br>
 With the parameter `$strict_match`, it possible to tell the engine to continue to climb if the current key is still not found.
