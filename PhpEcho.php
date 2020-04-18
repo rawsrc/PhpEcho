@@ -173,10 +173,6 @@ class PhpEcho
      */
     public function param(string $name)
     {
-        if ($this->hasParam($name)) {
-            return $this->params[$name];
-        }
-        // seek up the tree of blocks for the param value
         return $this('$seek_param', $name);
     }
 
