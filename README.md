@@ -341,9 +341,10 @@ $this->setParam('document.isPopup', true);
 $is_popup = $this->param('document.isPopup'); // true
 ```
 There's an interesting point to keep in mind, when the parameter is not defined in the current instance
-then the engine will automatically seek for it through the parent PhpEcho instances. It will climb the leaves to the root 
+then the engine will automatically seek for it through the parent PhpEcho instances. It will climb the other leaves to the root 
 and stop if the parameter is found or return null.
-
+So you can store for example as a parameter any object that will help you to render your code. This object will be available as it through 
+all child PhpEcho instances.
 
 ## **Let's play with helpers**
 As mentioned above, there's some new helpers that have been added to the standard helpers library `stdHelpers.php`.
