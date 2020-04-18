@@ -188,6 +188,35 @@ You can also use another strategy: injecting the child block directly using the 
 ```
 This approach will let you to pilot easily the rendering without a too complex architecture from the start.
 
+Have a look at the other ways to achieve exactly the same goal:
+```php
+$page = new PhpEcho('Layout.php', [
+    'title' => 'My first use case of PhpEcho',
+    'meta'  => ['<meta name="keywords" content="PhpEcho, PHP template engine, easy to learn and use" />']
+]);
+$page->addChild('body', 'LoginForm.php', [
+    'login'      => 'rawsrc',
+    'url_submit' => 'any/path/for/connection'
+]);
+
+echo $page;
+```
+This is also equivalent:
+```php
+$page = new PhpEcho('Layout.php', [
+    'title' => 'My first use case of PhpEcho',
+    'meta'  => ['<meta name="keywords" content="PhpEcho, PHP template engine, easy to learn and use" />']
+]);
+
+$body = $page->addChild('body', 'LoginForm.php');
+$body['login']      = 'rawsrc';
+$body['url_submit'] = 'any/path/for/connection';
+
+echo $page;
+```
+As you can see, `PhpEcho` is highly flexible. You can use plenty of ways to produce your HTML code. The syntax is always very 
+readable and easy to understand. 
+
 
 ## **Use HEREDOC instead of file inclusion**
 
