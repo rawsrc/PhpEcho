@@ -227,7 +227,7 @@ $page['body'] = $body;
 
 echo $page;
 ```
-As you can see, `PhpEcho` is highly flexible. You can use plenty of ways to produce your HTML code. The syntax is always very 
+As you can see, `PhpEcho` is highly flexible. You can use plenty of ways rendering your HTML/CSS/JS code. The syntax is always very 
 readable and easy to understand. 
 
 
