@@ -179,7 +179,7 @@ You can also use another strategy: injecting the child block directly using the 
     <title><?= $this['title'] ?></title>
 </head>
 <body>
-<?= $this->addChild('LoginForm.php', [
+<?= $this->addChild('', 'LoginForm.php', [
      'login'      => 'rawsrc',
      'url_submit' => 'any/path/for/connection'
  ]) ?>
