@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2020-04-18` `PHP 7+` `v.2.3.2` `stable` `last version for the branch 2.3.x`
+`2020-04-18` `PHP 7+` `v.2.3.2` `stable` `last version for the branch 2.x`
 
 ## **A PHP template engine : One class to rule them all**
 
