@@ -25,9 +25,10 @@ The class will manage :
 * let you access to the global HTML `<head></head>` from any child block
 * let your IDE to list all your helpers natively just using PHPDoc syntax (see the PHPDoc of the class)
 
-**NEW FEATURES IN PhpEcho v.2.3.0:**<br>
-1. Preserve the type of value using array notation and escaping only when necessary
-2. The way to access to the `<head></head>` is updated : the `head()->add()` is replaced by `addHead()` and `head()->render()` by `head()`
+**NEW FEATURES IN PhpEcho v.2.3.1:**<br>
+1. Each PhpEcho instance can now define their own parameters. 
+2. Parameters remain raw value and are never escaped. 
+2. The engine will always seek for a parameter value from the current block to the root. 
 
 **What you must know to use it**
 1. Using array access notation or function notation will always return escaped values
