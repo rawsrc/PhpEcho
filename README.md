@@ -301,7 +301,7 @@ html
 
 ## **Parameters**
 
-Since PhpEcho 2.3.1, each instance of PhpEcho can define their own parameters.<br>
+Since PhpEcho 2.3.1, each instance of PhpEcho can now have their own parameters.<br>
 Please note that the parameters are never escaped. 
 ```php
 // In any block
@@ -309,11 +309,11 @@ Please note that the parameters are never escaped.
 $this->setParam('document.isPopup', true);
 
 // get the parameter
-$is_popup = $this->param('document.isPopup');
+$is_popup = $this->param('document.isPopup'); // true
 ```
 There's an interesting point to keep in mind, when the parameter is not defined in the current instance
 then the engine will automatically seek for it through the parent PhpEcho instances. It will climb the leaves to the root 
-and stop if the parameter is found or return null when not found.
+and stop if the parameter is found or return null.
 
 
 ## **Let's play with helpers**
