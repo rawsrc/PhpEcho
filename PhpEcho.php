@@ -318,18 +318,27 @@ class PhpEcho
     /**
      * Create a new instance of PhpEcho using the current directory template as root for the file to include
      *
+     * If $var_name
+     *     - is defined then the new child block will be automatically attached to the current block in its vars
+     *       as $current[$var_name] = new child block instance
+     *     - if not and if you forget to attach the blocks each other, the child block may remain orphan
+     *
+     * @param string $var_name  the var used in the template for the child block
      * @param string $file
      * @param array  $vars
      * @param string $id
      * @return PhpEcho      Return the new instance
      */
-    public function addChild($file = '', array $vars = [], string $id = ''): PhpEcho
+    public function addChild(string $var_name = '', string $file = '', array $vars = [], string $id = ''): PhpEcho
     {
         $parts = is_string($file) ? explode(' ', $file) : $file;
         array_unshift($parts, $this->templateDirectory());
         $block = new PhpEcho($parts, $vars, $id);
         $block->parent      = $this;
         $this->has_children = true;
+        if ($var_name !== '') {
+            $this->vars[$var_name] = $block;
+        }
         return $block;
     }
 
