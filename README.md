@@ -131,7 +131,7 @@ In the layout below, some values are expected:
 </body>
 </html>
 ```
-As every PhpEcho instances are returned as it and transformed to a string when it's necessary, you can call it directly in your HTML code (as above).
+As every PhpEcho instances are returned as it and transformed into a string when it's necessary, you can call it directly in your HTML code (as above).
 To get a handy help from your IDE, you can also write the code above like this: `<?= $this->raw('meta') ?>`<br> 
 To get the IDE autocompletion, just add as the first line of your view file `<?php /** @var PhpEcho $this */ ?>` to tell the IDE the 
 right type for `$this`.<br> 
@@ -211,6 +211,19 @@ $page['meta']  = ['<meta name="keywords" content="PhpEcho, PHP template engine, 
 $body = $page->addChild('body', 'LoginForm.php');
 $body['login']      = 'rawsrc';
 $body['url_submit'] = 'any/path/for/connection';
+
+echo $page;
+```
+Or
+```php
+$page = new PhpEcho('Layout.php');
+$page['title'] = 'My first use case of PhpEcho';
+$page['meta']  = ['<meta name="keywords" content="PhpEcho, PHP template engine, easy to learn and use" />'];
+
+$body = new PhpEcho('LoginForm.php');
+$body['login']      = 'rawsrc';
+$body['url_submit'] = 'any/path/for/connection';
+$page['body'] = $body;
 
 echo $page;
 ```
