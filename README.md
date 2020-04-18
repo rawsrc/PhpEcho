@@ -203,10 +203,9 @@ echo $page;
 ```
 This is also equivalent:
 ```php
-$page = new PhpEcho('Layout.php', [
-    'title' => 'My first use case of PhpEcho',
-    'meta'  => ['<meta name="keywords" content="PhpEcho, PHP template engine, easy to learn and use" />']
-]);
+$page = new PhpEcho('Layout.php');
+$page['title'] = 'My first use case of PhpEcho';
+$page['meta']  = ['<meta name="keywords" content="PhpEcho, PHP template engine, easy to learn and use" />'];
 
 $body = $page->addChild('body', 'LoginForm.php');
 $body['login']      = 'rawsrc';
