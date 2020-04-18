@@ -344,7 +344,7 @@ the next release.
 
 New helpers:
 
-**Accessing the root**
+**Access the root**
 
 The root class is a special object that is available for any child PhpEcho instance.
 
