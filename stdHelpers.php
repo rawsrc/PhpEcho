@@ -384,8 +384,29 @@ $root_key = function($keys) use ($to_escape, $hsc) {
     }
 };
 $helpers['$root_key'] = [$root_key, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
-$helpers['param']     = $helpers['$root_key'];  // alias for method call
+$helpers['rootKey']   = $helpers['$root_key'];  // alias for method call
 
+
+/**
+ * Seek the parameter from the current block to the root
+ *
+ * @param string $name
+ * @return null
+ */
+$seek_param = function(string $name) {
+    /** @var PhpEcho $block */
+    $block = $this;
+    while (true) {
+        if ($block->hasParam($name)) {
+            return $block->params[$name];
+        } elseif ($block->hasParent()) {
+            $block = $block->parent;
+        } else {
+            return null;
+        }
+    }
+};
+$helpers['$seek_param'] = [$seek_param, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 
 // return the array of helpers to PhpEcho
 return $helpers;

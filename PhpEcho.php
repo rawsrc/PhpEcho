@@ -43,7 +43,7 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  * @method mixed   raw(string $key)                 Return the raw value from a PhpEcho block
  * @method bool    isScalar($p)
  * @method mixed   keyUp($keys, bool $strict_match) Climb the tree of PhpEcho instances while keys match
- * @method mixed   param($keys)                     Extract a value from the root PhpEcho instance of the tree
+ * @method mixed   rootKey($keys)                   Extract the value from the top level PhpEcho block (the root)
  * @method PhpEcho root()                           Return the root PhpEcho instance of the tree
  *
  * HTML HELPERS
@@ -166,12 +166,18 @@ class PhpEcho
     }
 
     /**
+     * The param is never escaped
+     *
      * @param string $name
-     * @return |null
+     * @return mixed|null
      */
     public function param(string $name)
     {
-        return $this->params[$name] ?? null;
+        if ($this->hasParam($name)) {
+            return $this->params[$name];
+        }
+        // seek up the tree of blocks for the param value
+        return $this('$seek_param', $name);
     }
 
     /**
@@ -180,7 +186,7 @@ class PhpEcho
      */
     public function hasParam(string $name): bool
     {
-        return in_array($name, $this->params);
+        return in_array($name, array_keys($this->params));
     }
 
     /**
