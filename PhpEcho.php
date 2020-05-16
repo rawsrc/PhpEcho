@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 namespace rawsrc\PhpEcho;
 
@@ -47,6 +47,9 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  * @method PhpEcho root()                           Return the root PhpEcho instance of the tree
  *
  * HTML HELPERS
+ * create an hidden input with an auto-generated csrf token
+ * @method string  csrf(string $html_input_name = 'csrftoken')
+ *
  * @method mixed   hsc($p)                          Escape the value in parameter (scalar, array, stringifyable)
  * @method string  attributes(array $p)             Return the values as escaped attributes: attribute="..."
  * @method string  selected($p, $ref)               Return " selected " if $p == $ref
@@ -135,8 +138,6 @@ class PhpEcho
         }
 
         $this->vars = $vars;
-        self::addPathToHelperFile(__DIR__.DIRECTORY_SEPARATOR.'stdHelpers.php');
-
         $this->render_token = self::token();
     }
 
@@ -194,15 +195,42 @@ class PhpEcho
         $this->id = chr(mt_rand(97, 122)).bin2hex(random_bytes(4));
     }
 
+    /**
+     * Generate a random unique token for all the current session
+     */
+    public function generateToken(): string
+    {
+        return self::token();
+    }
+
     //region ARRAY ACCESS
     /**
+     * Support the space notation for array and sub-arrays
+     * if $offset = 'abc def' then the engine will search for
+     * the key in $vars['abc']['def']
+     *
      * Interface ArrayAccess
      * @param mixed $offset
      * @return bool
      */
     public function offsetExists($offset)
     {
-        return array_key_exists($offset, $this->vars);
+        $keys = explode(' ', $offset);
+        if (count($keys) === 1) {
+            return array_key_exists($offset, $this->vars);
+        } else {
+            $last   = array_pop($keys);
+            $cursor = $this->vars;
+            foreach ($keys as $k) {
+                if (isset($cursor[$k])) {
+                    $cursor = $cursor[$k];
+                } else {
+                    return false;
+                }
+            }
+            return array_key_exists($last, $cursor);
+        }
+        return false;
     }
 
     /**
@@ -212,7 +240,9 @@ class PhpEcho
      * Some types are preserved : true bool, true int, true float, PhpEcho instance, object without __toString()
      * Otherwise, the value is cast to a string and escaped
      *
-     * If object: return the object
+     * Support the space notation for array and sub-arrays
+     * if $offset = 'abc def' then the engine will search for
+     * the value stored in $vars['abc']['def']
      *
      * @param mixed $offset
      * @return mixed|null
@@ -221,38 +251,101 @@ class PhpEcho
     {
         if (isset($this->vars[$offset])) {
             $v = $this->vars[$offset];
-            if ($this('$to_escape', $v)) {
-                return $this('$hsc', $v);
-            } else {
-                return $v;
+        } else {
+            $keys   = explode(' ', $offset);
+            $cursor = $this->vars;
+            foreach ($keys as $k) {
+                if (isset($cursor[$k])) {
+                    $cursor = $cursor[$k];
+                } else {
+                    return null;
+                }
             }
+            $v = $cursor;
         }
-        return null;
+
+        if ($this('$to_escape', $v)) {
+            return $this('$hsc', $v);
+        } else {
+            return $v;
+        }
     }
 
     /**
+     * Support the space notation for array and sub-arrays
+     * if $offset = 'abc def' then the engine will store
+     * the value in $vars['abc']['def']
+     *
      * Interface ArrayAccess
      * @param mixed $offset
      * @param mixed $value
      */
     public function offsetSet($offset, $value)
     {
-        $this->vars[$offset] = $value;
         if ($value instanceof PhpEcho) {
             $this->has_children = true;
             $value->parent      = $this;
         }
+
+        $keys = explode(' ', $offset);
+        if (count($keys) === 1) {
+            $this->vars[$offset] = $value;
+        } else {
+            $cursor =& $this->vars;
+            foreach ($keys as $k) {
+                $cursor[$k] = [];
+                $cursor     =& $cursor[$k];
+            }
+            $cursor = $value;
+        }
     }
 
     /**
+     * Support the space notation for array and sub-arrays
+     * if $offset = 'abc def' then the engine will unset
+     * the value stored in $vars['abc']['def']
+     *
      * Interface ArrayAccess
      * @param mixed $offset
      */
     public function offsetUnset($offset)
     {
-        unset($this->vars[$offset]);
+        $keys = explode(' ', $offset);
+
+        if (count($keys) === 1) {
+            unset ($this->vars[$offset]);
+        } else {
+            $last   = array_pop($keys);
+            $cursor =& $this->vars;
+            foreach ($keys as $k) {
+                if (isset($cursor[$k])) {
+                    $cursor =& $cursor[$k];
+                } else {
+                    return;
+                }
+            }
+            unset ($cursor[$last]);
+        }
     }
     //endregion
+
+    /**
+     * @param $offset
+     * @return bool
+     */
+    public function issetAndTrue($offset): bool
+    {
+        return $this->offsetExists($offset) && ($this->offsetGet($offset) === true);
+    }
+
+    /**
+     * @param $offset
+     * @return bool
+     */
+    public function issetAndFalse($offset): bool
+    {
+        return $this->offsetExists($offset) && ($this->offsetGet($offset) === false);
+    }
 
     /**
      * Define the filepath to the external view file to include
@@ -331,8 +424,17 @@ class PhpEcho
      */
     public function addChild(string $var_name = '', string $file = '', array $vars = [], string $id = ''): PhpEcho
     {
-        $parts = is_string($file) ? explode(' ', $file) : $file;
-        array_unshift($parts, $this->templateDirectory());
+        if ($file === '') {
+            // an empty PhpEcho block remains on the same filepath than its parent
+            $parts = $this->file;
+        } elseif (is_string($file)) {
+            $parts = explode(' ', $file);
+        } else {
+            $parts = $file;
+        }
+        if (is_array($parts)) {
+            array_unshift($parts, $this->templateDirectory());
+        }
         $block = new PhpEcho($parts, $vars, $id);
         $block->parent      = $this;
         $this->has_children = true;
@@ -434,21 +536,6 @@ class PhpEcho
     }
 
     /**
-     * @param $name
-     * @param $arguments
-     */
-    public function __call($name, $arguments)
-    {
-        if (self::isHelper($name)) {
-            return $this->__invoke($name, ...$arguments);
-        } elseif (self::isHelper('$'.$name)) {
-            return $this->__invoke('$'.$name, ...$arguments);
-        } else {
-            return null;
-        }
-    }
-
-    /**
      * Magic method that returns a string instead of current instance of the class in a string context
      */
     public function __toString()
@@ -488,17 +575,24 @@ class PhpEcho
      */
     private static $helpers = [];
     /**
-     * @var array  [path to the helpers file to include]
-     */
-    private static $helpers_file_path = [];
-    /**
      * @var array [helper's name => [type]]
      */
     private static $helpers_types = [];
+
     /**
-     * @var array   [helpers filepath to inject]
+     * @param $name
+     * @param $arguments
      */
-    private static $helpers_file_to_inject = [];
+    public function __call($name, $arguments)
+    {
+        if (isset(self::$helpers[$name])) {
+            return $this->__invoke($name, ...$arguments);
+        } elseif (isset(self::$helpers['$'.$name])) {
+            return $this->__invoke('$'.$name, ...$arguments);
+        } else {
+            return null;
+        }
+    }
 
     /**
      * @param string   $name
@@ -536,32 +630,22 @@ class PhpEcho
     }
 
     /**
-     * Path to the file that contains helpers closure definition
-     * The helpers are common to all instances and will be included only once
-     *
-     * @param string ...$path
+     * Read the paths and inject only once all the helpers
      */
-    public static function addPathToHelperFile(string ...$path)
+    public static function injectHelpers(string $path)
     {
-        foreach ($path as $p) {
-            if ( ! isset(self::$helpers_file_path[$p])) {
-                self::$helpers_file_path[$p]    = true;
-                self::$helpers_file_to_inject[] = $p;
-            }
+        if (is_file($path)) {
+            self::addHelpers(include $path);
         }
     }
 
     /**
-     * Read the paths and inject only once all the helpers
+     * Bootstrap of PhpEcho to get better performance
+     * avoiding multiple inclusions of the same file
      */
-    public static function injectHelpers()
+    public static function injectStandardHelpers()
     {
-        foreach (self::$helpers_file_to_inject as $path) {
-            if (is_file($path)) {
-                self::addHelpers(include $path);
-            }
-        }
-        self::$helpers_file_to_inject = [];
+        self::injectHelpers(__DIR__.DIRECTORY_SEPARATOR.'stdHelpers.php');
     }
 
     /**
@@ -579,12 +663,7 @@ class PhpEcho
      */
     public static function isHelper(string $helper_name): bool
     {
-        if (isset(self::$helpers[$helper_name])) {
-            return true;
-        } else {
-            self::injectHelpers();
-            return isset(self::$helpers[$helper_name]);
-        }
+        return isset(self::$helpers[$helper_name]);
     }
 
     /**
