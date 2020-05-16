@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 $helpers = [];
 
@@ -407,6 +405,20 @@ $seek_param = function(string $name) {
     }
 };
 $helpers['$seek_param'] = [$seek_param, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+
+
+/**
+ * @param string $token_name
+ * @return string               simple HTML code for csrf token
+ */
+$csrf = function(string $token_name = 'csrftoken'): string {
+    $token = bin2hex(random_bytes(32));
+    return <<<html
+<input type="hidden" name="{$token_name}" value="{$token}">
+html;
+};
+$helpers['$csrf'] = [$csrf, HELPER_RETURN_ESCAPED_DATA];
+
 
 // return the array of helpers to PhpEcho
 return $helpers;
