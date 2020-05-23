@@ -47,9 +47,7 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  * @method PhpEcho root()                           Return the root PhpEcho instance of the tree
  *
  * HTML HELPERS
- * create an hidden input with an auto-generated csrf token
- * @method string  csrf(string $html_input_name = 'csrftoken')
- *
+ * @method string  csrf(string $html_input_name = 'csrftoken')  Create an hidden input with an auto-generated csrf token
  * @method mixed   hsc($p)                          Escape the value in parameter (scalar, array, stringifyable)
  * @method string  attributes(array $p)             Return the values as escaped attributes: attribute="..."
  * @method string  selected($p, $ref)               Return " selected " if $p == $ref
@@ -240,7 +238,7 @@ class PhpEcho
      * Some types are preserved : true bool, true int, true float, PhpEcho instance, object without __toString()
      * Otherwise, the value is cast to a string and escaped
      *
-     * Support the space notation for array and sub-arrays
+     * Support the key space notation for array and sub-arrays
      * if $offset = 'abc def' then the engine will search for
      * the value stored in $vars['abc']['def']
      *
@@ -272,7 +270,7 @@ class PhpEcho
     }
 
     /**
-     * Support the space notation for array and sub-arrays
+     * Support the key space notation for array and sub-arrays
      * if $offset = 'abc def' then the engine will store
      * the value in $vars['abc']['def']
      *
@@ -301,7 +299,7 @@ class PhpEcho
     }
 
     /**
-     * Support the space notation for array and sub-arrays
+     * Support the kay space notation for array and sub-arrays
      * if $offset = 'abc def' then the engine will unset
      * the value stored in $vars['abc']['def']
      *
@@ -416,13 +414,13 @@ class PhpEcho
      *       as $current[$var_name] = new child block instance
      *     - if not and if you forget to attach the blocks each other, the child block may remain orphan
      *
-     * @param string $var_name  the var used in the template for the child block
-     * @param string $file
-     * @param array  $vars
-     * @param string $id
+     * @param string     $var_name  the var used in the template for the child block
+     * @param string     $file
+     * @param array|null $vars  if null then the parent transfers its internal vars to the child
+     * @param string     $id
      * @return PhpEcho      Return the new instance
      */
-    public function addChild(string $var_name = '', string $file = '', array $vars = [], string $id = ''): PhpEcho
+    public function addChild(string $var_name = '', string $file = '', ?array $vars = null, string $id = ''): PhpEcho
     {
         if ($file === '') {
             // an empty PhpEcho block remains on the same filepath than its parent
@@ -435,7 +433,7 @@ class PhpEcho
         if (is_array($parts)) {
             array_unshift($parts, $this->templateDirectory());
         }
-        $block = new PhpEcho($parts, $vars, $id);
+        $block = new PhpEcho($parts, $vars ?? $this->vars, $id);
         $block->parent      = $this;
         $this->has_children = true;
         if ($var_name !== '') {
