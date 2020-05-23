@@ -8,11 +8,28 @@ $helpers = [];
  *
  * This helper is linked to an instance of PhpEcho
  *
+ * Support the key space notation for array and sub-arrays
+ * if $key = 'abc def' then the engine will search for
+ * the value as $vars['abc']['def']
+ *
  * @param string $key
  * @return mixed|null
  */
 $raw = function(string $key) {
-    return $this->vars[$key] ?? null;
+    if (isset($this->vars[$key])) {
+        return $this->vars[$key];
+    } else {
+        $keys   = explode(' ', $key);
+        $cursor = $this->vars;
+        foreach ($keys as $k) {
+            if (isset($cursor[$k])) {
+                $cursor = $cursor[$k];
+            } else {
+                return null;
+            }
+        }
+        return $cursor;
+    }
 };
 $helpers['$raw'] = [$raw, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 
