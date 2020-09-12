@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 $helpers = [];
 
@@ -10,13 +8,30 @@ $helpers = [];
  *
  * This helper is linked to an instance of PhpEcho
  *
+ * Support the key space notation for array and sub-arrays
+ * if $key = 'abc def' then the engine will search for
+ * the value as $vars['abc']['def']
+ *
  * @param string $key
  * @return mixed|null
  */
 $raw = function(string $key) {
-    return $this->vars[$key] ?? null;
+    if (isset($this->vars[$key])) {
+        return $this->vars[$key];
+    } else {
+        $keys   = explode(' ', $key);
+        $cursor = $this->vars;
+        foreach ($keys as $k) {
+            if (isset($cursor[$k])) {
+                $cursor = $cursor[$k];
+            } else {
+                return null;
+            }
+        }
+        return $cursor;
+    }
 };
-$helpers['$raw'] = [$raw, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+$helpers['raw'] = [$raw, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -28,8 +43,7 @@ $helpers['$raw'] = [$raw, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_
 $is_scalar = function($p): bool {
     return is_scalar($p) || (is_object($p) && method_exists($p, '__toString'));
 };
-$helpers['$is_scalar'] = [$is_scalar, HELPER_RETURN_ESCAPED_DATA];
-$helpers['isScalar']   = $helpers['$is_scalar']; // alias for method call
+$helpers['isScalar'] = [$is_scalar, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -51,7 +65,7 @@ $to_escape = function($p) use ($is_scalar): bool  {
         return true;
     }
 };
-$helpers['$to_escape'] = [$to_escape, HELPER_RETURN_ESCAPED_DATA];
+$helpers['toEscape'] = [$to_escape, HELPER_RETURN_ESCAPED_DATA];
 
 /**
  * Return an array of escaped values with htmlspecialchars(ENT_QUOTES, 'utf-8') for both keys and values
@@ -60,7 +74,7 @@ $helpers['$to_escape'] = [$to_escape, HELPER_RETURN_ESCAPED_DATA];
  * Otherwise, the value is cast to a string and escaped
  *
  * This is a standalone helper that is not directly accessible
- * Use instead the common helper '$hsc' which is compatible with arrays
+ * Use instead the common helper 'hsc' which is compatible with arrays
  *
  * @param  array $part
  * @return array
@@ -104,7 +118,7 @@ $hsc = function($p) use ($hsc_array, $is_scalar) {
         return '';
     }
 };
-$helpers['$hsc'] = [$hsc, HELPER_RETURN_ESCAPED_DATA];
+$helpers['hsc'] = [$hsc, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -118,7 +132,7 @@ $helpers['$hsc'] = [$hsc, HELPER_RETURN_ESCAPED_DATA];
 $selected = function($p, $ref) use ($is_scalar): string {
     return $is_scalar($p) && $is_scalar($ref) && ((string)$p === (string)$ref) ? ' selected ' : '';
 };
-$helpers['$selected'] = [$selected, HELPER_RETURN_ESCAPED_DATA];
+$helpers['selected'] = [$selected, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -132,7 +146,7 @@ $helpers['$selected'] = [$selected, HELPER_RETURN_ESCAPED_DATA];
 $checked = function($p, $ref) use ($is_scalar): string {
     return $is_scalar($p) && $is_scalar($ref) && ((string)$p === (string)$ref) ? ' checked ' : '';
 };
-$helpers['$checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
+$helpers['checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -168,7 +182,7 @@ $attributes = function(array $p): string {
     }
     return implode(' ', $data);
 };
-$helpers['$attributes'] = [$attributes, HELPER_RETURN_ESCAPED_DATA];
+$helpers['attributes'] = [$attributes, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -186,8 +200,7 @@ $void_tag = function(string $tag, array $attr = []) use ($attributes): string {
     }
     return "<{$tag}{$str}>";
 };
-$helpers['$void_tag'] = [$void_tag, HELPER_RETURN_ESCAPED_DATA];
-$helpers['voidTag']   = $helpers['$void_tag'];  // alias for method call
+$helpers['voidTag'] = [$void_tag, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -205,10 +218,10 @@ $tag = function(string $tag, string $content, array $attr = []) use ($void_tag, 
     if (( ! isset($attr['escaped'])) || ($attr['escaped'] !== true)) {
         $content = $hsc($content);
     }
-    unset($attr['escaped']);
+    unset ($attr['escaped']);
     return $void_tag($tag, $attr).$content."</{$tag}>";
 };
-$helpers['$tag'] = [$tag, HELPER_RETURN_ESCAPED_DATA];
+$helpers['tag'] = [$tag, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -225,7 +238,7 @@ $link = function(array $p) use ($void_tag): string {
     }
     return $void_tag('link', $p);
 };
-$helpers['$link'] = [$link, HELPER_RETURN_ESCAPED_DATA];
+$helpers['link'] = [$link, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -255,7 +268,7 @@ $style = function(array $p) use ($tag, $link): string {
     $p['escaped'] = true;
     return $tag('style', $code, $attr + $p);
 };
-$helpers['$style'] = [$style, HELPER_RETURN_ESCAPED_DATA];
+$helpers['style'] = [$style, HELPER_RETURN_ESCAPED_DATA];
 
 /**
  * HTML TAG : <script></script>
@@ -279,7 +292,7 @@ $script = function(array $p) use ($tag): string {
     $p['escaped'] = true;
     return $tag('script', $code, $p);
 };
-$helpers['$script'] = [$style, HELPER_RETURN_ESCAPED_DATA];
+$helpers['script'] = [$style, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -328,8 +341,7 @@ $key_up = function($keys, bool $strict_match = true) use ($to_escape, $hsc) {
         }
     }
 };
-$helpers['$key_up'] = [$key_up, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
-$helpers['keyUp']   = $helpers['$key_up'];
+$helpers['keyUp'] = [$key_up, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -344,12 +356,12 @@ $root = function(): PhpEcho {
     }
     return $block;
 };
-$helpers['$root'] = [$root, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+$helpers['root'] = [$root, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
  * This helper will extract a value from a key stored in the root of the tree of PhpEcho instances
- * and go down while the key match. This function does not render the PhpRcho blocks
+ * and go down while the key match. This function does not render the PhpEcho blocks
  *
  * A string will be split in parts using the space for delimiter
  * If one of the keys contains a space, use an array of keys instead
@@ -357,9 +369,9 @@ $helpers['$root'] = [$root, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPE
  * @param string|array $keys
  * @return mixed|null          null if not found
  */
-$root_key = function($keys) use ($to_escape, $hsc) {
+$root_var = function($keys) use ($to_escape, $hsc) {
     /** @var PhpEcho $this */
-    $root  = $this->bound_helpers['$root'];
+    $root  = $this->bound_helpers['root'];
     /** @var PhpEcho $block */
     $block = $root();   // get the root PhpEcho block
     $keys  = is_string($keys) ? explode(' ', $keys) : $keys;
@@ -383,8 +395,7 @@ $root_key = function($keys) use ($to_escape, $hsc) {
         }
     }
 };
-$helpers['$root_key'] = [$root_key, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
-$helpers['rootKey']   = $helpers['$root_key'];  // alias for method call
+$helpers['rootVar'] = [$root_var, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -406,7 +417,8 @@ $seek_param = function(string $name) {
         }
     }
 };
-$helpers['$seek_param'] = [$seek_param, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+$helpers['seekParam'] = [$seek_param, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+
 
 // return the array of helpers to PhpEcho
 return $helpers;
