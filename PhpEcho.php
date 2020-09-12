@@ -114,6 +114,10 @@ class PhpEcho
      */
     private $parent;
     /**
+     * @var ?string     help to check if the current block is orphan
+     */
+    private $parent_var_name;
+    /**
      * @var string
      */
     private $render_token = '';
@@ -172,7 +176,7 @@ class PhpEcho
      */
     public function param(string $name)
     {
-        return $this('$seek_param', $name);
+        return $this('seekParam', $name);
     }
 
     /**
@@ -262,8 +266,8 @@ class PhpEcho
             $v = $cursor;
         }
 
-        if ($this('$to_escape', $v)) {
-            return $this('$hsc', $v);
+        if ($this('toEscape', $v)) {
+            return $this('hsc', $v);
         } else {
             return $v;
         }
@@ -407,20 +411,55 @@ class PhpEcho
     }
 
     /**
-     * Create a new instance of PhpEcho using the current directory template as root for the file to include
+     * Create a new instance of PhpEcho from a file path and link them each other
      *
      * If $var_name
      *     - is defined then the new child block will be automatically attached to the current block in its vars
-     *       as $current[$var_name] = new child block instance
+     *       as $this[$var_name] = new child block instance
      *     - if not and if you forget to attach the blocks each other, the child block may remain orphan
      *
      * @param string     $var_name  the var used in the template for the child block
-     * @param string     $file
-     * @param array|null $vars  if null then the parent transfers its internal vars to the child
+     * @param string     $file      you must provide the full path to the PhpEcho file to include
+     * @param array|null $vars      if null then the parent transfers its internal vars to the child
      * @param string     $id
-     * @return PhpEcho      Return the new instance
+     * @return PhpEcho              Return the new instance
      */
     public function addChild(string $var_name = '', string $file = '', ?array $vars = null, string $id = ''): PhpEcho
+    {
+        if ($file === '') {
+            // an empty PhpEcho block remains on the same filepath than the current block
+            $parts = $this->file;
+        } elseif (is_string($file)) {
+            $parts = explode(' ', $file);
+        } else {
+            $parts = $file;
+        }
+
+        $block = new PhpEcho($parts, $vars ?? $this->vars, $id);
+        $block->parent = $this;
+        $this->has_children = true;
+        if ($var_name !== '') {
+            $this->vars[$var_name]  = $block;
+            $block->parent_var_name = $var_name;
+        }
+        return $block;
+    }
+
+    /**
+     * Create a new instance of PhpEcho using the current directory template as root for the file to include
+     *
+     * If $var_name
+     *     - is defined then the new child block will automatically be attached to the current block in its vars
+     *       as $this[$var_name] = new child block instance
+     *     - if not and if you forget to attach the blocks each other, the child block may remain orphan
+     *
+     * @param string     $var_name
+     * @param string     $file
+     * @param array|null $vars
+     * @param string     $id
+     * @return PhpEcho
+     */
+    public function addChildFromCurrent(string $var_name = '', string $file = '', ?array $vars = null, string $id = ''): PhpEcho
     {
         if ($file === '') {
             // an empty PhpEcho block remains on the same filepath than its parent
@@ -433,13 +472,15 @@ class PhpEcho
         if (is_array($parts)) {
             array_unshift($parts, $this->templateDirectory());
         }
-        $block = new PhpEcho($parts, $vars ?? $this->vars, $id);
-        $block->parent      = $this;
-        $this->has_children = true;
-        if ($var_name !== '') {
-            $this->vars[$var_name] = $block;
-        }
-        return $block;
+
+    }
+
+    /**
+     * @return bool
+     */
+    public function isOrphan(): bool
+    {
+        return $this->parent_var_name === null;
     }
 
     /**
@@ -522,11 +563,11 @@ class PhpEcho
                 $helper  = $helpers[$helper];
                 $result  = $helper(...$args);
                 // being in a HTML context: in any case, the returned data should be escaped
-                // if you don't want so, use the specific helper '$raw'
+                // if you don't want so, use the specific helper 'raw'
                 if ($escaped) {
                     return $result;
                 } else {
-                    return $this('$hsc', $result);
+                    return $this('hsc', $result);
                 }
             }
         }
@@ -539,10 +580,10 @@ class PhpEcho
     public function __toString()
     {
         $this->render();
-        $root = $this('$root');
+        $root = $this('root');
         if (($root === $this) && $this->head_token) {
             if ($this->head_escape) {
-                $head = implode('', $this('$hsc', $this->head));
+                $head = implode('', $this('hsc', $this->head));
             } else {
                 $head = implode('', $this->head);
             }
@@ -585,8 +626,6 @@ class PhpEcho
     {
         if (isset(self::$helpers[$name])) {
             return $this->__invoke($name, ...$arguments);
-        } elseif (isset(self::$helpers['$'.$name])) {
-            return $this->__invoke('$'.$name, ...$arguments);
         } else {
             return null;
         }
@@ -628,22 +667,13 @@ class PhpEcho
     }
 
     /**
-     * Read the paths and inject only once all the helpers
+     * @param string $path
      */
     public static function injectHelpers(string $path)
     {
         if (is_file($path)) {
             self::addHelpers(include $path);
         }
-    }
-
-    /**
-     * Bootstrap of PhpEcho to get better performance
-     * avoiding multiple inclusions of the same file
-     */
-    public static function injectStandardHelpers()
-    {
-        self::injectHelpers(__DIR__.DIRECTORY_SEPARATOR.'stdHelpers.php');
     }
 
     /**
@@ -718,6 +748,3 @@ class PhpEcho
     }
     //endregion
 }
-
-// make the class directly available on the global namespace
-class_alias('rawsrc\PhpEcho\PhpEcho', 'PhpEcho', false);

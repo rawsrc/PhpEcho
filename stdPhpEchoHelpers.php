@@ -31,7 +31,7 @@ $raw = function(string $key) {
         return $cursor;
     }
 };
-$helpers['$raw'] = [$raw, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+$helpers['raw'] = [$raw, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -43,8 +43,7 @@ $helpers['$raw'] = [$raw, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_
 $is_scalar = function($p): bool {
     return is_scalar($p) || (is_object($p) && method_exists($p, '__toString'));
 };
-$helpers['$is_scalar'] = [$is_scalar, HELPER_RETURN_ESCAPED_DATA];
-$helpers['isScalar']   = $helpers['$is_scalar']; // alias for method call
+$helpers['isScalar'] = [$is_scalar, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -66,7 +65,7 @@ $to_escape = function($p) use ($is_scalar): bool  {
         return true;
     }
 };
-$helpers['$to_escape'] = [$to_escape, HELPER_RETURN_ESCAPED_DATA];
+$helpers['toEscape'] = [$to_escape, HELPER_RETURN_ESCAPED_DATA];
 
 /**
  * Return an array of escaped values with htmlspecialchars(ENT_QUOTES, 'utf-8') for both keys and values
@@ -119,7 +118,7 @@ $hsc = function($p) use ($hsc_array, $is_scalar) {
         return '';
     }
 };
-$helpers['$hsc'] = [$hsc, HELPER_RETURN_ESCAPED_DATA];
+$helpers['hsc'] = [$hsc, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -133,7 +132,7 @@ $helpers['$hsc'] = [$hsc, HELPER_RETURN_ESCAPED_DATA];
 $selected = function($p, $ref) use ($is_scalar): string {
     return $is_scalar($p) && $is_scalar($ref) && ((string)$p === (string)$ref) ? ' selected ' : '';
 };
-$helpers['$selected'] = [$selected, HELPER_RETURN_ESCAPED_DATA];
+$helpers['selected'] = [$selected, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -147,7 +146,7 @@ $helpers['$selected'] = [$selected, HELPER_RETURN_ESCAPED_DATA];
 $checked = function($p, $ref) use ($is_scalar): string {
     return $is_scalar($p) && $is_scalar($ref) && ((string)$p === (string)$ref) ? ' checked ' : '';
 };
-$helpers['$checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
+$helpers['checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -183,7 +182,7 @@ $attributes = function(array $p): string {
     }
     return implode(' ', $data);
 };
-$helpers['$attributes'] = [$attributes, HELPER_RETURN_ESCAPED_DATA];
+$helpers['attributes'] = [$attributes, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -201,8 +200,7 @@ $void_tag = function(string $tag, array $attr = []) use ($attributes): string {
     }
     return "<{$tag}{$str}>";
 };
-$helpers['$void_tag'] = [$void_tag, HELPER_RETURN_ESCAPED_DATA];
-$helpers['voidTag']   = $helpers['$void_tag'];  // alias for method call
+$helpers['voidTag'] = [$void_tag, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -223,7 +221,7 @@ $tag = function(string $tag, string $content, array $attr = []) use ($void_tag, 
     unset($attr['escaped']);
     return $void_tag($tag, $attr).$content."</{$tag}>";
 };
-$helpers['$tag'] = [$tag, HELPER_RETURN_ESCAPED_DATA];
+$helpers['tag'] = [$tag, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -240,7 +238,7 @@ $link = function(array $p) use ($void_tag): string {
     }
     return $void_tag('link', $p);
 };
-$helpers['$link'] = [$link, HELPER_RETURN_ESCAPED_DATA];
+$helpers['link'] = [$link, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -270,7 +268,7 @@ $style = function(array $p) use ($tag, $link): string {
     $p['escaped'] = true;
     return $tag('style', $code, $attr + $p);
 };
-$helpers['$style'] = [$style, HELPER_RETURN_ESCAPED_DATA];
+$helpers['style'] = [$style, HELPER_RETURN_ESCAPED_DATA];
 
 /**
  * HTML TAG : <script></script>
@@ -294,7 +292,7 @@ $script = function(array $p) use ($tag): string {
     $p['escaped'] = true;
     return $tag('script', $code, $p);
 };
-$helpers['$script'] = [$style, HELPER_RETURN_ESCAPED_DATA];
+$helpers['script'] = [$style, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -343,8 +341,7 @@ $key_up = function($keys, bool $strict_match = true) use ($to_escape, $hsc) {
         }
     }
 };
-$helpers['$key_up'] = [$key_up, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
-$helpers['keyUp']   = $helpers['$key_up'];
+$helpers['keyUp'] = [$key_up, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -359,7 +356,7 @@ $root = function(): PhpEcho {
     }
     return $block;
 };
-$helpers['$root'] = [$root, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+$helpers['root'] = [$root, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -398,8 +395,7 @@ $root_key = function($keys) use ($to_escape, $hsc) {
         }
     }
 };
-$helpers['$root_key'] = [$root_key, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
-$helpers['rootKey']   = $helpers['$root_key'];  // alias for method call
+$helpers['rootKey'] = [$root_key, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -421,7 +417,7 @@ $seek_param = function(string $name) {
         }
     }
 };
-$helpers['$seek_param'] = [$seek_param, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+$helpers['seekParam'] = [$seek_param, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -434,7 +430,7 @@ $csrf = function(string $token_name = 'csrftoken'): string {
 <input type="hidden" name="{$token_name}" value="{$token}">
 html;
 };
-$helpers['$csrf'] = [$csrf, HELPER_RETURN_ESCAPED_DATA];
+$helpers['csrf'] = [$csrf, HELPER_RETURN_ESCAPED_DATA];
 
 
 // return the array of helpers to PhpEcho

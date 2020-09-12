@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2020-04-18` `PHP 7+` `v.2.3.2` `stable` `last version for the branch 2.x`
+`2020-09-20` `PHP 7+` `v.3.0.2`
 
 ## **A PHP template engine : One class to rule them all**
 
@@ -25,7 +25,7 @@ The class will manage :
 * let you access to the global HTML `<head></head>` from any child block
 * let your IDE to list all your helpers natively just using PHPDoc syntax (see the PHPDoc of the class)
 
-**NEW FEATURES IN PhpEcho v.2.3.1:**<br>
+**NEW FEATURES IN PhpEcho v.3.0.0:**<br>
 1. Each PhpEcho instance can now define their own parameters. 
 2. Parameters remain raw value and are never escaped. 
 2. The engine will always seek for a parameter value from the current block to the root. 
