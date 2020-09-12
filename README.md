@@ -40,7 +40,7 @@ Ex: `$void_tag` and `voidTag`, now only `voidTag` is permitted, the helepr's nam
 This allows the developer to have the possibility to totally override the existing helpers if needed.
 2. Support for the space notation in keys of arrays (activated by default): in a PhpEcho block, 
 if you ask for example for `$block['abc def']`, 2 ways possible: either the support is deactivated and the key exists, then you will retrieve directly the value, 
-or the engine will set/get/unset/exist the key as $block['abc']['def'].
+or the engine will set/get/unset/exist the key as `$block['abc']['def']`.
 You can disable this feature using `PhpEcho::useSpaceNotationForKeys(false);`
 3. New method `addChildFromCurrent`: automatically prepend the child block filepath with the current template directory. 
 **NEVER USE A SPACE IN THE REAL PATH**, space is read as a `DIRECTORY_SEPARATOR`.
