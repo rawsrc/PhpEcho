@@ -120,7 +120,7 @@ To define a helper, there are 3 ways:
 
 When you write a new helper that will be bound to a class instance and needs to use another bound helper,
 you must use this syntax `$existing_helper = $this->bound_helpers['$existing_helper_name'];` inside your code. 
-Please have a look at the `$root_key` helper (how is created a link to another bound helper: `$root`).
+Please have a look at the `$root_var` helper (how is created a link to another bound helper: `$root`).
 
 
 ## **How to**
