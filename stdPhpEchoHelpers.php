@@ -74,7 +74,7 @@ $helpers['toEscape'] = [$to_escape, HELPER_RETURN_ESCAPED_DATA];
  * Otherwise, the value is cast to a string and escaped
  *
  * This is a standalone helper that is not directly accessible
- * Use instead the common helper '$hsc' which is compatible with arrays
+ * Use instead the common helper 'hsc' which is compatible with arrays
  *
  * @param  array $part
  * @return array
@@ -218,7 +218,7 @@ $tag = function(string $tag, string $content, array $attr = []) use ($void_tag, 
     if (( ! isset($attr['escaped'])) || ($attr['escaped'] !== true)) {
         $content = $hsc($content);
     }
-    unset($attr['escaped']);
+    unset ($attr['escaped']);
     return $void_tag($tag, $attr).$content."</{$tag}>";
 };
 $helpers['tag'] = [$tag, HELPER_RETURN_ESCAPED_DATA];
@@ -361,7 +361,7 @@ $helpers['root'] = [$root, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED
 
 /**
  * This helper will extract a value from a key stored in the root of the tree of PhpEcho instances
- * and go down while the key match. This function does not render the PhpRcho blocks
+ * and go down while the key match. This function does not render the PhpEcho blocks
  *
  * A string will be split in parts using the space for delimiter
  * If one of the keys contains a space, use an array of keys instead
@@ -369,9 +369,9 @@ $helpers['root'] = [$root, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED
  * @param string|array $keys
  * @return mixed|null          null if not found
  */
-$root_key = function($keys) use ($to_escape, $hsc) {
+$root_var = function($keys) use ($to_escape, $hsc) {
     /** @var PhpEcho $this */
-    $root  = $this->bound_helpers['$root'];
+    $root  = $this->bound_helpers['root'];
     /** @var PhpEcho $block */
     $block = $root();   // get the root PhpEcho block
     $keys  = is_string($keys) ? explode(' ', $keys) : $keys;
@@ -395,7 +395,7 @@ $root_key = function($keys) use ($to_escape, $hsc) {
         }
     }
 };
-$helpers['rootKey'] = [$root_key, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+$helpers['rootVar'] = [$root_var, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 
 
 /**
@@ -418,19 +418,6 @@ $seek_param = function(string $name) {
     }
 };
 $helpers['seekParam'] = [$seek_param, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
-
-
-/**
- * @param string $token_name
- * @return string               simple HTML code for csrf token
- */
-$csrf = function(string $token_name = 'csrftoken'): string {
-    $token = bin2hex(random_bytes(32));
-    return <<<html
-<input type="hidden" name="{$token_name}" value="{$token}">
-html;
-};
-$helpers['csrf'] = [$csrf, HELPER_RETURN_ESCAPED_DATA];
 
 
 // return the array of helpers to PhpEcho

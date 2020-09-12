@@ -43,7 +43,7 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  * @method mixed   raw(string $key)                 Return the raw value from a PhpEcho block
  * @method bool    isScalar($p)
  * @method mixed   keyUp($keys, bool $strict_match) Climb the tree of PhpEcho instances while keys match
- * @method mixed   rootKey($keys)                   Extract the value from the top level PhpEcho block (the root)
+ * @method mixed   rootVar($keys)                   Extract the value from the top level PhpEcho block (the root)
  * @method PhpEcho root()                           Return the root PhpEcho instance of the tree
  *
  * HTML HELPERS
@@ -114,13 +114,15 @@ class PhpEcho
      */
     private $parent;
     /**
-     * @var ?string     help to check if the current block is orphan
+     * @var bool
      */
-    private $parent_var_name;
+    private static $std_helpers_injected = false;
     /**
-     * @var string
+     * If true then tke keys should never contain a space between words
+     * Each space will be transformed into a sub-array: 'abc def' => ['abc']['def']
+     * @var bool
      */
-    private $render_token = '';
+    private static $use_space_notation = true;
 
     /**
      * @param mixed  $file   see setFile() below
@@ -129,6 +131,12 @@ class PhpEcho
      */
     public function __construct($file = '', array $vars = [], string $id = '')
     {
+        // injecting only once the stdPhpEchoHelpers.php
+        if (self::$std_helpers_injected === false) {
+            self::injectHelpers(__DIR__.DIRECTORY_SEPARATOR.'stdPhpEchoHelpers.php');
+            self::$std_helpers_injected = true;
+        }
+
         if ($file !== '') {
             $this->setFile($file);
         }
@@ -140,7 +148,6 @@ class PhpEcho
         }
 
         $this->vars = $vars;
-        $this->render_token = self::token();
     }
 
     /**
@@ -185,7 +192,7 @@ class PhpEcho
      */
     public function hasParam(string $name): bool
     {
-        return in_array($name, array_keys($this->params));
+        return array_key_exists($name, $this->params);
     }
 
     /**
@@ -197,19 +204,10 @@ class PhpEcho
         $this->id = chr(mt_rand(97, 122)).bin2hex(random_bytes(4));
     }
 
-    /**
-     * Generate a random unique token for all the current session
-     */
-    public function generateToken(): string
-    {
-        return self::token();
-    }
-
     //region ARRAY ACCESS
     /**
-     * Support the space notation for array and sub-arrays
-     * if $offset = 'abc def' then the engine will search for
-     * the key in $vars['abc']['def']
+     * If "support the space notation for array and sub-arrays" is activated then
+     * if $offset = 'abc def' then the engine will search for the key in $vars['abc']['def']
      *
      * Interface ArrayAccess
      * @param mixed $offset
@@ -217,22 +215,22 @@ class PhpEcho
      */
     public function offsetExists($offset)
     {
-        $keys = explode(' ', $offset);
-        if (count($keys) === 1) {
-            return array_key_exists($offset, $this->vars);
-        } else {
-            $last   = array_pop($keys);
-            $cursor = $this->vars;
-            foreach ($keys as $k) {
-                if (isset($cursor[$k])) {
-                    $cursor = $cursor[$k];
-                } else {
-                    return false;
+        if (self::$use_space_notation) {
+            $keys = explode(' ', $offset);
+            if (count($keys) > 1) {
+                $last = array_pop($keys);
+                $data = $this->vars;
+                foreach ($keys as $k) {
+                    if (isset($data[$k])) {
+                        $data = $data[$k];
+                    } else {
+                        return false;
+                    }
                 }
+                return array_key_exists($last, $data);
             }
-            return array_key_exists($last, $cursor);
         }
-        return false;
+        return array_key_exists($offset, $this->vars);
     }
 
     /**
@@ -242,28 +240,29 @@ class PhpEcho
      * Some types are preserved : true bool, true int, true float, PhpEcho instance, object without __toString()
      * Otherwise, the value is cast to a string and escaped
      *
-     * Support the key space notation for array and sub-arrays
-     * if $offset = 'abc def' then the engine will search for
-     * the value stored in $vars['abc']['def']
+     * If "support the space notation for array and sub-arrays" is activated then
+     * if $offset = 'abc def' then the engine will search for the key in $vars['abc']['def']
      *
      * @param mixed $offset
      * @return mixed|null
      */
     public function offsetGet($offset)
     {
-        if (isset($this->vars[$offset])) {
-            $v = $this->vars[$offset];
-        } else {
-            $keys   = explode(' ', $offset);
-            $cursor = $this->vars;
+        if (self::$use_space_notation) {
+            $keys = explode(' ', $offset);
+            $data = $this->vars;
             foreach ($keys as $k) {
-                if (isset($cursor[$k])) {
-                    $cursor = $cursor[$k];
+                if (isset($data[$k])) {
+                    $data = $data[$k];
                 } else {
                     return null;
                 }
             }
-            $v = $cursor;
+            $v = $data;
+        } elseif (isset($this->vars[$offset])) {
+            $v = $this->vars[$offset];
+        } else {
+            return null;
         }
 
         if ($this('toEscape', $v)) {
@@ -274,9 +273,8 @@ class PhpEcho
     }
 
     /**
-     * Support the key space notation for array and sub-arrays
-     * if $offset = 'abc def' then the engine will store
-     * the value in $vars['abc']['def']
+     * If "support the space notation for array and sub-arrays" is activated then
+     * if $offset = 'abc def' then the engine will define an array and a sub-array: $vars['abc']['def']
      *
      * Interface ArrayAccess
      * @param mixed $offset
@@ -289,45 +287,47 @@ class PhpEcho
             $value->parent      = $this;
         }
 
-        $keys = explode(' ', $offset);
-        if (count($keys) === 1) {
-            $this->vars[$offset] = $value;
-        } else {
-            $cursor =& $this->vars;
-            foreach ($keys as $k) {
-                $cursor[$k] = [];
-                $cursor     =& $cursor[$k];
+        if (self::$use_space_notation) {
+            $keys = explode(' ', $offset);
+            if (count($keys) > 1) {
+                $data =& $this->vars;
+                foreach ($keys as $k) {
+                    $data[$k] = [];
+                    $data     =& $data[$k];
+                }
+                $data = $value;
+                return;
             }
-            $cursor = $value;
         }
+        $this->vars[$offset] = $value;
     }
 
     /**
-     * Support the kay space notation for array and sub-arrays
-     * if $offset = 'abc def' then the engine will unset
-     * the value stored in $vars['abc']['def']
+     * If "support the space notation for array and sub-arrays" is activated then
+     * if $offset = 'abc def' then the engine will unset the key in $vars['abc']['def']
      *
      * Interface ArrayAccess
      * @param mixed $offset
      */
     public function offsetUnset($offset)
     {
-        $keys = explode(' ', $offset);
-
-        if (count($keys) === 1) {
-            unset ($this->vars[$offset]);
-        } else {
-            $last   = array_pop($keys);
-            $cursor =& $this->vars;
-            foreach ($keys as $k) {
-                if (isset($cursor[$k])) {
-                    $cursor =& $cursor[$k];
-                } else {
-                    return;
+        if (self::$use_space_notation) {
+            $keys = explode(' ', $offset);
+            if (count($keys) > 1) {
+                $last = array_pop($keys);
+                $data =& $this->vars;
+                foreach ($keys as $k) {
+                    if (isset($data[$k])) {
+                        $data =& $data[$k];
+                    } else {
+                        return;
+                    }
                 }
+                unset ($data[$last]);
+                return;
             }
-            unset ($cursor[$last]);
         }
+        unset ($this->vars[$offset]);
     }
     //endregion
 
@@ -412,75 +412,38 @@ class PhpEcho
 
     /**
      * Create a new instance of PhpEcho from a file path and link them each other
+     * You must never use a space in any part of the real file path: space is read as DIRECTORY_SEPARATOR
      *
-     * If $var_name
-     *     - is defined then the new child block will be automatically attached to the current block in its vars
-     *       as $this[$var_name] = new child block instance
-     *     - if not and if you forget to attach the blocks each other, the child block may remain orphan
-     *
-     * @param string     $var_name  the var used in the template for the child block
-     * @param string     $file      you must provide the full path to the PhpEcho file to include
+     * @param string     $var_name  the var used in the current template targeting the child block
+     * @param string     $file      you must provide the full path to the PhpEcho file to include using space as directory separator
      * @param array|null $vars      if null then the parent transfers its internal vars to the child
      * @param string     $id
      * @return PhpEcho              Return the new instance
      */
-    public function addChild(string $var_name = '', string $file = '', ?array $vars = null, string $id = ''): PhpEcho
+    public function addChild(string $var_name, string $file, ?array $vars = null, string $id = ''): PhpEcho
     {
-        if ($file === '') {
-            // an empty PhpEcho block remains on the same filepath than the current block
-            $parts = $this->file;
-        } elseif (is_string($file)) {
-            $parts = explode(' ', $file);
-        } else {
-            $parts = $file;
-        }
-
-        $block = new PhpEcho($parts, $vars ?? $this->vars, $id);
-        $block->parent = $this;
-        $this->has_children = true;
-        if ($var_name !== '') {
-            $this->vars[$var_name]  = $block;
-            $block->parent_var_name = $var_name;
-        }
+        $block = new PhpEcho($file, $vars ?? $this->vars, $id);
+        $block->parent         = $this;
+        $this->has_children    = true;
+        $this->vars[$var_name] = $block;
         return $block;
     }
 
     /**
      * Create a new instance of PhpEcho using the current directory template as root for the file to include
+     * You must never use a space in any part of the real file path: space is read as DIRECTORY_SEPARATOR
      *
-     * If $var_name
-     *     - is defined then the new child block will automatically be attached to the current block in its vars
-     *       as $this[$var_name] = new child block instance
-     *     - if not and if you forget to attach the blocks each other, the child block may remain orphan
-     *
-     * @param string     $var_name
-     * @param string     $file
-     * @param array|null $vars
+     * @param string     $var_name  the var used in the current template targeting the child block
+     * @param string     $file      you must provide the relative path to the PhpEcho file to include using space as directory separator
+     * @param array|null $vars      if null then the parent transfers its internal vars to the child
      * @param string     $id
-     * @return PhpEcho
+     * @return PhpEcho              Return the new instance
      */
-    public function addChildFromCurrent(string $var_name = '', string $file = '', ?array $vars = null, string $id = ''): PhpEcho
+    public function addChildFromCurrent(string $var_name, string $file, ?array $vars = null, string $id = ''): PhpEcho
     {
-        if ($file === '') {
-            // an empty PhpEcho block remains on the same filepath than its parent
-            $parts = $this->file;
-        } elseif (is_string($file)) {
-            $parts = explode(' ', $file);
-        } else {
-            $parts = $file;
-        }
-        if (is_array($parts)) {
-            array_unshift($parts, $this->templateDirectory());
-        }
-
-    }
-
-    /**
-     * @return bool
-     */
-    public function isOrphan(): bool
-    {
-        return $this->parent_var_name === null;
+        $parts = explode(' ', $file);
+        array_unshift($parts, $this->templateDirectory());
+        return $this->addChild($var_name, implode(DIRECTORY_SEPARATOR, $parts), $vars, $id);
     }
 
     /**
@@ -540,6 +503,14 @@ class PhpEcho
         } while (isset(self::$tokens[$token]));
         self::$tokens[$token] = true;
         return $token;
+    }
+
+    /**
+     * @param bool $p
+     */
+    public static function useSpaceNotationForKeys(bool $p)
+    {
+        self::$use_space_notation = $p;
     }
 
     //region MAGIC METHODS
@@ -703,9 +674,7 @@ class PhpEcho
      */
     public static function isHelperOfType(string $helper_name, int $type): bool
     {
-        return isset(self::$helpers_types[$helper_name])
-            ? in_array($type, self::$helpers_types[$helper_name])
-            : false;
+        return isset(self::$helpers_types[$helper_name]) && in_array($type, self::$helpers_types[$helper_name]);
     }
 
     /**
