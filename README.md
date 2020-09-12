@@ -27,7 +27,7 @@ The class will manage :
 
 **DEPRECATED in PhpEcho v3.0.0:**<br>
 1. Removing the possibility to define aliases for helpers<br> 
-Ex: `$void_tag` and `voidTag`, now only `voidTag` is permitted, the herlepr's name must be directly callable as a class method.
+Ex: `$void_tag` and `voidTag`, now only `voidTag` is permitted, the helepr's name must be directly callable as a class method.
 2. Removing the availability of PhpEcho on the global namespace
 
 **CHANGES in PhpEcho v3.0.0:**<br>
