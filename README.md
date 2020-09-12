@@ -464,7 +464,7 @@ Now in the block that renders the `<head></head>`, you just have to code:
     <?= $this->head(); ?>
 </head>
 ``` 
-The engine will compile the `<head></head>` parameters from all the child blocks to render the header.
+The engine will compile the `<head></head>` parameters from all the child blocks to render the global header.
 
 The concept of child block is easy to understand: when you define a PhpEcho class as a variable of one another, you create a child block.
 ```php
