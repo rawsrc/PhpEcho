@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2020-04-18` `PHP 7+` `v.2.3.2` `stable` `last version for the branch 2.x`
+`2020-09-12` `PHP 7.1+` `v.3.0.0`
 
 ## **A PHP template engine : One class to rule them all**
 
@@ -25,10 +25,26 @@ The class will manage :
 * let you access to the global HTML `<head></head>` from any child block
 * let your IDE to list all your helpers natively just using PHPDoc syntax (see the PHPDoc of the class)
 
-**NEW FEATURES IN PhpEcho v.2.3.1:**<br>
-1. Each PhpEcho instance can now define their own parameters. 
-2. Parameters remain raw value and are never escaped. 
-2. The engine will always seek for a parameter value from the current block to the root. 
+**DEPRECATED in PhpEcho v3.0.0:**<br>
+1. Removing the possibility to define aliases for helpers<br> 
+Ex: `$void_tag` and `voidTag`, now only `voidTag` is permitted, the helepr's name must be directly callable as a class method.
+2. Removing the availability of PhpEcho on the global namespace
+
+**CHANGES in PhpEcho v3.0.0:**<br>
+1. The helper file is renamed from `stdHelpers.php` to `stdPhpEchoHelpers.php` 
+2. The public static method `addPathToHelperFile(string ...$path)` is replaced by `injectHelpers(string $path)`
+3. The helper `rootKey()` is renamed to `rootVar()`
+
+**NEW FEATURES IN PhpEcho v.3.0.0:**<br>
+1. The standard library of helpers is now injected only once at the very first use of PhpEcho
+This allows the developer to have the possibility to totally override the existing helpers if needed.
+2. Support for the space notation in keys of arrays (activated by default): in a PhpEcho block, 
+if you ask for example for `$block['abc def']`, 2 ways possible: either the support is deactivated and the key exists, then you will retrieve directly the value, 
+or the engine will set/get/unset/exist the key as `$block['abc']['def']`.
+You can disable this feature using `PhpEcho::useSpaceNotationForKeys(false);`
+3. New method `addChildFromCurrent`: automatically prepend the child block filepath with the current template directory. 
+**NEVER USE A SPACE IN THE REAL PATH**, space is read as a `DIRECTORY_SEPARATOR`.
+4. To avoid orphan child blocks, there is now required to pass the name of the var targeting the child block in the current template. 
 
 **What you must know to use it**
 1. Using array access notation or function notation will always return escaped values
@@ -43,12 +59,12 @@ $block['foo'] = 'abc " < >';   // store a key-value pair inside the instance
 $x = $block['foo'];   // $x = 'abc &quot; &lt; &gt;'
 
 // escape on demand using a helper
-$y = $block('$hsc', 'any value to escape'); // or
+$y = $block('hsc', 'any value to escape'); // or
 $y = $block->hsc('any value to escape');    
 
 // extract the raw value on demand using a helper
-$z = $block('$raw', 'foo'); // $z = 'abc " < >' or
-$z = $block->raw('foo');    // $z = 'abc " < >' 
+$z = $block('raw', 'foo'); // $z = 'abc " < >' or
+$z = $block->raw('foo');   // $z = 'abc " < >' 
 
 // the type of value is preserved, are escaped all strings and objects having __toString()
 $block['bar'] = new stdClass();
@@ -57,13 +73,13 @@ $bar = $block['bar'];
 
 ## **Defining and using your own code snippets as helpers**
 You have the possibility to use your own code generator as simply as a `Closure`.<br>
-There's a small standard library of helpers that comes with PhpEcho : `stdHelpers.php`<br>
+There's a small standard library of helpers that comes with PhpEcho : `stdPhpEchoHelpers.php`<br>
 
 **About helpers:**<br> 
 Each helper is a `Closure` that can produce whatever you want.<br>
 Each helper can be linked to an instance of PhpEcho or remain a standalone helper.<br>
-If linked to an instance, inside the closure you can use `$this` to get an access to the caller's execution context.<br>
-If standalone, this is just a simply function with parameters.<br>
+If linked to an instance, inside the closure you can use `$this` to get access to the caller's execution context.<br>
+If standalone, this is just a simple function with parameters.<br>
 It's possible for each helper to define 2 properties:
 - if linked to a class instance use the constant `HELPER_BOUND_TO_CLASS_INSTANCE`
 - if the generated code is already escaped (to avoid double quote) use the constant : `HELPER_RETURN_ESCAPED_DATA`  
@@ -74,37 +90,37 @@ This helper compares two values and if they are equal return the string `" check
 $checked = function($p, $ref) use ($is_scalar): string {
     return $is_scalar($p) && $is_scalar($ref) && ((string)$p === (string)$ref) ? ' checked ' : '';
 };
-$helpers['$checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
+$helpers['checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
 ```
-This helper is a standalone closure, there's no need to have an access to an instance of PhpEcho.
+This helper is a standalone closure, there's no need to have access to an instance of PhpEcho.
 As everything is escaped by default in PhpEcho, we can consider that the word "checked" is safe and does not need to be escaped again, 
 this is why, with the helper definition, you have the flag `HELPER_RETURN_ESCAPED_DATA`.<br>
 To call this helper inside your code (2 ways) : <br>
-* `$this('$checked', 'your value', 'ref value');`
+* `$this('checked', 'your value', 'ref value');`
 * `$this->checked('your value', 'ref value');`
  
-Now, have a look at the helper that return the raw value from the stored key-value pair `$raw`:
+Now, have a look at the helper that return the raw value from the stored key-value pair `raw`:
 ```php
 $raw = function(string $key) {
     return $this->vars[$key] ?? null;
 };
-$helpers['$raw'] = [$raw, HELPER_RETURN_ESCAPED_DATA, HELPER_BOUND_TO_CLASS_INSTANCE];
+$helpers['raw'] = [$raw, HELPER_RETURN_ESCAPED_DATA, HELPER_BOUND_TO_CLASS_INSTANCE];
 ```
-As this helper extract data from the stored key-value pairs defined in each instance of PhpEcho, it needs an access to the caller's execution context
+As this helper extract data from the stored key-value pairs defined in each instance of PhpEcho, it needs access to the caller's execution context
 that's why the helper definition has the flag `HELPER_BOUND_TO_CLASS_INSTANCE`.<br>
 And as we want to get the value unescaped, we must tell the engine that the return value by the closure is already escaped.
 We know that is not but this is goal of that helper.<br>    
-* `$this('$raw', 'key');`
+* `$this('raw', 'key');`
 * `$this->raw('key');`
 
-To define a helper, there're 3 ways:
-* `$helpers["$helper's name"] = $helper_closure`
-* `$helpers["$helper's name"] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA]`
-* `$helpers["$helper's name"] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA, HELPER_BOUND_TO_CLASS_INSTANCE]`
+To define a helper, there are 3 ways:
+* `$helpers["helper's name"] = $helper_closure`
+* `$helpers["helper's name"] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA]`
+* `$helpers["helper's name"] = [$helper_closure, HELPER_RETURN_ESCAPED_DATA, HELPER_BOUND_TO_CLASS_INSTANCE]`
 
 When you write a new helper that will be bound to a class instance and needs to use another bound helper,
 you must use this syntax `$existing_helper = $this->bound_helpers['$existing_helper_name'];` inside your code. 
-Please have a look at the `$root_key` helper (how is created a link to another bound helper: `$root`).
+Please have a look at the `$root_var` helper (how is created a link to another bound helper: `$root`).
 
 
 ## **How to**
@@ -123,7 +139,7 @@ In the layout below, some values are expected:
 <html>
 <head>
     <meta charset="UTF-8">
-    <?= implode('', $this('$raw', 'meta') ?? []) ?>
+    <?= implode('', $this('raw', 'meta') ?? []) ?>
     <title><?= $this['title'] ?></title>
 </head>
 <body>
@@ -153,7 +169,7 @@ And finally, we're going to create the main file that will prepare the view to b
 ```php
 <?php
 
-// here we include the PhpEcho class stored in www_root/vendor/rawsrc/PhpEcho
+// here we include the PhpEcho class stored in www/vendor/rawsrc/PhpEcho
 // instead of include, you can use any autoloading mechanism in your code
 include __DIR__.'/vendor/rawsrc/PhpEcho/PhpEcho.php';
 
@@ -179,7 +195,7 @@ You can also use another strategy: injecting the child block directly using the 
     <title><?= $this['title'] ?></title>
 </head>
 <body>
-<?= $this->addChild('', 'LoginForm.php', [
+<?= $this->addChildFromCurrent('body', 'LoginForm.php', [
      'login'      => 'rawsrc',
      'url_submit' => 'any/path/for/connection'
  ]) ?>
@@ -195,7 +211,7 @@ $page = new PhpEcho('Layout.php', [
     'meta'  => ['<meta name="keywords" content="PhpEcho, PHP template engine, easy to learn and use" />']
 ]);
 
-$page->addChild('body', 'LoginForm.php', [
+$page->addChildFromCurrent('body', 'LoginForm.php', [
     'login'      => 'rawsrc',
     'url_submit' => 'any/path/for/connection'
 ]);
@@ -208,7 +224,7 @@ $page = new PhpEcho('Layout.php');
 $page['title'] = 'My first use case of PhpEcho';
 $page['meta']  = ['<meta name="keywords" content="PhpEcho, PHP template engine, easy to learn and use" />'];
 
-$body = $page->addChild('body', 'LoginForm.php');
+$body = $page->addChildFromCurrent('body', 'LoginForm.php');
 $body['login']      = 'rawsrc';
 $body['url_submit'] = 'any/path/for/connection';
 
@@ -223,7 +239,7 @@ $page['meta']  = ['<meta name="keywords" content="PhpEcho, PHP template engine, 
 $body = new PhpEcho('LoginForm.php');
 $body['login']      = 'rawsrc';
 $body['url_submit'] = 'any/path/for/connection';
-$page['body'] = $body;
+$page['body']       = $body;
 
 echo $page;
 ```
@@ -356,11 +372,9 @@ $is_popup = $this->param('document.isPopup'); // true
 There's an interesting point to keep in mind, when the parameter is not defined in the current instance
 then the engine will automatically seek for it through the parent PhpEcho instances. It will climb the other leaves to the root 
 and stop if the parameter is found or return null.
-So you can store for example as a parameter any object that will help you to render your code. This object will be available as it through 
-all child PhpEcho instances.
 
 ## **Let's play with helpers**
-As mentioned above, there's some new helpers that have been added to the standard helpers library `stdHelpers.php`.
+As mentioned above, there's some new helpers that have been added to the standard helpers library `stdPhpEchoHelpers.php`.
 These helpers will help you to render any HTML code and/or interact with any PhpEcho instance.
 By default, everything in PhpEcho is escaped, so this is also true for the HTML code generated by the helpers.
 
@@ -385,27 +399,23 @@ It's highly recommended creating and using your own helpers and ask to get them 
 the next release. 
 
 
-New helpers:
+About some helpers:
 
 **Access the root**
 
-The root class is a special object that is available for any child PhpEcho instance.
+The very first PhpEcho instance is a special object that is available for any child PhpEcho instance.
 
-You have a direct access to it using the helper `$root` or `$this->root()`. This helper return the top level instance of a PhpEcho class.
+You have direct access to it using the helper `root` or `$this->root()`. This helper return the top-level instance of a tree of PhpEcho classes.
 
 **Accessing a value stored in the root**
 
-As any other PhpEcho instance, you can store inside any value and retrieve it from any child block using the helper `$root_key` 
-with the corresponding method : `rootKey()`. Now, you can define some global values and interact with them from any child block.<br>
+As any other PhpEcho instance, you can store inside any value and retrieve it from any child block using the helper `rootVar` or 
+the corresponding method : `rootVar()`. Now, you can define some global values and interact with them from any child block.<br>
 These values behave like any standard value and are of course escaped when necessary.
-
-It also possible to use a multidimensional array: `$page['a']['b']['c'] = true` and in the child block: `$this->param('a b c')`.
-Please note: I consider that never a key should contain a space. This is the reason why `'a b c'` becomes an array of keys.    
-If you have a space in you key, use directly an array.
 
 **Climbing the tree of blocks**
 
-The last is `$key_up` with the corresponding method `keyUp()`. 
+The last is `keyUp` with the corresponding method `keyUp()`. 
 From a given list of keys (string or array, string: the delimiter for each key is space), the engine will start to climb the tree 
 of blocks while the key is found. And will return the value corresponding to the last key or null if not found.<br>
 With the parameter `$strict_match`, it possible to tell the engine to continue to climb if the current key is still not found.
@@ -454,20 +464,14 @@ Now in the block that renders the `<head></head>`, you just have to code:
     <?= $this->head(); ?>
 </head>
 ``` 
-The engine will compile the `<head></head>` parameters from all the child blocks to render the header.
+The engine will compile the `<head></head>` parameters from all the child blocks to render the global header.
 
 The concept of child block is easy to understand: when you define a PhpEcho class as a variable of one another, you create a child block.
 ```php
 $page = new PhpEcho('Layout.php');
 $page['body'] = new PhpEcho('Body.php');    // here's the child block 
 ```
-or if you use the method `addChild()`.
-
-## **Using a relative path to target any child PhpEcho block**
-When you create a PhpEcho instance, usually you will pass to the constructor the filepath of the view file.
-You can get directly the last template directory using `templateDirectory()` and use it as a root to build other dynamics paths. 
-
-When you use the `addChild()` method, the filepath you define as a parameter is automatically prepend with the current `templateDirectory()`  
+or if you use the methods `addChild()` or `addChildFromCurrent()`.
 
 Enjoy!
 
