@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2020-09-12` `PHP 7.1+` `v.3.0.0`
+`2020-09-12` `PHP 7.1+` `v.3.0.x`
 
 ## **A PHP template engine : One class to rule them all**
 
@@ -52,6 +52,8 @@ You can disable this feature using `PhpEcho::useSpaceNotationForKeys(false);`
 
 **SHORT EXAMPLE**
 ```php
+use rawsrc\PhpEcho\PhpEcho;
+
 $block        = new PhpEcho();
 $block['foo'] = 'abc " < >';   // store a key-value pair inside the instance
 
@@ -134,7 +136,7 @@ In the layout below, some values are expected:
 * a title (string)
 * a PhpEcho block in charge of rendering the body part of the page 
 ```php
-<?php /** @var PhpEcho $this */ ?>
+<?php /** @var \rawsrc\PhpEcho\PhpEcho $this */ ?>
 <!DOCTYPE html>
 <html>
 <head>
@@ -186,7 +188,7 @@ echo $page;
 ```
 You can also use another strategy: injecting the child block directly using the parent directory as a root:
 ```php
-<?php /** @var PhpEcho $this */ ?>
+<?php /** @var \rawsrc\PhpEcho\PhpEcho $this */ ?>
 <!DOCTYPE html>
 <html>
 <head>
