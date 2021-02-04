@@ -123,6 +123,10 @@ class PhpEcho
      * @var bool
      */
     private static $use_space_notation = true;
+    /**
+     * @var string The full path to the template root directory
+     */
+    private static $template_dir;
 
     /**
      * @param mixed  $file   see setFile() below
@@ -378,11 +382,16 @@ class PhpEcho
     }
 
     /**
-     * @return string
+     * @param string $p
      */
-    public function templateDirectory(): string
+    public static function setTemplateDir(string $p)
     {
-        return $this->file === '' ? '' : dirname($this->file);
+        // remove trailing slash
+        if (mb_substr($p, -1, 1) === DIRECTORY_SEPARATOR) {
+            self::$template_dir = mb_substr($p, 0, -1);
+        } else {
+            self::$template_dir = $p;
+        }
     }
 
     /**
@@ -411,6 +420,23 @@ class PhpEcho
     }
 
     /**
+     * @param string     $from
+     * @param string     $var_name
+     * @param string     $file
+     * @param array|null $vars
+     * @param string     $id
+     * @return PhpEcho
+     */
+    private function addChildFrom(string $from, string $var_name, string $file, ?array $vars = null, string $id = ''): PhpEcho
+    {
+        $parts = explode(' ', $file);
+        if ($from !== '') {
+            array_unshift($parts, $from);
+        }
+        return $this->addChild($var_name, implode(DIRECTORY_SEPARATOR, $parts), $vars, $id);
+    }
+
+    /**
      * Create a new instance of PhpEcho from a file path and link them each other
      * You must never use a space in any part of the real file path: space is read as DIRECTORY_SEPARATOR
      *
@@ -430,7 +456,7 @@ class PhpEcho
     }
 
     /**
-     * Create a new instance of PhpEcho using the current directory template as root for the file to include
+     * Create a new instance of PhpEcho using the current view directory as root for the file to include
      * You must never use a space in any part of the real file path: space is read as DIRECTORY_SEPARATOR
      *
      * @param string     $var_name  the var used in the current template targeting the child block
@@ -441,9 +467,23 @@ class PhpEcho
      */
     public function addChildFromCurrent(string $var_name, string $file, ?array $vars = null, string $id = ''): PhpEcho
     {
-        $parts = explode(' ', $file);
-        array_unshift($parts, $this->templateDirectory());
-        return $this->addChild($var_name, implode(DIRECTORY_SEPARATOR, $parts), $vars, $id);
+        $from = ($this->file === '') ? '' : dirname($this->file);
+        return $this->addChildFrom($from, $var_name, $file, $vars, $id);
+    }
+
+    /**
+     * Create a new instance of PhpEcho using the template directory root
+     * You must never use a space in any part of the real file path: space is read as DIRECTORY_SEPARATOR
+     *
+     * @param string     $var_name  the var used in the current template targeting the child block
+     * @param string     $file      you must provide the relative path to the PhpEcho file to include using space as directory separator
+     * @param array|null $vars      if null then the parent transfers its internal vars to the child
+     * @param string     $id
+     * @return PhpEcho              Return the new instance
+     */
+    public function addChildFromTplDir(string $var_name, string $file, ?array $vars = null, string $id = ''): PhpEcho
+    {
+        return $this->addChildFrom(self::$template_dir, $var_name, $file, $vars, $id);
     }
 
     /**
@@ -455,8 +495,8 @@ class PhpEcho
     }
 
     /**
-     * If  = 1 arg  => plain html code (string or array of html code)
-     * If >= 2 args => first=helper + the rest=helper's params
+     * If only 1 arg       => plain html code (string or array of html code)
+     * If more than 1 args => first=helper + the rest=helper's params
      * @param mixed ...$args
      */
     public function addHead(...$args)
