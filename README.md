@@ -329,10 +329,10 @@ When you want to preserve some flexibility using the abstract code, since v4 it 
 use rawsrc\PhpEcho\PhpEcho;
 
 $page['body'] = [
+    new PhpEcho('block preloader.php'),
     new PhpEcho('block top_header.php'),
     new PhpEcho('block navbar.php'),
     new PhpEcho('block navbar_mobile.php'),
-    new PhpEcho('block preloader.php'),
     new PhpEcho('block body.php'),
     new PhpEcho('block footer.php'),
     new PhpEcho('block copyright.php'),
@@ -346,10 +346,10 @@ Since v4, it's possible to define a default block view to render:
 ```php
 <?php /** @var rawsrc\PhpEcho\PhpEcho $this */ ?>
 <body>
+<?= $this->renderByDefault('preloader', 'block preloader.php') ?>
 <?= $this->renderByDefault('top_header', 'block top_header.php') ?>
 <?= $this->renderByDefault('navbar', 'block navbar.php') ?>
 <?= $this->renderByDefault('navbar_mobile', 'block navbar_mobile.php') ?>
-<?= $this->renderByDefault('preloader', 'block preloader.php') ?>
 <?= $this['body'] ?>
 <?= $this->renderByDefault('footer', 'block footer.php') ?>
 <?= $this->renderByDefault('copyright', 'block copyright.php') ?>
