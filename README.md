@@ -42,6 +42,7 @@ The class will manage :
 1. You have the possibility to define once for all a template directory root that will automatically prepend all block paths.
 2. You can define and attach an array of PhpEcho blocks to a key. That makes life really easier with complex layout rendering (see below).
 3. You can provide any default block view for a key. The default view will be rendered only if the key is not defined.  
+4. To be able to override helpers, you have to inject once manually on bootstrap the standard library using `PhpEcho::injectStandardHelpers();`
 
 **What you must know to use it**
 1. Using array access notation or function notation will always return escaped values.
@@ -112,8 +113,12 @@ www
  |--- bootstrap.php
  |--- index.php
 ```
-Set up the main template directory in `bootstrap.php` file:<br>
+In your `bootstrap.php` file, you must inject the standard helpers and set up the main template directory:<br>
 ```php
+
+use rawsrc\PhpEcho\PhpEcho;
+
+PhpEcho::injectStandardHelpers();
 PhpEcho::setTemplateDirRoot(__DIR__.DIRECTORY_SEPARATOR.'View'.DIRECTORY_SEPARATOR.'Template01');
 ```
 Then you will code for example the homepage `page homepage.php` based on `layout main.php` like that:
@@ -197,12 +202,12 @@ We're going to create a simple login form based ont the same architecture descri
 
 1. First, we create a layout file in `View/Template01/layout` called `main.php`
 Do not forget that all values returned are safe in HTML context.<br>
-In the layout, some values are expected:
+In the layout, some values are required:
 * a description (string)
 * a title (string)
 * a PhpEcho block in charge of rendering the body part of the page<br> 
 ```php
-<?php /** @var \rawsrc\PhpEcho\PhpEcho $this */ // MAIN LAYOUT ?>
+<?php /** @var rawsrc\PhpEcho\PhpEcho $this */ // MAIN LAYOUT ?>
 <!DOCTYPE html>
 <html>
 <head>

@@ -135,12 +135,6 @@ implements ArrayAccess
      */
     public function __construct(string $file = '', array $vars = [], string $id = '')
     {
-        // injecting only once the stdPhpEchoHelpers.php
-        if (self::$std_helpers_injected === false) {
-            self::injectHelpers(__DIR__.DIRECTORY_SEPARATOR.'stdPhpEchoHelpers.php');
-            self::$std_helpers_injected = true;
-        }
-
         if ($file !== '') {
             $this->setFile($file);
         }
@@ -424,6 +418,11 @@ implements ArrayAccess
         } else {
             return null;
         }
+    }
+
+    public static function injectStandardHelpers()
+    {
+        self::injectHelpers(__DIR__.DIRECTORY_SEPARATOR.'stdPhpEchoHelpers.php');
     }
 
     /**
