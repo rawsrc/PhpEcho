@@ -235,7 +235,7 @@ Please note that `$this['url_submit']` and `$this['login']` are automatically es
 </form>
 ```
 Finally, we create a page `page/login.php` based on `layout/main.php` 
-and inject the body `block/login.php`. All are seeked from the template directory root:<br>
+and inject the body `block/login.php`. All are sought from the template directory root:<br>
 ```php
 <?php // LOGIN PAGE
 
