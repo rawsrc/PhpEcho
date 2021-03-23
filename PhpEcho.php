@@ -125,8 +125,6 @@ implements ArrayAccess
      */
     private static array $tokens = [];
 
-    private static bool $std_helpers_injected = false;
-
     //region MAGIC METHODS
     /**
      * @param string $file see setFile() below
