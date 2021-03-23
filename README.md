@@ -4,7 +4,7 @@
 
 ## **A PHP template engine : One class to rule them all**
 ## **VERSION 4.X IS ONLY FOR PHP 8 AND ABOVE**
-**THIS VERSION BREAKS THE COMPATIBILITY WITH THE PREVIOUS**
+**THIS VERSION BREAKS THE COMPATIBILITY WITH THE PREVIOUS<br>**
 **NOT TO BE USED IN PRODUCTION AS THE TESTS ARE NOT YET COMPLETED, AND THE CODE IS NOT FROZEN ALSO**
 
 When you develop a web application, the rendering of views may be a real challenge.
