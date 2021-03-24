@@ -1,11 +1,10 @@
 # **PhpEcho**
 
-`2021-03-23` `PHP 8.0+` `v.4.0.x`
+`2021-03-24` `PHP 8.0+` `v.4.0.0`
 
 ## **A PHP template engine : One class to rule them all**
 ## **VERSION 4.X IS ONLY FOR PHP 8 AND ABOVE**
 **THIS VERSION BREAKS THE COMPATIBILITY WITH THE PREVIOUS<br>**
-**NOT TO BE USED IN PRODUCTION AS THE TESTS ARE NOT YET COMPLETED, AND THE CODE IS NOT FROZEN ALSO**
 
 When you develop a web application, the rendering of views may be a real challenge.
 Especially if you just want to use only native PHP and avoid external templating syntax.
@@ -43,11 +42,13 @@ The class will manage :
 1. You have the possibility to define once for all a template directory root that will automatically prepend all block paths.
 2. You can define and attach an array of PhpEcho blocks to a key. That makes life really easier with complex layout rendering (see below).
 3. You can provide any default block view for a key. The default view will be rendered only if the key is not defined.  
-4. To be able to override helpers, you have to inject once manually on bootstrap the standard library using `PhpEcho::injectStandardHelpers();`
+4. To be able to override helpers, you must inject once manually on bootstrap the standard library using `PhpEcho::injectStandardHelpers();`
 
 **What you must know to use it**
-1. Using array access notation or function notation will always return escaped values.
-2. Please note that inside an external view file, the instance of the class PhpEcho is always available through `$this`.
+1. All values read from a PhpEcho instance are escaped and safe in HTML context.
+2. Parameters stored in any PhpEcho instance are NEVER escaped
+3. Inside an external view file, the instance of the class PhpEcho is always available through `$this`.
+4. You MUST NEVER use a space in a name anywhere (block, helper, folder, path): a space is always read as a `DIRECTORY_SEPARATOR`
 
 **SHORT EXAMPLE**
 ```php
