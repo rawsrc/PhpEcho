@@ -448,7 +448,7 @@ implements ArrayAccess
      * @param callable|Closure $helper
      * @param int ...$types  HELPER_BOUND_TO_CLASS_INSTANCE HELPER_RETURN_ESCAPED_DATA
      */
-    public static function addHelper(string $name, callable|Closure $helper, int ...$types)
+    public static function addHelper(string $name, callable|Closure $helper, int ...$types): void
     {
         self::$helpers[$name] = $helper;
         foreach ($types as $t) {
@@ -459,7 +459,7 @@ implements ArrayAccess
     /**
      * @param array $helpers [name => callable|Closure | name => [callable|Closure, ...type]]
      */
-    public static function addHelpers(array $helpers)
+    public static function addHelpers(array $helpers): void
     {
         foreach ($helpers as $name => $h) {
             if (($h instanceof Closure) || is_callable($h)) {
@@ -602,7 +602,7 @@ implements ArrayAccess
      *
      * @param string $path
      */
-    public function setFile(string $path)
+    public function setFile(string $path): void
     {
         $path = str_replace(' ', DIRECTORY_SEPARATOR, $path);
         if ((self::$template_dir_root !== '') && ( ! str_contains($path, self::$template_dir_root))) {
@@ -622,7 +622,7 @@ implements ArrayAccess
      *
      * @param string $code
      */
-    public function setCode(string $code)
+    public function setCode(string $code): void
     {
         $this->code = $code;
         $this->file = '';
@@ -670,7 +670,7 @@ implements ArrayAccess
      * @param array|null $vars
      * @param string $id
      */
-    public function renderByDefault(string $var_name, string $path_from_tpl_dir, ?array $vars = null, string $id = '')
+    public function renderByDefault(string $var_name, string $path_from_tpl_dir, ?array $vars = null, string $id = ''): void
     {
         if ( ! (isset($this->vars[$var_name])) && ($this->vars[$var_name] instanceof self)) {
             $this->addBlock($var_name, $path_from_tpl_dir, $vars, $id);
@@ -690,7 +690,7 @@ implements ArrayAccess
      * If more or equal 2 args => first=helper + the rest=helper's params
      * @param mixed ...$args
      */
-    public function addHead(...$args)
+    public function addHead(...$args): void
     {
         // the head is only stored in the root of the tree
         $root = $this->root();
@@ -726,7 +726,7 @@ implements ArrayAccess
     /**
      * Manually render the block
      */
-    public function render()
+    public function render(): void
     {
         if ($this->code === '') {
             if (($this->file !== '') && is_file($this->file)) {
