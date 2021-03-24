@@ -93,26 +93,26 @@ www
  |--- Model
  |--- View
  |     |--- Template01
- |     |        |--- block
- |     |        |      |--- contact.php
- |     |        |      |--- err404.php
- |     |        |      |--- footer.php
- |     |        |      |--- header.php
- |     |        |      |--- home.php
- |     |        |      |--- navbar.php
- |     |        |      |--- ...
- |     |        |--- layout
- |     |        |      |--- err.php
- |     |        |      |--- main.php
- |     |        |      |--- ...
- |     |        |--- page
- |     |        |      |--- about.php
- |     |        |      |--- cart.php
- |     |        |      |--- err.php
- |     |        |      |--- homepage.php
- |     |        |      |--- ...
+ |     |     |--- block
+ |     |     |     |--- contact.php
+ |     |     |     |--- err404.php
+ |     |     |     |--- footer.php
+ |     |     |     |--- header.php
+ |     |     |     |--- home.php
+ |     |     |     |--- navbar.php
+ |     |     |     |--- ...
+ |     |     |--- layout
+ |     |     |     |--- err.php
+ |     |     |     |--- main.php
+ |     |     |     |--- ...
+ |     |     |--- page
+ |     |     |     |--- about.php
+ |     |     |     |--- cart.php
+ |     |     |     |--- err.php
+ |     |     |     |--- homepage.php
+ |     |     |     |--- ...
  |     |--- Template02
- |     |        |--- ...
+ |     |     |--- ...
  |--- bootstrap.php
  |--- index.php
 ```
