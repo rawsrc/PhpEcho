@@ -568,7 +568,7 @@ implements ArrayAccess
     {
         if (is_array($p)) {
             foreach ($p as $v) {
-                if ( ! ($v instanceof PhpEcho)) {
+                if ( ! ($v instanceof self)) {
                     return false;
                 }
             }
@@ -598,7 +598,7 @@ implements ArrayAccess
      *
      * File inclusion remove the inline code
      *
-     * If a template root dir is defined then the path is automatically prepend with
+     * If a template dir root is defined then the path is automatically prepend with
      *
      * @param string $path
      */
@@ -641,15 +641,15 @@ implements ArrayAccess
      * Create a new instance of PhpEcho from a file path and link them each other
      * You must never use a space in any part of the real file path: space is read as DIRECTORY_SEPARATOR
      *
-     * If a template root dir is defined then the path is automatically prepend with
+     * If a template dir root is defined then the path is automatically prepend with
      *
      * @param string $var_name the var used in the current template targeting the child block
      * @param string $path_from_tpl_dir
      * @param array|null $vars if null then the parent transfers its internal vars to the child
      * @param string $id
-     * @return PhpEcho
+     * @return self
      */
-    public function addBlock(string $var_name, string $path_from_tpl_dir, ?array $vars = null, string $id = ''): PhpEcho
+    public function addBlock(string $var_name, string $path_from_tpl_dir, ?array $vars = null, string $id = ''): self
     {
         $parts = explode(' ', $path_from_tpl_dir);
         if (self::$template_dir_root !== '') {
@@ -682,7 +682,7 @@ implements ArrayAccess
      */
     public function hasParent(): bool
     {
-        return ($this->parent instanceof PhpEcho);
+        return ($this->parent instanceof self);
     }
 
     /**
