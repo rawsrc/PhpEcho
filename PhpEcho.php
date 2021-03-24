@@ -687,8 +687,8 @@ implements ArrayAccess
     }
 
     /**
-     * If  = 1 arg  => plain html code (string or array of html code)
-     * If >= 2 args => first=helper + the rest=helper's params
+     * If 1 arg => plain html code (string or array of html code)
+     * If more or equal 2 args => first=helper + the rest=helper's params
      * @param mixed ...$args
      */
     public function addHead(...$args)
