@@ -1,16 +1,33 @@
-<?php declare(strict_types=1);
+<?php
+
+declare(strict_types=1);
 
 namespace rawsrc\PhpEcho;
 
 use ArrayAccess;
 
+use Closure;
+
+use function array_map;
+use function array_unshift;
+use function define;
+use function defined;
+use function implode;
+use function is_array;
+use function is_string;
+use function str_contains;
+use function str_replace;
+
 if ( ! defined('HELPER_BOUND_TO_CLASS_INSTANCE')) {
     define('HELPER_BOUND_TO_CLASS_INSTANCE', 1);
 }
-
 if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
     define('HELPER_RETURN_ESCAPED_DATA', 2);
 }
+
+use const DIRECTORY_SEPARATOR;
+use const HELPER_RETURN_ESCAPED_DATA;
+use const HELPER_BOUND_TO_CLASS_INSTANCE;
 
 /**
  * PhpEcho : PHP Template engine : One class to rule them all ;-)
@@ -19,7 +36,7 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  * @author      rawsrc - https://www.developpez.net/forums/u32058/rawsrc/
  * @copyright   MIT License
  *
- *              Copyright (c) 2020 rawsrc
+ *              Copyright (c) 2020-2021 rawsrc
  *
  *              Permission is hereby granted, free of charge, to any person obtaining a copy
  *              of this software and associated documentation files (the "Software"), to deal
@@ -40,103 +57,85 @@ if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
  *              SOFTWARE.
  *
  * PhpEcho HELPERS
- * @method mixed   raw(string $key)                 Return the raw value from a PhpEcho block
- * @method bool    isScalar($p)
- * @method mixed   keyUp($keys, bool $strict_match) Climb the tree of PhpEcho instances while keys match
- * @method mixed   rootVar($keys)                   Extract the value from the top level PhpEcho block (the root)
- * @method PhpEcho root()                           Return the root PhpEcho instance of the tree
+ * @method mixed raw(string $key)                 Return the raw value from a PhpEcho block
+ * @method bool isScalar($p)
+ * @method mixed keyUp($keys, bool $strict_match) Climb the tree of PhpEcho instances while keys match
+ * @method mixed rootVar($keys)                   Extract the value from the top level PhpEcho block (the root)
+ * @method PhpEcho root()                         Return the root PhpEcho instance of the tree
  *
  * HTML HELPERS
- * @method string  csrf(string $html_input_name = 'csrftoken')  Create an hidden input with an auto-generated csrf token
- * @method mixed   hsc($p)                          Escape the value in parameter (scalar, array, stringifyable)
- * @method string  attributes(array $p)             Return the values as escaped attributes: attribute="..."
- * @method string  selected($p, $ref)               Return " selected " if $p == $ref
- * @method string  checked($p, $ref)                Return " checked "  if $p == $ref
- * @method string  voidTag(string $tag, array $attributes = [])  Build a <tag>
- * @method string  tag(string $tag, array $attributes = [])      Build a <tag></tag>
- * @method string  link(array $attributes)          [rel => required, attribute => value]
- * @method string  style(array $attributes)         [href => url | code => plain css definition, attribute => value]
- * @method string  script(array $attributes)        [src => url | code => plain javascript, attribute => value]
+ * @method mixed hsc($p)                          Escape the value in parameter (scalar, array, stringifyable)
+ * @method string attributes(array $p)            Return the values as escaped attributes: attribute="..."
+ * @method string selected($p, $ref)              Return " selected " if $p == $ref
+ * @method string checked($p, $ref)               Return " checked "  if $p == $ref
+ * @method string voidTag(string $tag, array $attributes = [])  Build a <tag />
+ * @method string tag(string $tag, array $attributes = [])      Build a <tag></tag>
+ * @method string link(array $attributes)         [rel => required, attribute => value]
+ * @method string style(array $attributes)        [href => url | code => plain css definition, attribute => value]
+ * @method string script(array $attributes)       [src => url | code => plain javascript, attribute => value]
  */
 class PhpEcho
-    implements ArrayAccess
+implements ArrayAccess
 {
-    private static $ALPHANUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    private static string $ALPHANUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
-    /**
-     * @var array
-     */
-    private static $tokens = [];
-    /**
-     * @var string
-     */
-    private $id = '';
-    /**
-     * @var array
-     */
-    private $vars = [];
-    /**
-     * @var array
-     */
-    private $params = [];
-    /**
-     * @var array
-     */
-    private $head = [];
-    /**
-     * @var string
-     */
-    private $head_token = '';
-    /**
-     * @var bool
-     */
-    private $head_escape = true;
+    private string $id = '';
+    private array $vars = [];
+    private array $params = [];
+    private array $head = [];
+    private string $head_token = '';
+    private bool $head_escape = true;
     /**
      * Full resolved filepath to the external view file
      * @var string
      */
-    private $file = '';
-    /**
-     * @var string
-     */
-    private $code = '';
+    private string $file = '';
+    private string $code = '';
     /**
      * @var array [helper's id => bound closure]
      */
-    private $bound_helpers = [];
+    private array $bound_helpers = [];
     /*
      * Indicates if the current instance contains in its vars other PhpEcho instance(s)
      * @var bool
      */
-    private $has_children = false;
+    private bool $has_children = false;
     /**
-     * @var PhpEcho
+     * @var PhpEcho|null
      */
-    private $parent;
-    /**
-     * @var bool
-     */
-    private static $std_helpers_injected = false;
+    private ?PhpEcho $parent = null;
     /**
      * If true then tke keys should never contain a space between words
      * Each space will be transformed into a sub-array: 'abc def' => ['abc']['def']
      * @var bool
      */
-    private static $use_space_notation = true;
-
+    private static bool $use_space_notation = true;
     /**
-     * @param mixed  $file   see setFile() below
-     * @param array  $vars
-     * @param string $id     if empty then auto-generated
+     * @var string
      */
-    public function __construct($file = '', array $vars = [], string $id = '')
-    {
-        // injecting only once the stdPhpEchoHelpers.php
-        if (self::$std_helpers_injected === false) {
-            self::injectHelpers(__DIR__.DIRECTORY_SEPARATOR.'stdPhpEchoHelpers.php');
-            self::$std_helpers_injected = true;
-        }
+    private static string $template_dir_root = '';
+    /**
+     * @var array  [name => closure]
+     */
+    private static array $helpers = [];
+    /**
+     * @var array [helper's name => [type]]
+     */
+    private static array $helpers_types = [];
+    /**
+     * Used tokens
+     * @var array [token => true]
+     */
+    private static array $tokens = [];
 
+    //region MAGIC METHODS
+    /**
+     * @param string $file see setFile() below
+     * @param array $vars
+     * @param string $id if empty then auto-generated
+     */
+    public function __construct(string $file = '', array $vars = [], string $id = '')
+    {
         if ($file !== '') {
             $this->setFile($file);
         }
@@ -151,6 +150,61 @@ class PhpEcho
     }
 
     /**
+     * This function call a helper defined elsewhere or dynamically
+     * Auto-escape if necessary
+     *
+     * @param string $helper
+     * @param mixed $args
+     * @return mixed
+     */
+    public function __invoke(string $helper, mixed ...$args): mixed
+    {
+        if ($helper !== '') {
+            if (self::isHelper($helper)) {
+                if (empty($this->bound_helpers)) {
+                    $this->bound_helpers = self::bindHelpersTo($this);
+                }
+                $helpers = $this->bound_helpers + self::$helpers;
+                $hlp = $helpers[$helper];
+                $result = $hlp(...$args);
+
+                if ($result === null) {
+                    return null;
+                } elseif (self::isHelperOfType($helper, HELPER_RETURN_ESCAPED_DATA)) {
+                    return $result;
+                } else {
+                    // being in a HTML context: in any case, the returned data should be escaped
+                    // if you don't want so, use the specific helper 'raw'
+                    return $this('hsc', $result);
+                }
+            }
+        }
+
+        return null;
+    }
+
+    /**
+     * Magic method that returns a string instead of current instance of the class in a string context
+     */
+    public function __toString(): string
+    {
+        $this->render();
+        $root = $this('root');
+        if (($root === $this) && ( ! empty($this->head_token))) {
+            if ($this->head_escape) {
+                $head = implode('', $this('hsc', $this->head));
+            } else {
+                $head = implode('', $this->head);
+            }
+
+            return str_replace($this->head_token, $head, $this->code);
+        } else {
+            return $this->code;
+        }
+    }
+    //endregion
+
+    /**
      * @param string $id
      */
     public function setId(string $id)
@@ -161,16 +215,16 @@ class PhpEcho
     /**
      * @return string
      */
-    public function id(): string
+    public function getId(): string
     {
         return $this->id;
     }
 
     /**
      * @param string $name
-     * @param        $value
+     * @param mixed $value
      */
-    public function setParam(string $name, $value)
+    public function setParam(string $name, mixed $value)
     {
         $this->params[$name] = $value;
     }
@@ -179,9 +233,9 @@ class PhpEcho
      * The param is never escaped
      *
      * @param string $name
-     * @return mixed|null
+     * @return mixed
      */
-    public function param(string $name)
+    public function getParam(string $name): mixed
     {
         return $this('seekParam', $name);
     }
@@ -192,7 +246,7 @@ class PhpEcho
      */
     public function hasParam(string $name): bool
     {
-        return array_key_exists($name, $this->params);
+        return in_array($name, array_keys($this->params));
     }
 
     /**
@@ -210,10 +264,10 @@ class PhpEcho
      * if $offset = 'abc def' then the engine will search for the key in $vars['abc']['def']
      *
      * Interface ArrayAccess
-     * @param mixed $offset
+     * @param  $offset
      * @return bool
      */
-    public function offsetExists($offset)
+    public function offsetExists($offset): bool
     {
         if (self::$use_space_notation) {
             $keys = explode(' ', $offset);
@@ -227,9 +281,11 @@ class PhpEcho
                         return false;
                     }
                 }
+
                 return array_key_exists($last, $data);
             }
         }
+
         return array_key_exists($offset, $this->vars);
     }
 
@@ -238,15 +294,16 @@ class PhpEcho
      * The returned value is escaped
      *
      * Some types are preserved : true bool, true int, true float, PhpEcho instance, object without __toString()
+     * For array of PhpEcho blocks, the array is imploded and the blocks are rendered int the order they appear
      * Otherwise, the value is cast to a string and escaped
      *
      * If "support the space notation for array and sub-arrays" is activated then
      * if $offset = 'abc def' then the engine will search for the key in $vars['abc']['def']
      *
-     * @param mixed $offset
-     * @return mixed|null
+     * @param $offset
+     * @return mixed
      */
-    public function offsetGet($offset)
+    public function offsetGet($offset): mixed
     {
         if (self::$use_space_notation) {
             $keys = explode(' ', $offset);
@@ -265,7 +322,10 @@ class PhpEcho
             return null;
         }
 
-        if ($this('toEscape', $v)) {
+        // intercept the case where $v is an array of PhpEcho blocks
+        if ($this->isArrayOfPhpEchoBlocks($v)) {
+            return implode('', array_map('strval', $v));
+        } elseif ($this('toEscape', $v)) {
             return $this('hsc', $v);
         } else {
             return $v;
@@ -277,14 +337,29 @@ class PhpEcho
      * if $offset = 'abc def' then the engine will define an array and a sub-array: $vars['abc']['def']
      *
      * Interface ArrayAccess
-     * @param mixed $offset
+     * @param $offset
      * @param mixed $value
      */
-    public function offsetSet($offset, $value)
+    public function offsetSet($offset, mixed $value): void
     {
+        // we keep the rule from addBlock():
+        // if $value is a PhpEcho instance and if there's no defined vars
+        // then the parent block transfers its internal vars to the child
         if ($value instanceof PhpEcho) {
             $this->has_children = true;
-            $value->parent      = $this;
+            $value->parent = $this;
+            if (empty($value->vars)) {
+                $value->vars = $this->vars;
+            }
+        } elseif ($this->isArrayOfPhpEchoBlocks($value)) {
+            $this->has_children = true;
+            /** @var self $block */
+            foreach ($value as $block) {
+                $block->parent = $this;
+                if (empty($block->vars)) {
+                    $block->vars = $this->vars;
+                }
+            }
         }
 
         if (self::$use_space_notation) {
@@ -293,9 +368,10 @@ class PhpEcho
                 $data =& $this->vars;
                 foreach ($keys as $k) {
                     $data[$k] = [];
-                    $data     =& $data[$k];
+                    $data =& $data[$k];
                 }
                 $data = $value;
+
                 return;
             }
         }
@@ -307,9 +383,9 @@ class PhpEcho
      * if $offset = 'abc def' then the engine will unset the key in $vars['abc']['def']
      *
      * Interface ArrayAccess
-     * @param mixed $offset
+     * @param $offset
      */
-    public function offsetUnset($offset)
+    public function offsetUnset($offset): void
     {
         if (self::$use_space_notation) {
             $keys = explode(' ', $offset);
@@ -323,30 +399,193 @@ class PhpEcho
                         return;
                     }
                 }
-                unset ($data[$last]);
+                unset($data[$last]);
+
                 return;
             }
         }
-        unset ($this->vars[$offset]);
+        unset($this->vars[$offset]);
     }
     //endregion
 
+    //region HELPER ZONE
     /**
-     * @param $offset
-     * @return bool
+     * @param string $name
+     * @param array $arguments
+     * @return mixed
      */
-    public function issetAndTrue($offset): bool
+    public function __call(string $name, array $arguments): mixed
     {
-        return $this->offsetExists($offset) && ($this->offsetGet($offset) === true);
+        if (isset(self::$helpers[$name])) {
+            return $this->__invoke($name, ...$arguments);
+        } else {
+            return null;
+        }
+    }
+
+    public static function injectStandardHelpers(): void
+    {
+        self::injectHelpers(__DIR__.DIRECTORY_SEPARATOR.'stdPhpEchoHelpers.php');
     }
 
     /**
-     * @param $offset
+     * @param int $length min = 12 chars
+     * @return string
+     */
+    public static function getToken(int $length = 12): string
+    {
+        $length = ($length < 12) ? 12 : $length;
+        do {
+            $token = substr(str_shuffle(self::$ALPHANUM.mt_rand(100000000, 999999999)), 0, $length);
+        } while (isset(self::$tokens[$token]));
+
+        self::$tokens[$token] = true;
+
+        return $token;
+    }
+
+    /**
+     * @param string $name
+     * @param callable|Closure $helper
+     * @param int ...$types  HELPER_BOUND_TO_CLASS_INSTANCE HELPER_RETURN_ESCAPED_DATA
+     */
+    public static function addHelper(string $name, callable|Closure $helper, int ...$types)
+    {
+        self::$helpers[$name] = $helper;
+        foreach ($types as $t) {
+            self::$helpers_types[$name][] = $t;
+        }
+    }
+
+    /**
+     * @param array $helpers [name => callable|Closure | name => [callable|Closure, ...type]]
+     */
+    public static function addHelpers(array $helpers)
+    {
+        foreach ($helpers as $name => $h) {
+            if (($h instanceof Closure) || is_callable($h)) {
+                self::$helpers[$name] = $h;
+            } elseif (is_array($h)) {
+                self::addHelper($name, array_shift($h), ...$h);
+            }
+        }
+    }
+
+    /**
+     * Inject the helpers from a file
+     * @param string $path
+     */
+    public static function injectHelpers(string $path): void
+    {
+        if (is_file($path)) {
+            self::addHelpers(include $path);
+        }
+    }
+
+    /**
+     * @return array [name => closure]
+     */
+    public static function helpers(): array
+    {
+        return self::$helpers;
+    }
+
+    /**
+     * @param string $helper_name
+     * @return array [int]
+     */
+    public static function getHelperTypes(string $helper_name): array
+    {
+        return self::$helpers_types[$helper_name] ?? [];
+    }
+
+    /**
+     * @param string $helper_name
      * @return bool
      */
-    public function issetAndFalse($offset): bool
+    public static function isHelper(string $helper_name): bool
     {
-        return $this->offsetExists($offset) && ($this->offsetGet($offset) === false);
+        return isset(self::$helpers[$helper_name]);
+    }
+
+    /**
+     * Check if the helper has the defined type
+     *
+     * @param string $helper_name
+     * @param int $type
+     * @return bool
+     */
+    public static function isHelperOfType(string $helper_name, int $type): bool
+    {
+        return isset(self::$helpers_types[$helper_name])
+            ? in_array($type, self::$helpers_types[$helper_name])
+            : false;
+    }
+
+    /**
+     * @param array $type array of types [type]
+     * @param bool $strict when match, check if the helper has only the asked types
+     * @return array [helper's name => closure]
+     */
+    public static function getHelpersByType(array $type, bool $strict = false): array
+    {
+        $data = [];
+        foreach (self::$helpers_types as $name => $v) {
+            $intersect = array_intersect($type, $v);
+            if (( ! empty($intersect)) && (count($type) === count($intersect))) {
+                if ($strict) {
+                    if  (count($type) === count($v)) {
+                        $data[$name] = self::$helpers[$name];
+                    }
+                } else {
+                    $data[$name] = self::$helpers[$name];
+                }
+            }
+        }
+
+        return $data;
+    }
+
+    /**
+     * Change the helper's binding context to the given one in parameter
+     * Only for helpers bound to a class instance
+     *
+     * @param object $p
+     * @return array [helper's id => bound closure]
+     */
+    private function bindHelpersTo(object $p): array
+    {
+        $helpers = [];
+        foreach (self::getHelpersByType([HELPER_BOUND_TO_CLASS_INSTANCE], false) as $name => $hlp) {
+            $helpers[$name] = $hlp->bindTo($p, $p);
+        }
+        $this->bound_helpers = $helpers;
+
+        return $helpers;
+    }
+    //endregion
+
+    private function isArrayOfPhpEchoBlocks(mixed $p): bool
+    {
+        if (is_array($p)) {
+            foreach ($p as $v) {
+                if ( ! ($v instanceof PhpEcho)) {
+                    return false;
+                }
+            }
+
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @param string $p The path to the root directory of the view files
+     */
+    public static function setTemplateDirRoot(string $p): void
+    {
+        self::$template_dir_root = $p;
     }
 
     /**
@@ -358,31 +597,20 @@ class PhpEcho
      *  - become "www/user/view/login.php"  if DIRECTORY_SEPARATOR = '/'
      *  - become "www\user\view\login.php"  if DIRECTORY_SEPARATOR = '\'
      *
-     * For arrays, same rule (R001) for all values inside : $parts = ['www/user', 'view login.php'];
-     *  - become "www/user/view/login.php"  if DIRECTORY_SEPARATOR = '/'
-     *  - become "www/user\view\login.php"  if DIRECTORY_SEPARATOR = '\'
-     *
      * File inclusion remove the inline code
      *
-     * @param mixed $parts string|array
+     * If a template root dir is defined then the path is automatically prepend with
+     *
+     * @param string $path
      */
-    public function setFile($parts)
+    public function setFile(string $path)
     {
-        $file  = [];
-        $parts = is_string($parts) ? explode(' ', $parts) : $parts;
-        foreach ($parts as $p) {
-            $file[] = str_replace(' ', DIRECTORY_SEPARATOR, $p);
+        $path = str_replace(' ', DIRECTORY_SEPARATOR, $path);
+        if ((self::$template_dir_root !== '') && ( ! str_contains($path, self::$template_dir_root))) {
+            $path = self::$template_dir_root.DIRECTORY_SEPARATOR.$path;
         }
-        $this->file = str_replace(DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR, implode(DIRECTORY_SEPARATOR, $file));
+        $this->file = str_replace(DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR, $path);
         $this->code = '';
-    }
-
-    /**
-     * @return string
-     */
-    public function templateDirectory(): string
-    {
-        return $this->file === '' ? '' : dirname($this->file);
     }
 
     /**
@@ -414,36 +642,40 @@ class PhpEcho
      * Create a new instance of PhpEcho from a file path and link them each other
      * You must never use a space in any part of the real file path: space is read as DIRECTORY_SEPARATOR
      *
-     * @param string     $var_name  the var used in the current template targeting the child block
-     * @param string     $file      you must provide the full path to the PhpEcho file to include using space as directory separator
-     * @param array|null $vars      if null then the parent transfers its internal vars to the child
-     * @param string     $id
-     * @return PhpEcho              Return the new instance
+     * If a template root dir is defined then the path is automatically prepend with
+     *
+     * @param string $var_name the var used in the current template targeting the child block
+     * @param string $path_from_tpl_dir
+     * @param array|null $vars if null then the parent transfers its internal vars to the child
+     * @param string $id
+     * @return PhpEcho
      */
-    public function addChild(string $var_name, string $file, ?array $vars = null, string $id = ''): PhpEcho
+    public function addBlock(string $var_name, string $path_from_tpl_dir, ?array $vars = null, string $id = ''): PhpEcho
     {
-        $block = new PhpEcho($file, $vars ?? $this->vars, $id);
-        $block->parent         = $this;
-        $this->has_children    = true;
+        $parts = explode(' ', $path_from_tpl_dir);
+        if (self::$template_dir_root !== '') {
+            array_unshift($parts, self::$template_dir_root);
+        }
+        $path = implode(DIRECTORY_SEPARATOR, $parts);
+        $block = new PhpEcho($path, $vars ?? $this->vars, $id);
+        $block->parent = $this;
+        $this->has_children = true;
         $this->vars[$var_name] = $block;
+
         return $block;
     }
 
     /**
-     * Create a new instance of PhpEcho using the current directory template as root for the file to include
-     * You must never use a space in any part of the real file path: space is read as DIRECTORY_SEPARATOR
-     *
-     * @param string     $var_name  the var used in the current template targeting the child block
-     * @param string     $file      you must provide the relative path to the PhpEcho file to include using space as directory separator
-     * @param array|null $vars      if null then the parent transfers its internal vars to the child
-     * @param string     $id
-     * @return PhpEcho              Return the new instance
+     * @param string $var_name
+     * @param string $path_from_tpl_dir
+     * @param array|null $vars
+     * @param string $id
      */
-    public function addChildFromCurrent(string $var_name, string $file, ?array $vars = null, string $id = ''): PhpEcho
+    public function renderByDefault(string $var_name, string $path_from_tpl_dir, ?array $vars = null, string $id = '')
     {
-        $parts = explode(' ', $file);
-        array_unshift($parts, $this->templateDirectory());
-        return $this->addChild($var_name, implode(DIRECTORY_SEPARATOR, $parts), $vars, $id);
+        if ( ! (isset($this->vars[$var_name])) && ($this->vars[$var_name] instanceof self)) {
+            $this->addBlock($var_name, $path_from_tpl_dir, $vars, $id);
+        }
     }
 
     /**
@@ -455,15 +687,15 @@ class PhpEcho
     }
 
     /**
-     * If  = 1 arg  => plain html code (string or array of html code)
-     * If >= 2 args => first=helper + the rest=helper's params
+     * If 1 arg => plain html code (string or array of html code)
+     * If more or equal 2 args => first=helper + the rest=helper's params
      * @param mixed ...$args
      */
     public function addHead(...$args)
     {
         // the head is only stored in the root of the tree
         $root = $this->root();
-        $nb   = count($args);
+        $nb = count($args);
         if ($nb === 1) {
             if (is_string($args[0])) {
                 $root->head[] = $args[0];
@@ -483,87 +715,14 @@ class PhpEcho
      * @param bool $escape  If you dont want to escape the head, set it to false
      * @return string
      */
-    public function head(bool $escape): string
+    public function getHead(bool $escape): string
     {
         // generate a token that will be replaced after rendering the whole HTML
-        $this->head_token  = self::token(26);
+        $this->head_token = self::getToken(26);
         $this->head_escape = $escape;
+
         return $this->head_token;
     }
-
-    /**
-     * @param int $length   min = 12 chars
-     * @return string
-     */
-    private static function token(int $length = 12): string
-    {
-        $length = ($length < 12) ? 12 : $length;
-        do {
-            $token = substr(str_shuffle(self::$ALPHANUM.mt_rand(100000000, 999999999)), 0, $length);
-        } while (isset(self::$tokens[$token]));
-        self::$tokens[$token] = true;
-        return $token;
-    }
-
-    /**
-     * @param bool $p
-     */
-    public static function useSpaceNotationForKeys(bool $p)
-    {
-        self::$use_space_notation = $p;
-    }
-
-    //region MAGIC METHODS
-    /**
-     * This function call a helper defined elsewhere or dynamically
-     * Auto-escape if necessary
-     *
-     * @param string $helper
-     * @param array  $args
-     * @return mixed
-     */
-    public function __invoke(string $helper, ...$args)
-    {
-        if ($helper !== '') {
-            if (self::isHelper($helper)) {
-                if (empty($this->bound_helpers)) {
-                    $this->bound_helpers = self::bindHelpersTo($this);
-                }
-                $escaped = self::isHelperOfType($helper, HELPER_RETURN_ESCAPED_DATA);
-                $helpers = $this->bound_helpers + self::$helpers;
-                $helper  = $helpers[$helper];
-                $result  = $helper(...$args);
-                // being in a HTML context: in any case, the returned data should be escaped
-                // if you don't want so, use the specific helper 'raw'
-                if ($escaped) {
-                    return $result;
-                } else {
-                    return $this('hsc', $result);
-                }
-            }
-        }
-        return null;
-    }
-
-    /**
-     * Magic method that returns a string instead of current instance of the class in a string context
-     */
-    public function __toString()
-    {
-        $this->render();
-        $root = $this('root');
-        if (($root === $this) && $this->head_token) {
-            if ($this->head_escape) {
-                $head = implode('', $this('hsc', $this->head));
-            } else {
-                $head = implode('', $this->head);
-            }
-            return str_replace($this->head_token, $head, $this->code);
-        } else {
-            return $this->code;
-        }
-    }
-    //endregion
 
     /**
      * Manually render the block
@@ -578,142 +737,4 @@ class PhpEcho
             }
         }
     }
-
-    //region HELPER ZONE
-    /**
-     * @var array  [name => closure]
-     */
-    private static $helpers = [];
-    /**
-     * @var array [helper's name => [type]]
-     */
-    private static $helpers_types = [];
-
-    /**
-     * @param $name
-     * @param $arguments
-     */
-    public function __call($name, $arguments)
-    {
-        if (isset(self::$helpers[$name])) {
-            return $this->__invoke($name, ...$arguments);
-        } else {
-            return null;
-        }
-    }
-
-    /**
-     * @param string   $name
-     * @param \Closure $closure
-     * @param int      ...$types  HELPER_RETURN_ESCAPED_DATA HELPER_BOUND_TO_CLASS_INSTANCE
-     */
-    public static function addHelper(string $name, \Closure $closure, int ...$types)
-    {
-        self::$helpers[$name] = $closure;
-        foreach ($types as $t) {
-            self::$helpers_types[$name][] = $t; // HELPER_BOUND_TO_CLASS_INSTANCE HELPER_RETURN_ESCAPED_DATA
-        }
-    }
-
-    /**
-     * @param array $helpers [name => Closure | name => [Closure, ...type]]
-     */
-    public static function addHelpers(array $helpers)
-    {
-        foreach ($helpers as $name => $h) {
-            if ($h instanceof \Closure) {
-                self::$helpers[$name] = $h;
-            } elseif (is_array($h)) {
-                self::addHelper($name, array_shift($h), ...$h);
-            }
-        }
-    }
-
-    /**
-     * @return array [name => closure]
-     */
-    public static function helpers(): array
-    {
-        return self::$helpers;
-    }
-
-    /**
-     * @param string $path
-     */
-    public static function injectHelpers(string $path)
-    {
-        if (is_file($path)) {
-            self::addHelpers(include $path);
-        }
-    }
-
-    /**
-     * @param  string   $helper_name
-     * @return array    [int]
-     */
-    public static function getHelperTypes(string $helper_name): array
-    {
-        return self::$helpers_types[$helper_name] ?? [];
-    }
-
-    /**
-     * @param  string $helper_name
-     * @return bool
-     */
-    public static function isHelper(string $helper_name): bool
-    {
-        return isset(self::$helpers[$helper_name]);
-    }
-
-    /**
-     * Check if the helper has the defined type
-     *
-     * @param  string $helper_name
-     * @param  int    $type
-     * @return bool
-     */
-    public static function isHelperOfType(string $helper_name, int $type): bool
-    {
-        return isset(self::$helpers_types[$helper_name]) && in_array($type, self::$helpers_types[$helper_name]);
-    }
-
-    /**
-     * @param  array $type      array of types [type]
-     * @param  bool  $strict    when match, check if the helper has only the asked types
-     * @return array            [helper's name => closure]
-     */
-    public static function getHelpersByType(array $type, bool $strict = false): array
-    {
-        $data = [];
-        foreach (self::$helpers_types as $name => $v) {
-            $intersect = array_intersect($type, $v);
-            if (( ! empty($intersect)) && (count($type) === count($intersect))) {
-                if ($strict) {
-                    if  (count($type) === count($v)) {
-                        $data[$name] = self::$helpers[$name];
-                    }
-                } else {
-                    $data[$name] = self::$helpers[$name];
-                }
-            }
-        }
-        return $data;
-    }
-
-    /**
-     * Change the helper's binding context to the given one in parameter
-     * Only for helpers bound to a class instance
-     *
-     * @param object $p
-     * @return array        [helper's id => bound closure]
-     */
-    public static function bindHelpersTo(object $p): array
-    {
-        $helpers = [];
-        foreach (self::getHelpersByType([HELPER_BOUND_TO_CLASS_INSTANCE], false) as $name => $hlp) {
-            $helpers[$name] = $hlp->bindTo($p, $p);
-        }
-        return $helpers;
-    }
-    //endregion
 }
