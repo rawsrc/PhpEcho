@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace rawsrc\PhpEcho;
 
 use ArrayAccess;
-
 use Closure;
 
 use function array_map;
