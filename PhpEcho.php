@@ -100,6 +100,9 @@ implements ArrayAccess
      * @var bool
      */
     private bool $has_children = false;
+    /**
+     * @var PhpEcho|null
+     */
     private ?PhpEcho $parent = null;
     /**
      * If true then tke keys should never contain a space between words
@@ -107,9 +110,10 @@ implements ArrayAccess
      * @var bool
      */
     private static bool $use_space_notation = true;
-
+    /**
+     * @var string
+     */
     private static string $template_dir_root = '';
-
     /**
      * @var array  [name => closure]
      */
@@ -290,6 +294,7 @@ implements ArrayAccess
      * The returned value is escaped
      *
      * Some types are preserved : true bool, true int, true float, PhpEcho instance, object without __toString()
+     * For array of PhpEcho blocks, the array is imploded and the blocks are rendered int the order they appear
      * Otherwise, the value is cast to a string and escaped
      *
      * If "support the space notation for array and sub-arrays" is activated then
@@ -337,6 +342,9 @@ implements ArrayAccess
      */
     public function offsetSet($offset, mixed $value): void
     {
+        // we keep the rule from addBlock():
+        // if $value is a PhpEcho instance and if there's no defined vars
+        // then the parent block transfers its internal vars to the child
         if ($value instanceof PhpEcho) {
             $this->has_children = true;
             $value->parent = $this;
@@ -345,8 +353,6 @@ implements ArrayAccess
             }
         } elseif ($this->isArrayOfPhpEchoBlocks($value)) {
             $this->has_children = true;
-            // we keep the rule from addBlock():
-            // if no vars are defined then the parent block transfers its internal vars to the child
             /** @var self $block */
             foreach ($value as $block) {
                 $block->parent = $this;
@@ -417,7 +423,7 @@ implements ArrayAccess
         }
     }
 
-    public static function injectStandardHelpers()
+    public static function injectStandardHelpers(): void
     {
         self::injectHelpers(__DIR__.DIRECTORY_SEPARATOR.'stdPhpEchoHelpers.php');
     }
@@ -441,7 +447,7 @@ implements ArrayAccess
     /**
      * @param string $name
      * @param callable|Closure $helper
-     * @param int ...$types  HELPER_BOUND_TO_CLASS_INSTANCE|HELPER_RETURN_ESCAPED_DATA
+     * @param int ...$types  HELPER_BOUND_TO_CLASS_INSTANCE HELPER_RETURN_ESCAPED_DATA
      */
     public static function addHelper(string $name, callable|Closure $helper, int ...$types)
     {
@@ -469,7 +475,7 @@ implements ArrayAccess
      * Inject the helpers from a file
      * @param string $path
      */
-    public static function injectHelpers(string $path)
+    public static function injectHelpers(string $path): void
     {
         if (is_file($path)) {
             self::addHelpers(include $path);
@@ -547,7 +553,7 @@ implements ArrayAccess
      * @param object $p
      * @return array [helper's id => bound closure]
      */
-    public function bindHelpersTo(object $p): array
+    private function bindHelpersTo(object $p): array
     {
         $helpers = [];
         foreach (self::getHelpersByType([HELPER_BOUND_TO_CLASS_INSTANCE], false) as $name => $hlp) {

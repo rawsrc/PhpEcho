@@ -60,7 +60,7 @@ $helpers['isScalar'] = [$is_scalar, HELPER_RETURN_ESCAPED_DATA];
  * @param $p
  * @return bool
  */
-$to_escape = function($p) use ($is_scalar): bool  {
+$to_escape = function($p) use ($is_scalar): bool {
     if (is_string($p)) {
         return true;
     } elseif (is_bool($p) || is_int($p) || is_float($p) || ($p instanceof PhpEcho)) {
