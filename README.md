@@ -317,10 +317,10 @@ or like this:
 ```php
 <?php /** @var rawsrc\PhpEcho\PhpEcho $this */ ?>
 <body>
+<?= $this['preloader'] ?>
 <?= $this['top_header'] ?>
 <?= $this['navbar'] ?>
 <?= $this['navbar_mobile'] ?>
-<?= $this['preloader'] ?>
 <?= $this['body'] ?>
 <?= $this['footer'] ?>
 <?= $this['copyright'] ?>
