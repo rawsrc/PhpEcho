@@ -102,11 +102,13 @@ www
  |     |        |      |--- navbar.php
  |     |        |      |--- ...
  |     |        |--- layout
+ |     |        |      |--- err.php
  |     |        |      |--- main.php
  |     |        |      |--- ...
  |     |        |--- page
  |     |        |      |--- about.php
  |     |        |      |--- cart.php
+ |     |        |      |--- err.php
  |     |        |      |--- homepage.php
  |     |        |      |--- ...
  |     |--- Template02
