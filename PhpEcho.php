@@ -516,9 +516,7 @@ implements ArrayAccess
      */
     public static function isHelperOfType(string $helper_name, int $type): bool
     {
-        return isset(self::$helpers_types[$helper_name])
-            ? in_array($type, self::$helpers_types[$helper_name])
-            : false;
+        return isset(self::$helpers_types[$helper_name]) && in_array($type, self::$helpers_types[$helper_name]);
     }
 
     /**
@@ -669,12 +667,19 @@ implements ArrayAccess
      * @param string $path_from_tpl_dir
      * @param array|null $vars
      * @param string $id
+     * @return self|null
      */
-    public function renderByDefault(string $var_name, string $path_from_tpl_dir, ?array $vars = null, string $id = ''): void
+    public function renderByDefault(string $var_name, string $path_from_tpl_dir, ?array $vars = null, string $id = ''): ?self
     {
-        if ( ! (isset($this->vars[$var_name])) && ($this->vars[$var_name] instanceof self)) {
-            $this->addBlock($var_name, $path_from_tpl_dir, $vars, $id);
+        if (isset($this->vars[$var_name])) {
+            if ($this->vars[$var_name] instanceof self) {
+                return $this->vars[$var_name];
+            }
+        } else {
+            return $this->addBlock($var_name, $path_from_tpl_dir, $vars, $id);
         }
+
+        return null;
     }
 
     /**
