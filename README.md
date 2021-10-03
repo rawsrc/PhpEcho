@@ -1,10 +1,9 @@
 # **PhpEcho**
 
-`2021-03-24` `PHP 8.0+` `v.4.0.0`
+`2021-10-03` `PHP 8.0+` `v.4.0.2`
 
 ## **A PHP template engine : One class to rule them all**
 ## **VERSION 4.X IS ONLY FOR PHP 8 AND ABOVE**
-**THIS VERSION BREAKS THE COMPATIBILITY WITH THE PREVIOUS<br>**
 
 When you develop a web application, the rendering of views may be a real challenge.
 Especially if you just want to use only native PHP and avoid external templating syntax.
@@ -32,17 +31,9 @@ The class will manage :
 * let you create your own helpers
 * let your IDE to list all your helpers natively just using PHPDoc syntax (see the PHPDoc of the class)
 
-**REMOVED from PhpEcho v4.0.0:**<br>
-1. Removed methods: `->issetAndTrue($offset)`, `issetAndFalse($offset)`, `->templateDirectory()`  
-
-**CHANGES in PhpEcho v4.0.0:**<br>
-1. Renamed methods: `->addChild()` and `->addChildFromCurrent()` by `->addBlock()`
-
-**NEW FEATURES IN PhpEcho v4.0.0:**<br>
-1. You have the possibility to define once for all a template directory root that will automatically prepend all block paths.
-2. You can define and attach an array of PhpEcho blocks to a key. That makes life really easier with complex layout rendering (see below).
-3. You can provide any default block view for a key. The default view will be rendered only if the key is not defined.  
-4. To be able to override helpers, you must inject once manually on bootstrap the standard library using `PhpEcho::injectStandardHelpers();`
+**NEW FEATURE IN PhpEcho v4.0.2:**<br>
+1. You have now the possibility to define a global parameter that will be available through all of PhpEcho instances using
+`PhpEcho::setGlobalParam()` and read using `PhpEcho::getGlobalParam()`  
 
 **What you must know to use it**
 1. All values read from a PhpEcho instance are escaped and safe in HTML context.

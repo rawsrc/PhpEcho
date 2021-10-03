@@ -126,6 +126,10 @@ implements ArrayAccess
      * @var array [token => true]
      */
     private static array $tokens = [];
+    /**
+     * @var array
+     */
+    private static array $global_params = [];
 
     //region MAGIC METHODS
     /**
@@ -237,6 +241,26 @@ implements ArrayAccess
     public function getParam(string $name): mixed
     {
         return $this('seekParam', $name);
+    }
+
+    /**
+     * Parameter that is available through all PhpEcho instances
+     *
+     * @param string $name
+     * @param mixed $value
+     */
+    public static function setGlobalParam(string $name, mixed $value)
+    {
+        self::$global_params[$name] = $value;
+    }
+
+    /**
+     * @param string $name
+     * @return mixed
+     */
+    public static function getGlobalParam(string $name): mixed
+    {
+        return self::$global_params[$name] ?? null;
     }
 
     /**
