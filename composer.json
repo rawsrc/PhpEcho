@@ -12,7 +12,6 @@
   ],
   "autoload": {
     "psr-4": {
-      "rawsrc\\": "vendor/rawsrc/"
     }
   },
   "require": {
