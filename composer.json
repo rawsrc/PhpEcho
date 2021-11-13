@@ -10,6 +10,11 @@
       "role": "Creator"
     }
   ],
+  "autoload": {
+    "psr-4": {
+      "rawsrc\\": "/"
+    }
+  },
   "require": {
     "php": ">=8.0"
   },
