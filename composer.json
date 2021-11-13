@@ -7,17 +7,11 @@
     {
       "name": "Martin Lacroix",
       "email": "rawsrc@gmail.com",
-      "homepage": "https://www.developpez.net/forums/blogs/32058-rawsrc/b9154/phpecho-version-2-0-0/",
       "role": "Creator"
     }
   ],
   "require": {
     "php": ">=8.0"
-  },
-  "autoload": {
-    "psr-4": {
-      "rawsrc\\PhpEcho\\": "PhpEcho/"
-    }
   },
   "minimum-stability": "stable"
 }
