@@ -29,7 +29,12 @@ The class will manage :
 * managing and rendering instance of class that implements the magic function `__toString()`
 * let you access to the global HTML `<head></head>` from any child block
 * let you create your own helpers
-* let your IDE to list all your helpers natively just using PHPDoc syntax (see the PHPDoc of the class)
+* let your IDE list all your helpers natively just using PHPDoc syntax (see the PHPDoc of the class)
+
+**INSTALLATION**
+```bash
+composer require rawsrc/phpecho
+```
 
 **NEW FEATURE IN PhpEcho v4.0.2:**<br>
 1. You have now the possibility to define a global parameter that will be available through all of PhpEcho instances using
