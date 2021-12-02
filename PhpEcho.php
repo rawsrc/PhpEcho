@@ -33,6 +33,8 @@ use function ob_start;
 use function random_bytes;
 use function str_contains;
 use function str_replace;
+use function str_shuffle;
+use function substr;
 
 if ( ! defined('HELPER_BOUND_TO_CLASS_INSTANCE')) {
     define('HELPER_BOUND_TO_CLASS_INSTANCE', 1);
@@ -757,7 +759,7 @@ implements ArrayAccess
     }
 
     /**
-     * @param bool $escape  If you dont want to escape the head, set it to false
+     * @param bool $escape  If you don't want to escape the head, set it to false
      * @return string
      */
     public function getHead(bool $escape): string
