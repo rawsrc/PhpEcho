@@ -50,8 +50,7 @@ use const HELPER_BOUND_TO_CLASS_INSTANCE;
 /**
  * PhpEcho : PHP Template engine : One class to rule them all ;-)
  *
- * @link        https://www.developpez.net/forums/blogs/32058-rawsrc/b9154/phpecho-version-2-0-0/
- * @author      rawsrc - https://www.developpez.net/forums/u32058/rawsrc/
+ * @author      rawsrc
  * @copyright   MIT License
  *
  *              Copyright (c) 2020-2021 rawsrc
@@ -95,7 +94,7 @@ use const HELPER_BOUND_TO_CLASS_INSTANCE;
 class PhpEcho
 implements ArrayAccess
 {
-    private static string $ALPHANUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    private static string $ALPHA_NUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
 
     private string $id = '';
     private array $vars = [];
@@ -478,7 +477,7 @@ implements ArrayAccess
     {
         $length = ($length < 12) ? 12 : $length;
         do {
-            $token = substr(str_shuffle(self::$ALPHANUM.mt_rand(100000000, 999999999)), 0, $length);
+            $token = substr(str_shuffle(self::$ALPHA_NUM.mt_rand(100000000, 999999999)), 0, $length);
         } while (isset(self::$tokens[$token]));
 
         self::$tokens[$token] = true;
@@ -605,6 +604,10 @@ implements ArrayAccess
     }
     //endregion
 
+    /**
+     * @param mixed $p
+     * @return bool
+     */
     private function isArrayOfPhpEchoBlocks(mixed $p): bool
     {
         if (is_array($p)) {
@@ -738,7 +741,7 @@ implements ArrayAccess
      * If more or equal 2 args => first=helper + the rest=helper's params
      * @param mixed ...$args
      */
-    public function addHead(...$args): void
+    public function addHead(mixed ...$args): void
     {
         // the head is only stored in the root of the tree
         $root = $this->root();
