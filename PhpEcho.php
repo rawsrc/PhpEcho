@@ -226,6 +226,22 @@ implements ArrayAccess
     //endregion
 
     /**
+     * Return the full path to a view file, prepend it with the template dir root
+     *
+     * @param string $path space separated of path segments
+     * @return string
+     */
+    public static function getFullFilepath(string $path): string
+    {
+        $path = str_replace(' ', DIRECTORY_SEPARATOR, $path);
+        if ((self::$template_dir_root !== '') && ( ! str_contains($path, self::$template_dir_root))) {
+            $path = self::$template_dir_root.DIRECTORY_SEPARATOR.$path;
+        }
+
+        return str_replace(DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR, $path);
+    }
+
+    /**
      * @param string $id
      */
     public function setId(string $id)
@@ -648,11 +664,7 @@ implements ArrayAccess
      */
     public function setFile(string $path): void
     {
-        $path = str_replace(' ', DIRECTORY_SEPARATOR, $path);
-        if ((self::$template_dir_root !== '') && ( ! str_contains($path, self::$template_dir_root))) {
-            $path = self::$template_dir_root.DIRECTORY_SEPARATOR.$path;
-        }
-        $this->file = str_replace(DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR, $path);
+        $this->file = self::getFullFilepath($path);
         $this->code = '';
     }
 

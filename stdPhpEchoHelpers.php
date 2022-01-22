@@ -156,11 +156,11 @@ $key_up = function(array|string $keys, bool $strict_match = true) use ($to_escap
     if ( ! $this->hasParent()) {
         return null;
     }
-    $keys  = is_string($keys) ? explode(' ', $keys) : $keys;
+    $keys = is_string($keys) ? explode(' ', $keys) : $keys;
     /** @var PhpEcho $block */
     $block = $this->parent;
-    $nb    = count($keys);
-    $i     = 0;
+    $nb = count($keys);
+    $i = 0;
     while ($i < $nb) {
         $k = $keys[$i];
         if (isset($block[$k])) {
