@@ -36,7 +36,7 @@ The class will manage :
 composer require rawsrc/phpecho
 ```
 
-**NEW FEATURE IN PhpEcho v4.0.3:**<br>
+**NEW FEATURE IN PhpEcho v4.0.6:**<br>
 1. Get the full file path to a view file from its path segments using the static method `getFullFilepath()`
 
 **What you must know to use it**
