@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2022-01-22` `PHP 8.0+` `v.4.0.3`
+`2022-01-22` `PHP 8.0+` `v.4.0.6`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **VERSION 4.X IS ONLY FOR PHP 8 AND ABOVE**
