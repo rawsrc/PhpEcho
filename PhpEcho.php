@@ -48,7 +48,7 @@ use const HELPER_RETURN_ESCAPED_DATA;
 use const HELPER_BOUND_TO_CLASS_INSTANCE;
 
 /**
- * PhpEcho : PHP Template engine : One class to rule them all ;-)
+ * PhpEcho : Native PHP Template engine: One class to rule them all ;-)
  *
  * @author      rawsrc
  * @copyright   MIT License

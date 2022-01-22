@@ -1,12 +1,12 @@
 # **PhpEcho**
 
-`2021-10-03` `PHP 8.0+` `v.4.0.2`
+`2022-01-22` `PHP 8.0+` `v.4.0.3`
 
-## **A PHP template engine : One class to rule them all**
+## **A native PHP template engine : One class to rule them all**
 ## **VERSION 4.X IS ONLY FOR PHP 8 AND ABOVE**
 
 When you develop a web application, the rendering of views may be a real challenge.
-Especially if you just want to use only native PHP and avoid external templating syntax.
+Especially if you just want to use only native PHP syntax and avoid external templating language.
 
 This is exactly the goal of `PhpEcho`: providing a pure PHP template engine with no other dependencies.<br>
 
@@ -36,9 +36,8 @@ The class will manage :
 composer require rawsrc/phpecho
 ```
 
-**NEW FEATURE IN PhpEcho v4.0.2:**<br>
-1. You have now the possibility to define a global parameter that will be available through all of PhpEcho instances using
-`PhpEcho::setGlobalParam()` and read using `PhpEcho::getGlobalParam()`  
+**NEW FEATURE IN PhpEcho v4.0.3:**<br>
+1. Get the full file path to a view file from its path segments using the static method `getFullFilepath()`
 
 **What you must know to use it**
 1. All values read from a PhpEcho instance are escaped and safe in HTML context.
