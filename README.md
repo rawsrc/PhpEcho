@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2022-01-22` `PHP 8.0+` `v.4.0.6`
+`2022-01-28` `PHP 8.0+` `v.4.0.7`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **VERSION 4.X IS ONLY FOR PHP 8 AND ABOVE**
@@ -36,8 +36,9 @@ The class will manage :
 composer require rawsrc/phpecho
 ```
 
-**NEW FEATURE IN PhpEcho v4.0.6:**<br>
-1. Get the full file path to a view file from its path segments using the static method `getFullFilepath()`
+**NEW FEATURE IN PhpEcho v4.0.7:**<br>
+1. Add a reserved word for vars: `raw`. Stores the raw code of the instance, on rendering 
+the code extracted from the var `raw` is never escaped, see SHORT EXAMPLE 
 
 **What you must know to use it**
 1. All values read from a PhpEcho instance are escaped and safe in HTML context.
@@ -62,6 +63,10 @@ $y = $block->hsc('any value to escape');  // using IDE highlight
 // extract the raw value on demand using a helper
 $z = $block('raw', 'foo'); // $z = 'abc " < >' or
 $z = $block->raw('foo');   // $z = 'abc " < >' 
+
+// new feature v4.0.7, raw is reserved, equivalent to the previous code
+$z = $block['raw foo'] = 'abc " < >';
+$v = $block['raw foo']; // $v = 'abc " < >'
 
 // the type of value is preserved, are escaped all strings and objects having __toString()
 $block['bar'] = new stdClass();

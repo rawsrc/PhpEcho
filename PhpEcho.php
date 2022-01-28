@@ -94,7 +94,8 @@ use const HELPER_BOUND_TO_CLASS_INSTANCE;
 class PhpEcho
 implements ArrayAccess
 {
-    private static string $ALPHA_NUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    private const ALPHA_NUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    private const RESERVED_KEY_RAW = 'raw';
 
     private string $id = '';
     private array $vars = [];
@@ -168,6 +169,10 @@ implements ArrayAccess
         }
 
         $this->vars = $vars;
+
+        if ( ! isset($this->vars[self::RESERVED_KEY_RAW])) {
+            $this->vars[self::RESERVED_KEY_RAW] = [];
+        }
     }
 
     /**
@@ -363,8 +368,9 @@ implements ArrayAccess
     public function offsetGet($offset): mixed
     {
         if (self::$use_space_notation) {
-            $keys = explode(' ', $offset);
             $data = $this->vars;
+            $keys = explode(' ', $offset);
+            $is_raw = $keys[0] === self::RESERVED_KEY_RAW;
             foreach ($keys as $k) {
                 if (isset($data[$k])) {
                     $data = $data[$k];
@@ -375,6 +381,7 @@ implements ArrayAccess
             $v = $data;
         } elseif (isset($this->vars[$offset])) {
             $v = $this->vars[$offset];
+            $is_raw = $offset === self::RESERVED_KEY_RAW;
         } else {
             return null;
         }
@@ -382,6 +389,8 @@ implements ArrayAccess
         // intercept the case where $v is an array of PhpEcho blocks
         if ($this->isArrayOfPhpEchoBlocks($v)) {
             return implode('', array_map('strval', $v));
+        } elseif ($is_raw) {
+            return $v;
         } elseif ($this('toEscape', $v)) {
             return $this('hsc', $v);
         } else {
@@ -459,6 +468,10 @@ implements ArrayAccess
                 unset($data[$last]);
 
                 return;
+            } elseif ($offset === self::RESERVED_KEY_RAW) {
+                $this->vars[self::RESERVED_KEY_RAW] = [];
+
+                return;
             }
         }
         unset($this->vars[$offset]);
@@ -493,7 +506,7 @@ implements ArrayAccess
     {
         $length = ($length < 12) ? 12 : $length;
         do {
-            $token = substr(str_shuffle(self::$ALPHA_NUM.mt_rand(100000000, 999999999)), 0, $length);
+            $token = substr(str_shuffle(self::ALPHA_NUM.mt_rand(100000000, 999999999)), 0, $length);
         } while (isset(self::$tokens[$token]));
 
         self::$tokens[$token] = true;
@@ -579,7 +592,7 @@ implements ArrayAccess
 
     /**
      * @param array $type array of types [type]
-     * @param bool $strict when match, check if the helper has only the asked types
+     * @param bool $strict when matched, check if the helper has only the asked types
      * @return array [helper's name => closure]
      */
     public static function getHelpersByType(array $type, bool $strict = false): array
