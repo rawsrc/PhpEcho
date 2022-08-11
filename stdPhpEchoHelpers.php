@@ -117,6 +117,8 @@ $helpers['hsc'] = [$hsc, HELPER_RETURN_ESCAPED_DATA];
  * @return mixed
  */
 $raw = function(string $key): mixed {
+    /** @var PhpEcho $this */
+
     if (isset($this->vars[$key])) {
         return $this->vars[$key];
     } else {

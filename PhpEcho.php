@@ -7,9 +7,10 @@ namespace rawsrc\PhpEcho;
 use ArrayAccess;
 use Closure;
 
+use InvalidArgumentException;
+
 use function array_intersect;
 use function array_key_exists;
-use function array_keys;
 use function array_map;
 use function array_pop;
 use function array_push;
@@ -24,7 +25,6 @@ use function explode;
 use function implode;
 use function in_array;
 use function is_array;
-use function is_callable;
 use function is_file;
 use function is_string;
 use function mt_rand;
@@ -95,7 +95,6 @@ class PhpEcho
 implements ArrayAccess
 {
     private const ALPHA_NUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    private const RESERVED_KEY_RAW = 'raw';
 
     private string $id = '';
     private array $vars = [];
@@ -108,6 +107,9 @@ implements ArrayAccess
      * @var string
      */
     private string $file = '';
+    /**
+     * @var string
+     */
     private string $code = '';
     /**
      * @var array [helper's id => bound closure]
@@ -151,6 +153,7 @@ implements ArrayAccess
     private static array $global_params = [];
 
     //region MAGIC METHODS
+
     /**
      * @param string $file see setFile() below
      * @param array $vars
@@ -169,10 +172,6 @@ implements ArrayAccess
         }
 
         $this->vars = $vars;
-
-        if ( ! isset($this->vars[self::RESERVED_KEY_RAW])) {
-            $this->vars[self::RESERVED_KEY_RAW] = [];
-        }
     }
 
     /**
@@ -182,31 +181,34 @@ implements ArrayAccess
      * @param string $helper
      * @param mixed $args
      * @return mixed
+     * @throws InvalidArgumentException
      */
     public function __invoke(string $helper, mixed ...$args): mixed
     {
-        if ($helper !== '') {
-            if (self::isHelper($helper)) {
-                if (empty($this->bound_helpers)) {
-                    $this->bound_helpers = self::bindHelpersTo($this);
-                }
-                $helpers = $this->bound_helpers + self::$helpers;
-                $hlp = $helpers[$helper];
-                $result = $hlp(...$args);
-
-                if ($result === null) {
-                    return null;
-                } elseif (self::isHelperOfType($helper, HELPER_RETURN_ESCAPED_DATA)) {
-                    return $result;
-                } else {
-                    // being in a HTML context: in any case, the returned data should be escaped
-                    // if you don't want so, use the specific helper 'raw'
-                    return $this('hsc', $result);
-                }
-            }
+        if ($helper === '') {
+            throw new InvalidArgumentException('helper.cannot.be.empty');
         }
 
-        return null;
+        if (self::isHelper($helper)) {
+            if (empty($this->bound_helpers)) {
+                $this->bound_helpers = self::bindHelpersTo($this);
+            }
+            $helpers = $this->bound_helpers + self::$helpers;
+            $hlp = $helpers[$helper];
+            $result = $hlp(...$args);
+
+            if ($result === null) {
+                return null;
+            } elseif (self::isHelperOfType($helper, HELPER_RETURN_ESCAPED_DATA)) {
+                return $result;
+            } else {
+                // being in a HTML context: in any case, the returned data should be escaped
+                // if you don't want so, use the specific helper 'raw'
+                return $this('hsc', $result);
+            }
+        } else {
+            throw new InvalidArgumentException("unknown.helper.{$helper}");
+        }
     }
 
     /**
@@ -247,6 +249,22 @@ implements ArrayAccess
     }
 
     /**
+     * @param bool $p
+     */
+    public static function setUseSpaceNotation(bool $p): void
+    {
+        self::$use_space_notation = $p;
+    }
+
+    /**
+     * @return bool
+     */
+    public static function useSpaceNotation(): bool
+    {
+        return self::$use_space_notation;
+    }
+
+    /**
      * @param string $id
      */
     public function setId(string $id)
@@ -263,6 +281,8 @@ implements ArrayAccess
     }
 
     /**
+     * Define a local parameter
+     *
      * @param string $name
      * @param mixed $value
      */
@@ -272,14 +292,27 @@ implements ArrayAccess
     }
 
     /**
-     * The param is never escaped
+     * Get the value of a local parameter
+     * The value of the parameter is never escaped
+     *
+     * if the parameter does not exist then throw an exception
      *
      * @param string $name
      * @return mixed
+     * @throws InvalidArgumentException
      */
     public function getParam(string $name): mixed
     {
-        return $this('seekParam', $name);
+        return $this->params[$name] ?? throw new InvalidArgumentException("unknown.parameter.{$name}");
+    }
+
+    /**
+     * @param string $name
+     * @return bool
+     */
+    public function hasParam(string $name): bool
+    {
+        return array_key_exists($name, $this->params);
     }
 
     /**
@@ -296,23 +329,24 @@ implements ArrayAccess
     /**
      * @param string $name
      * @return mixed
+     * @throws InvalidArgumentException
      */
     public static function getGlobalParam(string $name): mixed
     {
-        return self::$global_params[$name] ?? null;
+        return self::$global_params[$name] ?? throw new InvalidArgumentException("unknown.parameter.{$name}");
     }
 
     /**
      * @param string $name
      * @return bool
      */
-    public function hasParam(string $name): bool
+    public function hasGlobalParam(string $name): bool
     {
-        return in_array($name, array_keys($this->params));
+        return array_key_exists($name, self::$global_params);
     }
 
     /**
-     * Generate an unique execution id based on random_bytes()
+     * Generate a unique execution id based on random_bytes()
      * Always start with a letter
      */
     public function generateId()
@@ -364,37 +398,51 @@ implements ArrayAccess
      *
      * @param $offset
      * @return mixed
+     * @throws InvalidArgumentException
      */
     public function offsetGet($offset): mixed
     {
-        if (self::$use_space_notation) {
-            $data = $this->vars;
-            $keys = explode(' ', $offset);
-            $is_raw = $keys[0] === self::RESERVED_KEY_RAW;
-            foreach ($keys as $k) {
-                if (isset($data[$k])) {
-                    $data = $data[$k];
-                } else {
-                    return null;
-                }
-            }
-            $v = $data;
-        } elseif (isset($this->vars[$offset])) {
-            $v = $this->vars[$offset];
-            $is_raw = $offset === self::RESERVED_KEY_RAW;
-        } else {
-            return null;
-        }
+        $v = $this->getOffsetRawValue($offset);
 
-        // intercept the case where $v is an array of PhpEcho blocks
-        if ($this->isArrayOfPhpEchoBlocks($v)) {
+        if ($v === null) {
+            return null;
+        } elseif ($this->isArrayOfPhpEchoBlocks($v)) {
+            // intercept the case where $v is an array of PhpEcho blocks
             return implode('', array_map('strval', $v));
-        } elseif ($is_raw) {
-            return $v;
         } elseif ($this('toEscape', $v)) {
             return $this('hsc', $v);
         } else {
             return $v;
+        }
+    }
+
+    /**
+     * @param $offset
+     * @return mixed
+     * @throws InvalidArgumentException
+     */
+    private function getOffsetRawValue($offset): mixed
+    {
+        if (self::$use_space_notation) {
+            $data = $this->vars;
+            $keys = explode(' ', $offset);
+            $last = array_pop($keys);
+            foreach ($keys as $k) {
+                if (isset($data[$k])) {
+                    $data = $data[$k];
+                } else {
+                    throw new InvalidArgumentException("unknown.offset.{$k}");
+                }
+            }
+            if (array_key_exists($last, $data)) {
+                return $data[$last];
+            } else {
+                throw new InvalidArgumentException("unknown.offset.{$last}");
+            }
+        } elseif (isset($this->vars[$offset])) {
+            return $this->vars[$offset];
+        } else {
+            return null;
         }
     }
 
@@ -441,6 +489,7 @@ implements ArrayAccess
                 return;
             }
         }
+
         $this->vars[$offset] = $value;
     }
 
@@ -462,19 +511,21 @@ implements ArrayAccess
                     if (isset($data[$k])) {
                         $data =& $data[$k];
                     } else {
-                        return;
+                        throw new InvalidArgumentException("unknown.offset.{$k}");
                     }
                 }
-                unset($data[$last]);
 
-                return;
-            } elseif ($offset === self::RESERVED_KEY_RAW) {
-                $this->vars[self::RESERVED_KEY_RAW] = [];
-
-                return;
+                if (array_key_exists($last, $data)) {
+                    unset($data[$last]);
+                } else {
+                    throw new InvalidArgumentException("unknown.offset.{$last}");
+                }
             }
+        } elseif (array_key_exists($offset, $this->vars)) {
+            unset($this->vars[$offset]);
+        } else {
+            throw new InvalidArgumentException("unknown.offset.{$offset}");
         }
-        unset($this->vars[$offset]);
     }
     //endregion
 
@@ -483,13 +534,14 @@ implements ArrayAccess
      * @param string $name
      * @param array $arguments
      * @return mixed
+     * @throws InvalidArgumentException
      */
     public function __call(string $name, array $arguments): mixed
     {
         if (isset(self::$helpers[$name])) {
             return $this->__invoke($name, ...$arguments);
         } else {
-            return null;
+            throw new InvalidArgumentException("unknown.helper.{$name}");
         }
     }
 
@@ -516,10 +568,10 @@ implements ArrayAccess
 
     /**
      * @param string $name
-     * @param callable|Closure $helper
+     * @param Closure $helper
      * @param int ...$types  HELPER_BOUND_TO_CLASS_INSTANCE HELPER_RETURN_ESCAPED_DATA
      */
-    public static function addHelper(string $name, callable|Closure $helper, int ...$types): void
+    public static function addHelper(string $name, Closure $helper, int ...$types): void
     {
         self::$helpers[$name] = $helper;
         foreach ($types as $t) {
@@ -528,12 +580,12 @@ implements ArrayAccess
     }
 
     /**
-     * @param array $helpers [name => callable|Closure | name => [callable|Closure, ...type]]
+     * @param array $helpers [name => Closure | name => [Closure, ...type]]
      */
     public static function addHelpers(array $helpers): void
     {
         foreach ($helpers as $name => $h) {
-            if (($h instanceof Closure) || is_callable($h)) {
+            if ($h instanceof Closure) {
                 self::$helpers[$name] = $h;
             } elseif (is_array($h)) {
                 self::addHelper($name, array_shift($h), ...$h);
@@ -553,9 +605,19 @@ implements ArrayAccess
     }
 
     /**
+     * @param string $helper_name
+     * @return Closure
+     * @throws InvalidArgumentException
+     */
+    public static function getHelper(string $helper_name): Closure
+    {
+        return self::$helpers[$helper_name] ?? throw new InvalidArgumentException("unknown.helper.{$helper_name}");
+    }
+
+    /**
      * @return array [name => closure]
      */
-    public static function helpers(): array
+    public static function getHelpers(): array
     {
         return self::$helpers;
     }
@@ -563,9 +625,12 @@ implements ArrayAccess
     /**
      * @param string $helper_name
      * @return array [int]
+     * @throws InvalidArgumentException
      */
     public static function getHelperTypes(string $helper_name): array
     {
+        self::getHelper($helper_name);
+
         return self::$helpers_types[$helper_name] ?? [];
     }
 
@@ -584,10 +649,11 @@ implements ArrayAccess
      * @param string $helper_name
      * @param int $type
      * @return bool
+     * @throws InvalidArgumentException
      */
     public static function isHelperOfType(string $helper_name, int $type): bool
     {
-        return isset(self::$helpers_types[$helper_name]) && in_array($type, self::$helpers_types[$helper_name]);
+        return in_array($type, self::getHelperTypes($helper_name));
     }
 
     /**
