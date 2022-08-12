@@ -555,7 +555,7 @@ implements ArrayAccess
      */
     public static function getToken(int $length = 12): string
     {
-        $length = ($length < 12) ? 12 : $length;
+        $length = max(12, $length);
         do {
             $token = substr(str_shuffle(self::ALPHA_NUM.mt_rand(100000000, 999999999)), 0, $length);
         } while (isset(self::$tokens[$token]));
