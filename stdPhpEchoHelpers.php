@@ -27,15 +27,13 @@ $helpers['isScalar'] = [$is_scalar, HELPER_RETURN_ESCAPED_DATA];
  * @param mixed $p
  * @return bool
  */
-$to_escape = function(mixed $p) use ($is_scalar): bool  {
+$to_escape = function(mixed $p): bool  {
     if (is_string($p)) {
         return true;
-    } elseif (is_bool($p) || is_int($p) || is_float($p) || ($p instanceof PhpEcho)) {
+    } elseif (is_bool($p) || is_int($p) || is_float($p) || ($p instanceof PhpEcho) || ($p === null)) {
         return false;
-    } elseif ($is_scalar($p)) {
-        return true;
     } elseif (is_object($p)) {
-        return false;
+        return method_exists($p, '__toString');
     } else {
         return true;
     }
