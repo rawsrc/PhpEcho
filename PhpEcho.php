@@ -104,7 +104,7 @@ implements ArrayAccess
     private string $head_token = '';
     private bool $head_escape = true;
     /**
-     * Full resolved filepath to the external view file
+     * Partial file path to the external view file (from the template dir root)
      * @var string
      */
     private string $file = '';
@@ -156,7 +156,7 @@ implements ArrayAccess
     //region MAGIC METHODS
 
     /**
-     * @param string $file see setFile() below
+     * @param string $file path from the template dir root
      * @param array $vars
      * @param string $id if empty then auto-generated
      */
@@ -728,23 +728,22 @@ implements ArrayAccess
     }
 
     /**
-     * Define the filepath to the external view file to include
+     * Define the filepath to the external view file to include from the template dir root
+     * The full resolved filepath is built using the template directory root
      *
      * Rule R001 : Any space inside a name will be automatically converted to DIRECTORY_SEPARATOR
      *
-     * For strings : $parts = 'www user view login.php';
+     * For strings : $path = 'www user view login.php';
      *  - become "www/user/view/login.php"  if DIRECTORY_SEPARATOR = '/'
      *  - become "www\user\view\login.php"  if DIRECTORY_SEPARATOR = '\'
      *
      * File inclusion remove the inline code
      *
-     * If a template dir root is defined then the path is automatically prepend with
-     *
      * @param string $path
      */
     public function setFile(string $path): void
     {
-        $this->file = self::getFullFilepath($path);
+        $this->file = $path;
         $this->code = '';
     }
 
@@ -780,18 +779,13 @@ implements ArrayAccess
      * If a template dir root is defined then the path is automatically prepend with
      *
      * @param string $var_name the var used in the current template targeting the child block
-     * @param string $path_from_tpl_dir
+     * @param string $path path from template dir root
      * @param array|null $vars if null then the parent transfers its internal vars to the child
      * @param string $id
      * @return self
      */
-    public function addBlock(string $var_name, string $path_from_tpl_dir, ?array $vars = null, string $id = ''): self
+    public function addBlock(string $var_name, string $path, ?array $vars = null, string $id = ''): self
     {
-        $parts = explode(' ', $path_from_tpl_dir);
-        if (self::$template_dir_root !== '') {
-            array_unshift($parts, self::$template_dir_root);
-        }
-        $path = implode(DIRECTORY_SEPARATOR, $parts);
         $block = new PhpEcho($path, $vars ?? $this->vars, $id);
         $block->parent = $this;
         $this->has_children = true;
@@ -802,19 +796,19 @@ implements ArrayAccess
 
     /**
      * @param string $var_name
-     * @param string $path_from_tpl_dir
+     * @param string $path path from template dir root
      * @param array|null $vars
      * @param string $id
      * @return self|null
      */
-    public function renderByDefault(string $var_name, string $path_from_tpl_dir, ?array $vars = null, string $id = ''): ?self
+    public function renderByDefault(string $var_name, string $path, ?array $vars = null, string $id = ''): ?self
     {
         if (isset($this->vars[$var_name])) {
             if ($this->vars[$var_name] instanceof self) {
                 return $this->vars[$var_name];
             }
         } else {
-            return $this->addBlock($var_name, $path_from_tpl_dir, $vars, $id);
+            return $this->addBlock($var_name, $path, $vars, $id);
         }
 
         return null;
@@ -866,20 +860,20 @@ implements ArrayAccess
         return $this->head_token;
     }
 
-    /**
-     * Manually render the block
-     */
     public function render(): void
     {
         if ($this->code === '') {
-            if (($this->file !== '') && is_file($this->file)) {
-                ob_start();
-                include $this->file;
-                $this->code = ob_get_clean();
+            if ($this->file === '') {
+                throw new BadMethodCallException("no.view.to.render");
             } else {
-                // for security reasons we remove the root segment path from the full filepath
-                $tpl_file = ltrim($this->file, self::$template_dir_root);
-                throw new BadMethodCallException("unknown.template.file.{$tpl_file}");
+                $full_filepath = self::getFullFilepath($this->file);
+                if (is_file($full_filepath)) {
+                    ob_start();
+                    include $this->file;
+                    $this->code = ob_get_clean();
+                } else {
+                    throw new BadMethodCallException("unknown.view.file.{$this->file}");
+                }
             }
         }
     }
