@@ -113,7 +113,7 @@ implements ArrayAccess
      * @var array [helper's id => bound closure]
      */
     private array $bound_helpers = [];
-    /*
+    /**
      * Indicates if the current instance contains in its vars other PhpEcho instance(s)
      * @var bool
      */
@@ -123,7 +123,7 @@ implements ArrayAccess
      */
     private PhpEcho $parent;
     /**
-     * If true then tke keys should never contain a space between words
+     * If true then the array keys should never contain a space between words
      * Each space will be transformed into a sub-array: 'abc def' => ['abc']['def']
      * @var bool
      */
@@ -188,7 +188,7 @@ implements ArrayAccess
         }
 
         if (self::isHelper($helper)) {
-            if (empty($this->bound_helpers)) {
+            if ($this->bound_helpers === []) {
                 $this->bindHelpersTo($this);
             }
             $helpers = $this->bound_helpers + self::$helpers;
@@ -298,7 +298,9 @@ implements ArrayAccess
      */
     public function getParam(string $name): mixed
     {
-        return $this->params[$name] ?? throw new InvalidArgumentException("unknown.parameter.{$name}");
+        return array_key_exists($name, $this->params)
+            ? $this->params[$name]
+            : throw new InvalidArgumentException("unknown.parameter.{$name}");
     }
 
     /**
@@ -328,7 +330,9 @@ implements ArrayAccess
      */
     public static function getGlobalParam(string $name): mixed
     {
-        return self::$global_params[$name] ?? throw new InvalidArgumentException("unknown.parameter.{$name}");
+        return array_key_exists($name, self::$global_params)
+            ? self::$global_params[$name]
+            : throw new InvalidArgumentException("unknown.parameter.{$name}");
     }
 
     /**
