@@ -580,6 +580,7 @@ implements ArrayAccess
 
     /**
      * @param array $helpers [name => Closure | name => [Closure, ...type]]
+     * @throws InvalidArgumentException
      */
     public static function addHelpers(array $helpers): void
     {
@@ -588,6 +589,8 @@ implements ArrayAccess
                 self::$helpers[$name] = $h;
             } elseif (is_array($h)) {
                 self::addHelper($name, array_shift($h), ...$h);
+            } else {
+                throw new InvalidArgumentException('invalid.argument.format');
             }
         }
     }
