@@ -101,7 +101,6 @@ implements ArrayAccess
     private array $params = [];
     private array $head = [];
     private string $head_token = '';
-    private bool $head_escape = true;
     /**
      * Partial file path to the external view file (from the template dir root)
      * @var string
@@ -220,11 +219,7 @@ implements ArrayAccess
         $this->render();
         $root = $this('root');
         if (($root === $this) && ( ! empty($this->head_token))) {
-            if ($this->head_escape) {
-                $head = implode('', $this('hsc', $this->head));
-            } else {
-                $head = implode('', $this->head);
-            }
+            $head = implode('', $this->head);
 
             return str_replace($this->head_token, $head, $this->code);
         } else {
@@ -845,14 +840,12 @@ implements ArrayAccess
     }
 
     /**
-     * @param bool $escape  If you don't want to escape the head, set it to false
      * @return string
      */
-    public function getHead(bool $escape): string
+    public function getHead(): string
     {
         // generate a token that will be replaced after rendering the whole HTML
         $this->head_token = self::getToken(26);
-        $this->head_escape = $escape;
 
         return $this->head_token;
     }
