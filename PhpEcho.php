@@ -7,7 +7,6 @@ namespace rawsrc\PhpEcho;
 use ArrayAccess;
 use BadMethodCallException;
 use Closure;
-
 use InvalidArgumentException;
 
 use function array_intersect;
@@ -791,19 +790,20 @@ implements ArrayAccess
      * @param string $path path from template dir root
      * @param array|null $vars
      * @param string $id
-     * @return self|null
+     * @return self
+     * @throws InvalidArgumentException
      */
-    public function renderByDefault(string $var_name, string $path, ?array $vars = null, string $id = ''): ?self
+    public function renderByDefault(string $var_name, string $path, ?array $vars = null, string $id = ''): self
     {
         if (isset($this->vars[$var_name])) {
             if ($this->vars[$var_name] instanceof self) {
                 return $this->vars[$var_name];
+            } else {
+                throw new InvalidArgumentException('default.view.must.be.a.PhpEcho.block');
             }
         } else {
             return $this->addBlock($var_name, $path, $vars, $id);
         }
-
-        return null;
     }
 
     /**
