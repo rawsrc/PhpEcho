@@ -877,7 +877,7 @@ implements ArrayAccess
                 include $this->file;
                 $this->code = ob_get_clean();
             } else {
-                // for security reasons we remove from the filepath the root path
+                // for security reasons we remove the root segment path from the full filepath
                 $tpl_file = ltrim($this->file, self::$template_dir_root);
                 throw new BadMethodCallException("unknown.template.file.{$tpl_file}");
             }
