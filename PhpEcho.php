@@ -191,7 +191,7 @@ implements ArrayAccess
 
         if (self::isHelper($helper)) {
             if (empty($this->bound_helpers)) {
-                $this->bound_helpers = self::bindHelpersTo($this);
+                $this->bindHelpersTo($this);
             }
             $helpers = $this->bound_helpers + self::$helpers;
             $hlp = $helpers[$helper];
@@ -686,17 +686,14 @@ implements ArrayAccess
      * Only for helpers bound to a class instance
      *
      * @param object $p
-     * @return array [helper's id => bound closure]
      */
-    private function bindHelpersTo(object $p): array
+    private function bindHelpersTo(object $p): void
     {
         $helpers = [];
         foreach (self::getHelpersByType([HELPER_BOUND_TO_CLASS_INSTANCE], false) as $name => $hlp) {
             $helpers[$name] = $hlp->bindTo($p, $p);
         }
         $this->bound_helpers = $helpers;
-
-        return $helpers;
     }
     //endregion
 
@@ -869,10 +866,10 @@ implements ArrayAccess
             if ($this->file === '') {
                 throw new BadMethodCallException('no.view.to.render');
             } else {
-                $filepath = self::getFullFilepath($this->file);
-                if (is_file($filepath)) {
+                $path = self::getFullFilepath($this->file);
+                if (is_file($path)) {
                     ob_start();
-                    include $filepath;
+                    include $path;
                     $this->code = ob_get_clean();
                 } else {
                     throw new BadMethodCallException("unknown.view.file.{$this->file}");
