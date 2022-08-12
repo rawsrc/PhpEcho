@@ -16,7 +16,6 @@ use function array_map;
 use function array_pop;
 use function array_push;
 use function array_shift;
-use function array_unshift;
 use function bin2hex;
 use function chr;
 use function count;
@@ -214,6 +213,7 @@ implements ArrayAccess
 
     /**
      * Magic method that returns a string instead of current instance of the class in a string context
+     * @throws BadMethodCallException
      */
     public function __toString(): string
     {
@@ -860,16 +860,19 @@ implements ArrayAccess
         return $this->head_token;
     }
 
+    /**
+     * @throws BadMethodCallException
+     */
     public function render(): void
     {
         if ($this->code === '') {
             if ($this->file === '') {
-                throw new BadMethodCallException("no.view.to.render");
+                throw new BadMethodCallException('no.view.to.render');
             } else {
-                $full_filepath = self::getFullFilepath($this->file);
-                if (is_file($full_filepath)) {
+                $filepath = self::getFullFilepath($this->file);
+                if (is_file($filepath)) {
                     ob_start();
-                    include $this->file;
+                    include $filepath;
                     $this->code = ob_get_clean();
                 } else {
                     throw new BadMethodCallException("unknown.view.file.{$this->file}");
