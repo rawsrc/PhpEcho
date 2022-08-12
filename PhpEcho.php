@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace rawsrc\PhpEcho;
 
 use ArrayAccess;
+use BadMethodCallException;
 use Closure;
 
 use InvalidArgumentException;
@@ -121,9 +122,9 @@ implements ArrayAccess
      */
     private bool $has_children = false;
     /**
-     * @var PhpEcho|null
+     * @var PhpEcho
      */
-    private ?PhpEcho $parent = null;
+    private PhpEcho $parent;
     /**
      * If true then tke keys should never contain a space between words
      * Each space will be transformed into a sub-array: 'abc def' => ['abc']['def']
@@ -824,7 +825,7 @@ implements ArrayAccess
      */
     public function hasParent(): bool
     {
-        return ($this->parent instanceof self);
+        return isset($this->parent);
     }
 
     /**
@@ -875,6 +876,10 @@ implements ArrayAccess
                 ob_start();
                 include $this->file;
                 $this->code = ob_get_clean();
+            } else {
+                // for security reasons we remove from the filepath the root path
+                $tpl_file = ltrim($this->file, self::$template_dir_root);
+                throw new BadMethodCallException("unknown.template.file.{$tpl_file}");
             }
         }
     }
