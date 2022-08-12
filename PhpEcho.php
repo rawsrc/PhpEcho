@@ -437,7 +437,7 @@ implements ArrayAccess
         } elseif (isset($this->vars[$offset])) {
             return $this->vars[$offset];
         } else {
-            return null;
+            throw new InvalidArgumentException("unknown.offset.{$offset}");
         }
     }
 

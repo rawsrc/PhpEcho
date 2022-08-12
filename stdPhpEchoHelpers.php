@@ -118,22 +118,7 @@ $helpers['hsc'] = [$hsc, HELPER_RETURN_ESCAPED_DATA];
  */
 $raw = function(string $key): mixed {
     /** @var PhpEcho $this */
-
-    if (isset($this->vars[$key])) {
-        return $this->vars[$key];
-    } else {
-        $keys = explode(' ', $key);
-        $cursor = $this->vars;
-        foreach ($keys as $k) {
-            if (isset($cursor[$k])) {
-                $cursor = $cursor[$k];
-            } else {
-                return null;
-            }
-        }
-
-        return $cursor;
-    }
+    return $this->getOffsetRawValue($key);
 };
 $helpers['raw'] = [$raw, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
 //endregion
