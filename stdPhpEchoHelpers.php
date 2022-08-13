@@ -85,7 +85,9 @@ $hsc_array = function(array $part) use (&$hsc_array, $to_escape): array {
  * @return array|string
  */
 $hsc = function(mixed $p) use ($hsc_array, $is_scalar): array|string {
-    if ($is_scalar($p)) {
+    if ($p instanceof PhpEcho) {
+        return $p;
+    } elseif ($is_scalar($p)) {
         return htmlspecialchars((string)$p, ENT_QUOTES, 'utf-8');
     } elseif (is_array($p)) {
         return $hsc_array($p);
@@ -111,6 +113,7 @@ PhpEcho::addHelper('hsc', $hsc, true);
  *
  * @param string $key
  * @return mixed
+ * @throws InvalidArgumentException
  */
 $raw = function(string $key): mixed {
     /** @var PhpEcho $this */
