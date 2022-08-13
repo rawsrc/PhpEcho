@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 use rawsrc\PhpEcho\PhpEcho;
 
-$helpers = [];
-
 //region STANDALONE HELPERS
 //region is_scalar
 /**
@@ -17,7 +15,7 @@ $helpers = [];
 $is_scalar = function(mixed $p): bool {
     return is_scalar($p) || (is_object($p) && method_exists($p, '__toString'));
 };
-$helpers['isScalar'] = [$is_scalar, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addHelper('isScalar', $is_scalar);
 //endregion
 
 //region to_escape
@@ -38,7 +36,7 @@ $to_escape = function(mixed $p): bool  {
         return true;
     }
 };
-$helpers['toEscape'] = [$to_escape, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addHelper('toEscape', $to_escape);
 //endregion
 
 //region hsc_array
@@ -95,7 +93,7 @@ $hsc = function(mixed $p) use ($hsc_array, $is_scalar): array|string {
         return '';
     }
 };
-$helpers['hsc'] = [$hsc, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addHelper('hsc', $hsc);
 //endregion
 //endregion
 
@@ -118,7 +116,7 @@ $raw = function(string $key): mixed {
     /** @var PhpEcho $this */
     return $this->getOffsetRawValue($key);
 };
-$helpers['raw'] = [$raw, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addBindableHelper('raw', $raw);
 //endregion
 
 //region key_up
@@ -168,7 +166,7 @@ $key_up = function(array|string $keys, bool $strict_match = true) use ($to_escap
         }
     }
 };
-$helpers['keyUp'] = [$key_up, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addBindableHelper('keyUp', $key_up);
 //endregion
 
 //region root
@@ -185,7 +183,7 @@ $root = function(): PhpEcho {
 
     return $block;
 };
-$helpers['root'] = [$root, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addBindableHelper('root', $root);
 //endregion
 
 //region root_var
@@ -225,7 +223,7 @@ $root_var = function(array|string $keys) use ($to_escape, $hsc): mixed {
         }
     }
 };
-$helpers['rootVar'] = [$root_var, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addBindableHelper('rootVar', $root_var);
 //endregion
 
 //region seek_param
@@ -248,7 +246,7 @@ $seek_param = function(string $name) {
         }
     }
 };
-$helpers['seekParam'] = [$seek_param, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addBindableHelper('seekParam', $seek_param);
 //endregion
 //endregion
 
@@ -265,7 +263,7 @@ $helpers['seekParam'] = [$seek_param, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RET
 $selected = function(mixed $p, mixed $ref) use ($is_scalar): string {
     return $is_scalar($p) && $is_scalar($ref) && ((string)$p === (string)$ref) ? ' selected ' : '';
 };
-$helpers['selected'] = [$selected, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addHelper('selected', $selected);
 //endregion
 
 //region checked
@@ -280,7 +278,7 @@ $helpers['selected'] = [$selected, HELPER_RETURN_ESCAPED_DATA];
 $checked = function(mixed $p, mixed $ref) use ($is_scalar): string {
     return $is_scalar($p) && $is_scalar($ref) && ((string)$p === (string)$ref) ? ' checked ' : '';
 };
-$helpers['checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addHelper('checked', $checked);
 //endregion
 
 //region attribute
@@ -318,7 +316,7 @@ $attributes = function(array $p): string {
 
     return implode(' ', $data);
 };
-$helpers['attributes'] = [$attributes, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addHelper('attributes', $attributes);
 //endregion
 
 //region void_tag
@@ -338,7 +336,7 @@ $void_tag = function(string $tag, array $attr = []) use ($attributes): string {
 
     return "<{$tag}{$str}>";
 };
-$helpers['voidTag'] = [$void_tag, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addHelper('voidTag', $void_tag);
 //endregion
 
 //region tag
@@ -361,7 +359,7 @@ $tag = function(string $tag, string $content, array $attr = []) use ($void_tag, 
 
     return $void_tag($tag, $attr).$content."</{$tag}>";
 };
-$helpers['tag'] = [$tag, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addHelper('tag', $tag);
 //endregion
 
 //region link
@@ -380,7 +378,7 @@ $link = function(array $p) use ($void_tag): string {
         return $void_tag('link', $p);
     }
 };
-$helpers['link'] = [$link, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addHelper('link', $link);
 //endregion
 
 //region style
@@ -413,7 +411,7 @@ $style = function(array $p) use ($tag, $link): string {
 
     return $tag('style', $code, $attr + $p);
 };
-$helpers['style'] = [$style, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addHelper('style', $style);
 //endregion
 
 //region script
@@ -440,9 +438,6 @@ $script = function(array $p) use ($tag): string {
 
     return $tag('script', $code, $p);
 };
-$helpers['script'] = [$script, HELPER_RETURN_ESCAPED_DATA];
+PhpEcho::addHelper('script', $script);
 //endregion
 //endregion
-
-// return the array of helpers to PhpEcho
-return $helpers;

@@ -9,7 +9,6 @@ use BadMethodCallException;
 use Closure;
 use InvalidArgumentException;
 
-use function array_intersect;
 use function array_key_exists;
 use function array_map;
 use function array_pop;
@@ -18,11 +17,8 @@ use function array_shift;
 use function bin2hex;
 use function chr;
 use function count;
-use function define;
-use function defined;
 use function explode;
 use function implode;
-use function in_array;
 use function is_array;
 use function is_file;
 use function is_string;
@@ -35,16 +31,7 @@ use function str_replace;
 use function str_shuffle;
 use function substr;
 
-if ( ! defined('HELPER_BOUND_TO_CLASS_INSTANCE')) {
-    define('HELPER_BOUND_TO_CLASS_INSTANCE', 1);
-}
-if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
-    define('HELPER_RETURN_ESCAPED_DATA', 2);
-}
-
 use const DIRECTORY_SEPARATOR;
-use const HELPER_RETURN_ESCAPED_DATA;
-use const HELPER_BOUND_TO_CLASS_INSTANCE;
 
 /**
  * PhpEcho : Native PHP Template engine: One class to rule them all ;-)
@@ -52,7 +39,7 @@ use const HELPER_BOUND_TO_CLASS_INSTANCE;
  * @author      rawsrc
  * @copyright   MIT License
  *
- *              Copyright (c) 2020-2021 rawsrc
+ *              Copyright (c) 2020-2022 rawsrc
  *
  *              Permission is hereby granted, free of charge, to any person obtaining a copy
  *              of this software and associated documentation files (the "Software"), to deal
@@ -94,6 +81,7 @@ class PhpEcho
 implements ArrayAccess
 {
     private const ALPHA_NUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+    private const TOKEN_MIN_LENGTH = 16;
 
     private string $id = '';
     private array $vars = [];
@@ -137,9 +125,14 @@ implements ArrayAccess
      */
     private static array $helpers = [];
     /**
-     * @var array [helper's name => [type]]
+     * Array of helpers to bind to the class instance
+     * @var array [helper's name => true]
      */
-    private static array $helpers_types = [];
+    private static array $bindable_helpers = [];
+    /**
+     * @var array [helper's name => true]
+     */
+    private static array $helpers_result_escaped = [];
     /**
      * Used tokens
      * @var array [token => true]
@@ -195,15 +188,17 @@ implements ArrayAccess
             $hlp = $helpers[$helper];
             $result = $hlp(...$args);
 
-            if ($result === null) {
-                return null;
-            } elseif (self::isHelperOfType($helper, HELPER_RETURN_ESCAPED_DATA)) {
-                return $result;
-            } else {
-                // being in a HTML context: in any case, the returned data should be escaped
-                // if you don't want so, use the specific helper 'raw'
-                return $this('hsc', $result);
+            if ($this('toEscape', $result)) {
+                if (is_string($result)) {
+                    if (self::isHelperResultEscaped($helper)) {
+                        return $result;
+                    } else {
+                        return $this('hsc', $result);
+                    }
+                }
             }
+
+            return $result;
         } else {
             throw new InvalidArgumentException("unknown.helper.{$helper}");
         }
@@ -553,9 +548,9 @@ implements ArrayAccess
      * @param int $length min = 12 chars
      * @return string
      */
-    public static function getToken(int $length = 12): string
+    public static function getToken(int $length = self::TOKEN_MIN_LENGTH): string
     {
-        $length = max(12, $length);
+        $length = max(self::TOKEN_MIN_LENGTH, $length);
         do {
             $token = substr(str_shuffle(self::ALPHA_NUM.mt_rand(100000000, 999999999)), 0, $length);
         } while (isset(self::$tokens[$token]));
@@ -568,52 +563,50 @@ implements ArrayAccess
     /**
      * @param string $name
      * @param Closure $helper
-     * @param int ...$types  HELPER_BOUND_TO_CLASS_INSTANCE HELPER_RETURN_ESCAPED_DATA
+     * @param bool $result_escaped
      */
-    public static function addHelper(string $name, Closure $helper, int ...$types): void
+    public static function addHelper(string $name, Closure $helper, bool $result_escaped = false): void
     {
         self::$helpers[$name] = $helper;
-        foreach ($types as $t) {
-            self::$helpers_types[$name][] = $t;
+        if ($result_escaped) {
+            self::$helpers_result_escaped[] = $name;
         }
     }
 
     /**
-     * @param array $helpers [name => Closure | name => [Closure, ...type]]
-     * @throws InvalidArgumentException
+     * @param string $name
+     * @param Closure $helper
+     * @param bool $result_escaped
      */
-    public static function addHelpers(array $helpers): void
+    public static function addBindableHelper(string $name, Closure $helper, bool $result_escaped = false): void
     {
-        foreach ($helpers as $name => $h) {
-            if ($h instanceof Closure) {
-                self::$helpers[$name] = $h;
-            } elseif (is_array($h)) {
-                self::addHelper($name, array_shift($h), ...$h);
-            } else {
-                throw new InvalidArgumentException('invalid.argument.format');
-            }
+        self::$bindable_helpers[$name] = $helper;
+        if ($result_escaped) {
+            self::$helpers_result_escaped[] = $name;
         }
     }
 
     /**
      * Inject the helpers from a file
-     * @param string $path
+     * @param string $path full path file from the root
      */
     public static function injectHelpers(string $path): void
     {
         if (is_file($path)) {
-            self::addHelpers(include $path);
+            include $path;
+        } else {
+            throw new InvalidArgumentException("helpers.file.not.found.{$path}");
         }
     }
 
     /**
-     * @param string $helper_name
+     * @param string $name
      * @return Closure
      * @throws InvalidArgumentException
      */
-    public static function getHelper(string $helper_name): Closure
+    public static function getHelper(string $name): Closure
     {
-        return self::$helpers[$helper_name] ?? throw new InvalidArgumentException("unknown.helper.{$helper_name}");
+        return self::$helpers[$name] ?? throw new InvalidArgumentException("unknown.helper.{$name}");
     }
 
     /**
@@ -625,61 +618,34 @@ implements ArrayAccess
     }
 
     /**
-     * @param string $helper_name
-     * @return array [int]
-     * @throws InvalidArgumentException
-     */
-    public static function getHelperTypes(string $helper_name): array
-    {
-        self::getHelper($helper_name);
-
-        return self::$helpers_types[$helper_name] ?? [];
-    }
-
-    /**
-     * @param string $helper_name
+     * @param string $name
      * @return bool
      */
-    public static function isHelper(string $helper_name): bool
+    public static function isHelper(string $name): bool
     {
-        return isset(self::$helpers[$helper_name]);
+        return isset(self::$helpers[$name]);
     }
 
     /**
-     * Check if the helper has the defined type
+     * @param string $name
+     * @return bool
+     */
+    public static function isHelperResultEscaped(string $name): bool
+    {
+        return isset(self::$helpers[$name])
+            ? isset(self::$helpers_result_escaped[$name])
+            : throw new InvalidArgumentException("unknown.helper.{$name}");
+    }
+
+    /**
+     * Check if the helper must be bound to a class instance
      *
-     * @param string $helper_name
-     * @param int $type
+     * @param string $name
      * @return bool
-     * @throws InvalidArgumentException
      */
-    public static function isHelperOfType(string $helper_name, int $type): bool
+    public static function isBindableHelper(string $name): bool
     {
-        return in_array($type, self::getHelperTypes($helper_name));
-    }
-
-    /**
-     * @param array $type array of types [type]
-     * @param bool $strict when matched, check if the helper has only the asked types
-     * @return array [helper's name => closure]
-     */
-    public static function getHelpersByType(array $type, bool $strict = false): array
-    {
-        $data = [];
-        foreach (self::$helpers_types as $name => $v) {
-            $intersect = array_intersect($type, $v);
-            if (( ! empty($intersect)) && (count($type) === count($intersect))) {
-                if ($strict) {
-                    if  (count($type) === count($v)) {
-                        $data[$name] = self::$helpers[$name];
-                    }
-                } else {
-                    $data[$name] = self::$helpers[$name];
-                }
-            }
-        }
-
-        return $data;
+        return isset(self::$bindable_helpers[$name]);
     }
 
     /**
@@ -691,7 +657,7 @@ implements ArrayAccess
     private function bindHelpersTo(object $p): void
     {
         $helpers = [];
-        foreach (self::getHelpersByType([HELPER_BOUND_TO_CLASS_INSTANCE], false) as $name => $hlp) {
+        foreach (self::$bindable_helpers as $name => $hlp) {
             $helpers[$name] = $hlp->bindTo($p, $p);
         }
         $this->bound_helpers = $helpers;
