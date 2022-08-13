@@ -803,6 +803,8 @@ implements ArrayAccess
             $helper = array_shift($args);
             if (self::isHelper($helper)) {
                 $root->head[] = $this($helper, ...$args);
+            } else {
+                throw new InvalidArgumentException("unknown.helper.{$helper}");
             }
         }
     }
