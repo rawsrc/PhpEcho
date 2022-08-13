@@ -144,7 +144,6 @@ implements ArrayAccess
     private static array $global_params = [];
 
     //region MAGIC METHODS
-
     /**
      * @param string $file path from the template dir root
      * @param array $vars
@@ -202,6 +201,17 @@ implements ArrayAccess
         } else {
             throw new InvalidArgumentException("unknown.helper.{$helper}");
         }
+    }
+
+    /**
+     * @param string $name
+     * @param array $arguments
+     * @return mixed
+     * @throws InvalidArgumentException
+     */
+    public function __call(string $name, array $arguments): mixed
+    {
+        return $this->__invoke($name, ...$arguments);
     }
 
     /**
@@ -347,8 +357,8 @@ implements ArrayAccess
     {
         $this->id = chr(mt_rand(97, 122)).bin2hex(random_bytes(4));
     }
-
     //region ARRAY ACCESS
+
     /**
      * If "support the space notation for array and sub-arrays" is activated then
      * if $offset = 'abc def' then the engine will search for the key in $vars['abc']['def']
@@ -486,7 +496,6 @@ implements ArrayAccess
 
         $this->vars[$offset] = $value;
     }
-
     /**
      * If "support the space notation for array and sub-arrays" is activated then
      * if $offset = 'abc def' then the engine will unset the key in $vars['abc']['def']
@@ -521,28 +530,9 @@ implements ArrayAccess
             throw new InvalidArgumentException("unknown.offset.{$offset}");
         }
     }
+
     //endregion
-
     //region HELPER ZONE
-    /**
-     * @param string $name
-     * @param array $arguments
-     * @return mixed
-     * @throws InvalidArgumentException
-     */
-    public function __call(string $name, array $arguments): mixed
-    {
-        if (isset(self::$helpers[$name])) {
-            return $this->__invoke($name, ...$arguments);
-        } else {
-            throw new InvalidArgumentException("unknown.helper.{$name}");
-        }
-    }
-
-    public static function injectStandardHelpers(): void
-    {
-        self::injectHelpers(__DIR__.DIRECTORY_SEPARATOR.'stdPhpEchoHelpers.php');
-    }
 
     /**
      * @param int $length min = 12 chars
@@ -558,6 +548,24 @@ implements ArrayAccess
         self::$tokens[$token] = true;
 
         return $token;
+    }
+
+    public static function injectStandardHelpers(): void
+    {
+        self::injectHelpers(__DIR__.DIRECTORY_SEPARATOR.'stdPhpEchoHelpers.php');
+    }
+
+    /**
+     * Inject the helpers from a file
+     * @param string $path full path file from the root
+     */
+    public static function injectHelpers(string $path): void
+    {
+        if (is_file($path)) {
+            include $path;
+        } else {
+            throw new InvalidArgumentException("helpers.file.not.found.{$path}");
+        }
     }
 
     /**
@@ -583,19 +591,6 @@ implements ArrayAccess
         self::$bindable_helpers[$name] = $helper;
         if ($result_escaped) {
             self::$helpers_result_escaped[] = $name;
-        }
-    }
-
-    /**
-     * Inject the helpers from a file
-     * @param string $path full path file from the root
-     */
-    public static function injectHelpers(string $path): void
-    {
-        if (is_file($path)) {
-            include $path;
-        } else {
-            throw new InvalidArgumentException("helpers.file.not.found.{$path}");
         }
     }
 
