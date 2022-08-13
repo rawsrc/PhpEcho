@@ -16,7 +16,7 @@ $is_scalar = function(mixed $p): bool {
     return is_scalar($p) || (is_object($p) && method_exists($p, '__toString'));
 };
 PhpEcho::addHelper('isScalar', $is_scalar);
-//endregion
+//endregion is_scalar
 
 //region to_escape
 /**
@@ -37,7 +37,7 @@ $to_escape = function(mixed $p): bool  {
     }
 };
 PhpEcho::addHelper('toEscape', $to_escape);
-//endregion
+//endregion to_escape
 
 //region hsc_array
 /**
@@ -69,7 +69,7 @@ $hsc_array = function(array $part) use (&$hsc_array, $to_escape): array {
 
     return $data;
 };
-//endregion
+//endregion hsc_array
 
 //region hsc
 /**
@@ -93,11 +93,11 @@ $hsc = function(mixed $p) use ($hsc_array, $is_scalar): array|string {
         return '';
     }
 };
-PhpEcho::addHelper('hsc', $hsc);
-//endregion
-//endregion
+PhpEcho::addHelper('hsc', $hsc, true);
+//endregion hsc
+//endregion STANDALONE HELPERS
 
-//region PHPECHO INSTANCE HELPERS
+//region BINDABLE HELPERS
 //region raw
 /**
  * Return the raw value from the key in parameter
@@ -116,8 +116,8 @@ $raw = function(string $key): mixed {
     /** @var PhpEcho $this */
     return $this->getOffsetRawValue($key);
 };
-PhpEcho::addBindableHelper('raw', $raw);
-//endregion
+PhpEcho::addBindableHelper('raw', $raw, true);
+//endregion raw
 
 //region key_up
 /**
@@ -166,8 +166,8 @@ $key_up = function(array|string $keys, bool $strict_match = true) use ($to_escap
         }
     }
 };
-PhpEcho::addBindableHelper('keyUp', $key_up);
-//endregion
+PhpEcho::addBindableHelper('keyUp', $key_up, true);
+//endregion key_up
 
 //region root
 /**
@@ -184,7 +184,7 @@ $root = function(): PhpEcho {
     return $block;
 };
 PhpEcho::addBindableHelper('root', $root);
-//endregion
+//endregion root
 
 //region root_var
 /**
@@ -223,8 +223,8 @@ $root_var = function(array|string $keys) use ($to_escape, $hsc): mixed {
         }
     }
 };
-PhpEcho::addBindableHelper('rootVar', $root_var);
-//endregion
+PhpEcho::addBindableHelper('rootVar', $root_var, true);
+//endregion root_var
 
 //region seek_param
 /**
@@ -233,7 +233,7 @@ PhpEcho::addBindableHelper('rootVar', $root_var);
  * @param string $name
  * @return null
  */
-$seek_param = function(string $name) {
+$seek_param = function(string $name): mixed {
     /** @var PhpEcho $block */
     $block = $this;
     while (true) {
@@ -246,9 +246,9 @@ $seek_param = function(string $name) {
         }
     }
 };
-PhpEcho::addBindableHelper('seekParam', $seek_param);
-//endregion
-//endregion
+PhpEcho::addBindableHelper('seekParam', $seek_param, true);
+//endregion seek_param
+//endregion BINDABLE HELPERS
 
 //region HTML HELPERS
 //region selected
@@ -263,8 +263,8 @@ PhpEcho::addBindableHelper('seekParam', $seek_param);
 $selected = function(mixed $p, mixed $ref) use ($is_scalar): string {
     return $is_scalar($p) && $is_scalar($ref) && ((string)$p === (string)$ref) ? ' selected ' : '';
 };
-PhpEcho::addHelper('selected', $selected);
-//endregion
+PhpEcho::addHelper('selected', $selected, true);
+//endregion selected
 
 //region checked
 /**
@@ -278,8 +278,8 @@ PhpEcho::addHelper('selected', $selected);
 $checked = function(mixed $p, mixed $ref) use ($is_scalar): string {
     return $is_scalar($p) && $is_scalar($ref) && ((string)$p === (string)$ref) ? ' checked ' : '';
 };
-PhpEcho::addHelper('checked', $checked);
-//endregion
+PhpEcho::addHelper('checked', $checked, true);
+//endregion checked
 
 //region attribute
 /**
@@ -316,8 +316,8 @@ $attributes = function(array $p): string {
 
     return implode(' ', $data);
 };
-PhpEcho::addHelper('attributes', $attributes);
-//endregion
+PhpEcho::addHelper('attributes', $attributes, true);
+//endregion attribute
 
 //region void_tag
 /**
@@ -336,8 +336,8 @@ $void_tag = function(string $tag, array $attr = []) use ($attributes): string {
 
     return "<{$tag}{$str}>";
 };
-PhpEcho::addHelper('voidTag', $void_tag);
-//endregion
+PhpEcho::addHelper('voidTag', $void_tag, true);
+//endregion void_tag
 
 //region tag
 /**
@@ -359,8 +359,8 @@ $tag = function(string $tag, string $content, array $attr = []) use ($void_tag, 
 
     return $void_tag($tag, $attr).$content."</{$tag}>";
 };
-PhpEcho::addHelper('tag', $tag);
-//endregion
+PhpEcho::addHelper('tag', $tag, true);
+//endregion tag
 
 //region link
 /**
@@ -378,8 +378,8 @@ $link = function(array $p) use ($void_tag): string {
         return $void_tag('link', $p);
     }
 };
-PhpEcho::addHelper('link', $link);
-//endregion
+PhpEcho::addHelper('link', $link, true);
+//endregion link
 
 //region style
 /**
@@ -411,8 +411,8 @@ $style = function(array $p) use ($tag, $link): string {
 
     return $tag('style', $code, $attr + $p);
 };
-PhpEcho::addHelper('style', $style);
-//endregion
+PhpEcho::addHelper('style', $style, true);
+//endregion style
 
 //region script
 /**
@@ -438,6 +438,6 @@ $script = function(array $p) use ($tag): string {
 
     return $tag('script', $code, $p);
 };
-PhpEcho::addHelper('script', $script);
-//endregion
-//endregion
+PhpEcho::addHelper('script', $script, true);
+//endregion script
+//endregion HTML HELPERS

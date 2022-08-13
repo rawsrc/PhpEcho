@@ -125,7 +125,7 @@ implements ArrayAccess
      */
     private static array $helpers = [];
     /**
-     * Array of helpers to bind to the class instance
+     * Array of bindable helpers to the class instance
      * @var array [helper's name => true]
      */
     private static array $bindable_helpers = [];
@@ -357,8 +357,8 @@ implements ArrayAccess
     {
         $this->id = chr(mt_rand(97, 122)).bin2hex(random_bytes(4));
     }
-    //region ARRAY ACCESS
 
+    //region ARRAY ACCESS
     /**
      * If "support the space notation for array and sub-arrays" is activated then
      * if $offset = 'abc def' then the engine will search for the key in $vars['abc']['def']
@@ -496,6 +496,7 @@ implements ArrayAccess
 
         $this->vars[$offset] = $value;
     }
+
     /**
      * If "support the space notation for array and sub-arrays" is activated then
      * if $offset = 'abc def' then the engine will unset the key in $vars['abc']['def']
@@ -530,10 +531,9 @@ implements ArrayAccess
             throw new InvalidArgumentException("unknown.offset.{$offset}");
         }
     }
+    //endregion ARRAY ACCESS
 
-    //endregion
     //region HELPER ZONE
-
     /**
      * @param int $length min = 12 chars
      * @return string
@@ -638,7 +638,7 @@ implements ArrayAccess
      * @param string $name
      * @return bool
      */
-    public static function isBindableHelper(string $name): bool
+    public static function isHelperBindable(string $name): bool
     {
         return isset(self::$bindable_helpers[$name]);
     }
@@ -657,7 +657,7 @@ implements ArrayAccess
         }
         $this->bound_helpers = $helpers;
     }
-    //endregion
+    //endregion HELPER ZONE
 
     /**
      * @param mixed $p
@@ -767,7 +767,7 @@ implements ArrayAccess
             if ($this->vars[$var_name] instanceof self) {
                 return $this->vars[$var_name];
             } else {
-                throw new InvalidArgumentException('default.view.must.be.a.PhpEcho.block');
+                throw new InvalidArgumentException('a.partial.view.must.be.a.PhpEcho.block');
             }
         } else {
             return $this->addBlock($var_name, $path, $vars, $id);
@@ -824,9 +824,7 @@ implements ArrayAccess
     public function render(): void
     {
         if ($this->code === '') {
-            if ($this->file === '') {
-                throw new BadMethodCallException('no.view.to.render');
-            } else {
+            if ($this->file !== '') {
                 $path = self::getFullFilepath($this->file);
                 if (is_file($path)) {
                     ob_start();
@@ -835,6 +833,8 @@ implements ArrayAccess
                 } else {
                     throw new BadMethodCallException("unknown.view.file.{$this->file}");
                 }
+            } else {
+                throw new BadMethodCallException('no.view.to.render');
             }
         }
     }
