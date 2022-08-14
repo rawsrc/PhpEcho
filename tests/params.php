@@ -95,7 +95,3 @@ $pilot->run(
 );
 $pilot->assertIsBool();
 $pilot->assertEqual(true);
-
-
-
-
