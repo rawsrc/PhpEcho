@@ -247,6 +247,14 @@ implements ArrayAccess
     }
 
     /**
+     * @return string
+     */
+    public function getFilepath(): string
+    {
+        return $this->file;
+    }
+
+    /**
      * @param bool $p
      */
     public static function setUseSpaceNotation(bool $p): void
