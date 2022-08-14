@@ -15,7 +15,7 @@ use rawsrc\PhpEcho\PhpEcho;
 $is_scalar = function(mixed $p): bool {
     return is_scalar($p) || (is_object($p) && method_exists($p, '__toString'));
 };
-PhpEcho::addHelper('isScalar', $is_scalar);
+PhpEcho::addHelper('isScalar', $is_scalar, true);
 //endregion is_scalar
 
 //region to_escape
