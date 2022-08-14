@@ -52,3 +52,21 @@ $pilot->run(
 );
 $pilot->assertIsString();
 $pilot->assertEqual('xxx');
+
+$block['klm'] = 12;
+$pilot->run(
+    id: 'core_006',
+    test: fn() => $block['klm'],
+    description: 'for non string values, check data type preservation (int)'
+);
+$pilot->assertIsInt();
+$pilot->assertEqual(12);
+
+$block['klm'] = true;
+$pilot->run(
+    id: 'core_007',
+    test: fn() => $block['klm'],
+    description: 'for non string values, check data type preservation (bool)'
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(true);

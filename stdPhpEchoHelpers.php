@@ -36,7 +36,7 @@ $to_escape = function(mixed $p): bool  {
         return true;
     }
 };
-PhpEcho::addHelper('toEscape', $to_escape);
+PhpEcho::addHelper('toEscape', $to_escape, true);
 //endregion to_escape
 
 //region hsc_array
