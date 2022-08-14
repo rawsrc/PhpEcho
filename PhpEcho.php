@@ -179,7 +179,7 @@ implements ArrayAccess
             throw new InvalidArgumentException('helper.cannot.be.empty');
         }
 
-        if (self::isHelper($helper)) {
+        if (self::isHelper($helper, true)) {
             if ($this->bound_helpers === []) {
                 $this->bindHelpersTo($this);
             }
@@ -198,8 +198,6 @@ implements ArrayAccess
             }
 
             return $result;
-        } else {
-            throw new InvalidArgumentException("unknown.helper.{$helper}");
         }
     }
 
@@ -601,7 +599,9 @@ implements ArrayAccess
      */
     public static function getHelper(string $name): Closure
     {
-        return self::$helpers[$name] ?? throw new InvalidArgumentException("unknown.helper.{$name}");
+        if (self::isHelper($name, true)) {
+            return self::$helpers[$name];
+        }
     }
 
     /**
@@ -614,22 +614,27 @@ implements ArrayAccess
 
     /**
      * @param string $name
+     * @param bool $throw_if_not
      * @return bool
+     * @throws InvalidArgumentException
      */
-    public static function isHelper(string $name): bool
+    public static function isHelper(string $name, bool $throw_if_not = false): bool
     {
-        return isset(self::$helpers[$name]);
+        if (isset(self::$helpers[$name])) {
+            return true;
+        } else {
+            return $throw_if_not ? throw new InvalidArgumentException("unknown.helper.{$name}") : false;
+        }
     }
 
     /**
      * @param string $name
      * @return bool
+     * @throws InvalidArgumentException
      */
     public static function isHelperResultEscaped(string $name): bool
     {
-        return isset(self::$helpers[$name])
-            ? isset(self::$helpers_result_escaped[$name])
-            : throw new InvalidArgumentException("unknown.helper.{$name}");
+        return self::isHelper($name, true) && isset(self::$helpers_result_escaped[$name]);
     }
 
     /**
@@ -637,10 +642,11 @@ implements ArrayAccess
      *
      * @param string $name
      * @return bool
+     * @throws InvalidArgumentException
      */
     public static function isHelperBindable(string $name): bool
     {
-        return isset(self::$bindable_helpers[$name]);
+        return self::isHelper($name, true) && isset(self::$bindable_helpers[$name]);
     }
 
     /**
@@ -801,10 +807,8 @@ implements ArrayAccess
         } elseif ($nb >= 2) {
             // the first param should be a helper
             $helper = array_shift($args);
-            if (self::isHelper($helper)) {
+            if (self::isHelper($helper, true)) {
                 $root->head[] = $this($helper, ...$args);
-            } else {
-                throw new InvalidArgumentException("unknown.helper.{$helper}");
             }
         }
     }
