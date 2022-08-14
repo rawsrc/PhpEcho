@@ -187,12 +187,8 @@ implements ArrayAccess
             $hlp = $helpers[$helper];
             $result = $hlp(...$args);
 
-            if (is_string($result) && ($helper !== 'hsc')) {
-                if (self::isHelperResultEscaped($helper)) {
-                    return $result;
-                } else {
-                    return $this('hsc', $result);
-                }
+            if (is_string($result) && ( ! self::isHelperResultEscaped($helper))) {
+                return $this('hsc', $result);
             }
 
             return $result;
@@ -581,7 +577,7 @@ implements ArrayAccess
     {
         self::$helpers[$name] = $helper;
         if ($result_escaped) {
-            self::$helpers_result_escaped[] = $name;
+            self::$helpers_result_escaped[$name] = true;
         }
     }
 
