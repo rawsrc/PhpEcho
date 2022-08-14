@@ -26,5 +26,6 @@ include 'filepath.php';
 include 'params.php';
 include 'helpers.php';
 //include 'stdHelpers.php';
+include 'core.php';
 
 $pilot->createReport();

@@ -33,7 +33,7 @@ $pilot->assertIsInstanceOf(Closure::class);
 $basic_helper = $pilot->getRunner()->getResult();
 
 $pilot->run(
-    id: 'helper_004',
+    id: 'helpers_004',
     test: fn() => $basic_helper() === 'foo_bar_helper_result',
     description: 'control the value returned by the helper created on the fly'
 );
@@ -56,7 +56,7 @@ $pilot->assertIsInstanceOf(Closure::class);
 $basic_helper = $pilot->getRunner()->getResult();
 
 $pilot->run(
-    id: 'helper_007',
+    id: 'helpers_007',
     test: fn() => $basic_helper() === 'foo_bar_helper_result_new',
     description: 'control the value returned by the redefined helper on the fly'
 );

@@ -187,13 +187,11 @@ implements ArrayAccess
             $hlp = $helpers[$helper];
             $result = $hlp(...$args);
 
-            if ($this('toEscape', $result)) {
-                if (is_string($result)) {
-                    if (self::isHelperResultEscaped($helper)) {
-                        return $result;
-                    } else {
-                        return $this('hsc', $result);
-                    }
+            if (is_string($result) && ($helper !== 'hsc')) {
+                if (self::isHelperResultEscaped($helper)) {
+                    return $result;
+                } else {
+                    return $this('hsc', $result);
                 }
             }
 
