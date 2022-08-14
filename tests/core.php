@@ -70,3 +70,29 @@ $pilot->run(
 );
 $pilot->assertIsBool();
 $pilot->assertEqual(true);
+
+$block['klm'] = new stdClass();
+$pilot->run(
+    id: 'core_008',
+    test: fn() => $block['klm'],
+    description: 'for non string values, check data type preservation (object without __toString)'
+);
+$pilot->assertIsObject();
+$pilot->assertIsInstanceOf(stdClass::class);
+
+class Foo {
+    public function __toString(): string
+    {
+        return 'abc " < >';
+    }
+}
+
+$block['klm'] = new Foo();
+$pilot->run(
+    id: 'core_009',
+    test: fn() => $block['klm'],
+    description: 'for non string values, object with __toString is assimilated to as string and escaped'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('abc &quot; &lt; &gt;');
+
