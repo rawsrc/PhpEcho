@@ -591,7 +591,7 @@ implements ArrayAccess
         self::$helpers[$name] = $helper;
         self::$bindable_helpers[$name] = true;
         if ($result_escaped) {
-            self::$helpers_result_escaped[] = $name;
+            self::$helpers_result_escaped[$name] = true;
         }
     }
 
