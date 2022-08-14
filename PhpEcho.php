@@ -586,7 +586,8 @@ implements ArrayAccess
      */
     public static function addBindableHelper(string $name, Closure $helper, bool $result_escaped = false): void
     {
-        self::$bindable_helpers[$name] = $helper;
+        self::$helpers[$name] = $helper;
+        self::$bindable_helpers[$name] = true;
         if ($result_escaped) {
             self::$helpers_result_escaped[] = $name;
         }
@@ -658,7 +659,8 @@ implements ArrayAccess
     private function bindHelpersTo(object $p): void
     {
         $helpers = [];
-        foreach (self::$bindable_helpers as $name => $hlp) {
+        foreach (array_keys(self::$bindable_helpers) as $name) {
+            $hlp = self::$helpers[$name];
             $helpers[$name] = $hlp->bindTo($p, $p);
         }
         $this->bound_helpers = $helpers;
