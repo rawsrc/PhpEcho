@@ -78,3 +78,22 @@ $pilot->assertEqual([
         '&gt;' => '&gt;',
     ],
 ]);
+
+$block['foo'] = $data;
+$pilot->run(
+    id: 'stdHelpers_007',
+    test: fn() => $block['foo'],
+    description: 'data extracting and escaping from the instance read as an array and sub-array (keys + values)'
+);
+$pilot->assertIsArray();
+$pilot->assertEqual([
+    'abc' => 'abc',
+    '&quot;' => '&quot;',
+    '&lt;' => '&lt;',
+    '&gt;' => '&gt;',
+    'def' => [
+        '&quot;' => '&quot;',
+        '&lt;' => '&lt;',
+        '&gt;' => '&gt;',
+    ],
+]);
