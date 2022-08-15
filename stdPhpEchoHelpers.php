@@ -294,20 +294,24 @@ PhpEcho::addHelper('checked', $checked, true);
  *  - 2 => "selected" => will render selected
  *
  * @param array $p [attribute_name => value]
+ * @param bool $escape_url for href or src attributes
  * @return string
  */
-$attributes = function(array $p): string {
+$attributes = function(array $p, bool $escape_url = true): string {
     $data = [];
     foreach ($p as $attr => $value) {
         if (is_int($attr)) {
             $data[] = $value;
         } elseif ($value !== '') {
             $str = null;
-            // consider that href or src are already escaped
             if (in_array($attr, ['href', 'src'], true)) {
-                $str = $value;
-                // intercept js for DOMEvent : starting with onXXX
+                if ($escape_url) {
+                    $str = htmlspecialchars($value, ENT_QUOTES, 'utf-8');
+                } else {
+                    $str = $value;
+                }
             } elseif (mb_substr($attr, 0, 2, 'utf-8') === 'on') {
+                // intercept js for DOMEvent : starting with onXXX
                 $str = str_replace('"', '&quot;', $value);
             } elseif (ctype_alpha($attr) || (mb_substr($attr, 0, 5) === 'data-')) {
                 $str = htmlspecialchars($value, ENT_QUOTES, 'utf-8');
