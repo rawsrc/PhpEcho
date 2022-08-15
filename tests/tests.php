@@ -25,7 +25,7 @@ $pilot->addResource('filepath', fn(string $p): string => str_replace(' ', DIRECT
 include 'filepath.php';
 include 'params.php';
 include 'helpers.php';
-//include 'stdHelpers.php';
+include 'stdHelpers.php';
 include 'core.php';
 
 $pilot->createReport();

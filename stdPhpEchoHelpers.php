@@ -54,13 +54,14 @@ PhpEcho::addHelper('toEscape', $to_escape, true);
  */
 $hsc_array = function(array $part) use (&$hsc_array, $to_escape): array {
     $data = [];
+    $hsc = fn($p) => htmlspecialchars((string)$p, ENT_QUOTES, 'utf-8');
     foreach ($part as $k => $v) {
-        $sk = htmlspecialchars((string)$k, ENT_QUOTES, 'utf-8');
+        $sk = $hsc($k);
         if ($to_escape($v)) {
             if (is_array($v)) {
                 $data[$sk] = $hsc_array($v);
             } else {
-                $data[$sk] = htmlspecialchars((string)$v, ENT_QUOTES, 'utf-8');
+                $data[$sk] = $hsc($v);
             }
         } else {
             $data[$sk] = $v;

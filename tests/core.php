@@ -91,7 +91,7 @@ $block['klm'] = new Foo();
 $pilot->run(
     id: 'core_009',
     test: fn() => $block['klm'],
-    description: 'for non string values, object with __toString is assimilated to as string and escaped'
+    description: 'for non string values, object with __toString is assimilated to a string and escaped'
 );
 $pilot->assertIsString();
 $pilot->assertEqual('abc &quot; &lt; &gt;');
