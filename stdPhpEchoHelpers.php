@@ -334,10 +334,11 @@ PhpEcho::addHelper('attributes', $attributes, true);
  *
  * @param string $tag
  * @param array $attr
+ * @param bool $escape_url for href or src attributes
  * @return string
  */
-$void_tag = function(string $tag, array $attr = []) use ($attributes): string {
-    $str = $attributes($attr);
+$void_tag = function(string $tag, array $attr = [], bool $escape_url = true) use ($attributes): string {
+    $str = $attributes($attr, $escape_url);
     if ($str !== '') {
         $str = ' '.$str;
     }
@@ -352,20 +353,21 @@ PhpEcho::addHelper('voidTag', $void_tag, true);
  * Return the HTML code for a tag: <tag>content</tag>
  * Attributes and content are escaped
  *
- * To avoid double escaping on content : set $attr['escaped'] = true
+ * To avoid double escaping only on content : set $attr['escaped'] = true
  *
  * @param string $tag
  * @param string $content
  * @param array $attr
+ * @param bool $escape_url for href or src attributes
  * @return string
  */
-$tag = function(string $tag, string $content, array $attr = []) use ($void_tag, $hsc) {
+$tag = function(string $tag, string $content, array $attr = [], bool $escape_url = true) use ($void_tag, $hsc) {
     if (( ! isset($attr['escaped'])) || ($attr['escaped'] !== true)) {
         $content = $hsc($content);
     }
     unset($attr['escaped']);
 
-    return $void_tag($tag, $attr).$content."</{$tag}>";
+    return $void_tag($tag, $attr, $escape_url).$content."</{$tag}>";
 };
 PhpEcho::addHelper('tag', $tag, true);
 //endregion tag
@@ -374,16 +376,17 @@ PhpEcho::addHelper('tag', $tag, true);
 /**
  * HTML TAG : <link>
  *
- * @param array $p  [rel => value, attribute => value] as many pair (attribute => value) as necessary
+ * @param array $p [rel => value, attribute => value] as many pair (attribute => value) as necessary
+ * @param bool $escape_url for href or src attributes
  * @return string
  *
  * @link https://www.w3schools.com/tags/tag_link.asp
  */
-$link = function(array $p) use ($void_tag): string {
+$link = function(array $p, bool $escape_url = true) use ($void_tag): string {
     if (empty($p['rel'])) {   // rel is required
         return '';
     } else {
-        return $void_tag('link', $p);
+        return $void_tag('link', $p, $escape_url);
     }
 };
 PhpEcho::addHelper('link', $link, true);
@@ -394,12 +397,13 @@ PhpEcho::addHelper('link', $link, true);
  * HTML TAG : <style></style>
  *
  * The url if defined goes over the plain code
- * @param array $p  [href => url | code => plain css definition, attribute => value] as many pair (attribute => value) as necessary
+ * @param array $p [href => url | code => plain css definition, attribute => value] as many pair (attribute => value) as necessary
+ * @param bool $escape_url for href or src attributes
  * @return string
  *
  * @link https://www.w3schools.com/tags/tag_style.asp
  */
-$style = function(array $p) use ($tag, $link): string {
+$style = function(array $p, bool $escape_url = true) use ($tag, $link): string {
     if (empty($p['href']) && empty($p['code'])) {
         return '';
     }
@@ -410,14 +414,14 @@ $style = function(array $p) use ($tag, $link): string {
         $attr += ['rel' => 'stylesheet', 'href' => $p['href']];
         unset($p['rel'], $p['href']);
 
-        return $link($attr + $p);
+        return $link($attr + $p, $escape_url);
     }
 
     $code = $p['code'];
     unset($p['code'], $p['rel'], $p['href']);
     $p['escaped'] = true;
 
-    return $tag('style', $code, $attr + $p);
+    return $tag('style', $code, $attr + $p, $escape_url);
 };
 PhpEcho::addHelper('style', $style, true);
 //endregion style
@@ -427,12 +431,13 @@ PhpEcho::addHelper('style', $style, true);
  * HTML TAG : <script></script>
  *
  * The url if defined goes over the plain code
- * @param array $p  [src => url | code => plain javascript, attribute => value] as many pair (attribute => value) as necessary
+ * @param array $p [src => url | code => plain javascript, attribute => value] as many pair (attribute => value) as necessary
+ * @param bool $escape_url for href or src attributes
  * @return string
  *
  * @link https://www.w3schools.com/tags/tag_script.asp
  */
-$script = function(array $p) use ($tag): string {
+$script = function(array $p, bool $escape_url = true) use ($tag): string {
     if (empty($p['src']) && empty($p['code'])) {
         return '';
     }
@@ -444,7 +449,7 @@ $script = function(array $p) use ($tag): string {
     }
     $p['escaped'] = true;
 
-    return $tag('script', $code, $p);
+    return $tag('script', $code, $p, $escape_url);
 };
 PhpEcho::addHelper('script', $script, true);
 //endregion script
