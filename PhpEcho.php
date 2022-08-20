@@ -191,6 +191,8 @@ implements ArrayAccess
                 return $result;
             } elseif ($this('toEscape', $result)) {
                 return $this('hsc', $result);
+            } else {
+                return $result;
             }
         }
     }
