@@ -787,6 +787,20 @@ implements ArrayAccess
     }
 
     /**
+     * Same as addBlock() but without having a $var_name to define
+     * The block is not accessible using a variable
+     *
+     * @param string $path
+     * @param array|null $vars
+     * @param string $id
+     * @return self
+     */
+    public function renderBlock(string $path, ?array $vars = null, string $id = ''): self
+    {
+        return $this->addBlock(self::getToken(), $path, $vars, $id);
+    }
+
+    /**
      * @return bool
      */
     public function hasParent(): bool
