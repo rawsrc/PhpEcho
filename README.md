@@ -316,6 +316,7 @@ use rawsrc\PhpEcho\PhpEcho; // LOGIN FORM BLOCK ?>
     <input type="submit" name="submit" value="CONNECT">
 </form>
 ```
+That way, you do not cut the tree ;-)
 
 **AUTO WIRING VARS**
 
