@@ -220,3 +220,49 @@ $pilot->assertEqual(<<<html
 </body>
 </html>
 html);
+
+
+$layout = new PhpEcho('layout_06.php');
+$layout['block_03_text'] = 'foo_text';
+$layout->addBlock('block', 'block block_03.php'); // bloc_03 expects to have a value for 'block_03_text' which is defined in the layout
+ob_start();
+echo $layout;
+$html = ob_get_clean();
+$pilot->run(
+    id : 'view_10',
+    test : fn() => $html,
+    description : 'passing vars to child blocks if no vars defined in the constructor'
+);
+$pilot->assertEqual(<<<html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    </head>
+<body>
+<p>foo_text</p></body>
+</html>
+html);
+
+
+$layout = new PhpEcho('layout_07.php');
+$layout['block'] = new PhpEcho('block block_05.php');
+ob_start();
+echo $layout;
+$html = ob_get_clean();
+$pilot->run(
+    id : 'view_11',
+    test : fn() => $html,
+    description : 'inserting data into the <head></head> section from the deep of a PhpEcho tree'
+);
+$pilot->assertEqual(<<<html
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <meta name="description" content="dummy description"><meta name="keywords" content="one two three words"></head>
+<body>
+<p>abcdef</p>
+</body>
+</html>
+html);
