@@ -45,8 +45,9 @@ generating the helpers. The code for the view part of your project is not impact
 Now, the engine is able to check when data must be escaped and preserve the datatype when it's safe in HTML context
 2. Instead of dying silently with `null` or empty string, the engine now throws an `Exception`
 You must produce a better code as the engine will crash on each low quality code segment.
-3. Many code improvements
-4. Soon "Fully tested": tests are in progress 
+3. Add new method `renderBlock()` to link easily a child block to its parent  
+4. Many code improvements
+5. Soon "Fully tested": tests are in progress 
 
 **What you must know to use it**
 1. All values read from a PhpEcho instance are escaped and safe in HTML context.
@@ -115,8 +116,6 @@ www
  |     |     |     |--- err.php
  |     |     |     |--- homepage.php
  |     |     |     |--- ...
- |     |--- Template02
- |     |     |--- ...
  |--- bootstrap.php
  |--- index.php
 ```
@@ -281,9 +280,47 @@ echo $page;
 As you can see, `PhpEcho` is highly flexible. You can use plenty of ways rendering your HTML/CSS/JS code. The syntax is always very 
 readable and easy to understand. 
 
-## **Child blocks: autowiring vars**
+## **Child blocks:**
+To use as many blocks as needed to compose the whole view, there are several ways 
+to declare the child blocks:
+* `$this->renderBlock()`: the rendered block is anonymous in the page and unreachable once rendered 
+* `$this->addBlock()`: the rendered block has a name and can be reached from the parent context using its name
+* `$this->renderByDefault()`: the rendered block has a name and if the parent does not provide a specific block for 
+that name, then the engine will render the default block as specified in the parameters 
+
+Please note, that the whole view must be seen as a huge tree and the blocks are linked all together.
+You must never declare a totally independent block into another.
+This is not allowed for example:
+```php
+<?php /** @var rawsrc\PhpEcho\PhpEcho $this */
+use rawsrc\PhpEcho\PhpEcho; // LOGIN FORM BLOCK ?>
+<p>Please login : </p>
+<form method=post action="<?= $this['url_submit'] ?>">
+    <label>User</label>
+    <input type="text" name="login" value="<?= new PhpEcho('block login_input_text.php') ?>"><br>
+    <label>Password</label>
+    <input type="password" name="pwd" value=""><br>
+    <input type="submit" name="submit" value="CONNECT">
+</form>
+```
+it should be replaced with one of the method described just above:
+```php
+<?php /** @var rawsrc\PhpEcho\PhpEcho $this */
+use rawsrc\PhpEcho\PhpEcho; // LOGIN FORM BLOCK ?>
+<p>Please login : </p>
+<form method=post action="<?= $this['url_submit'] ?>">
+    <label>User</label>
+    <input type="text" name="login" value="<?= $this->renderBlock('block login_input_text.php') ?>"><br>
+    <label>Password</label>
+    <input type="password" name="pwd" value=""><br>
+    <input type="submit" name="submit" value="CONNECT">
+</form>
+```
+
+**AUTO WIRING VARS**
+
 The engine fills the vars attached to a block automatically if there's no other values defined. 
-In that case the child gets a copy of the vars defined in the parent block.<br>
+In that case the child gets a copy of the vars defined in the parent block.
 ```php
 <?php
 
