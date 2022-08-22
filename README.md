@@ -285,8 +285,8 @@ To use as many blocks as needed to compose the whole view, there are several way
 to declare the child blocks:
 * `$this->renderBlock()`: the rendered block is anonymous in the page and unreachable once rendered 
 * `$this->addBlock()`: the rendered block has a name and can be reached from the parent context using its name
-* `$this->renderByDefault()`: the rendered block has a name and if the parent does not provide a specific block for 
-that name, then the engine will render the default block as specified in the parameters 
+* `$this->renderByDefault()`: the rendered block has a name and if the parent does not provide a specific block for, 
+then the engine will render the default block as specified in the parameters 
 
 Please note, that the whole view must be seen as a huge tree and the blocks are linked all together.
 You must never declare a totally independent block into another.
@@ -303,10 +303,9 @@ use rawsrc\PhpEcho\PhpEcho; // LOGIN FORM BLOCK ?>
     <input type="submit" name="submit" value="CONNECT">
 </form>
 ```
-it should be replaced with one of the method described just above:
+it should be replaced with one of the methods described just above:
 ```php
-<?php /** @var rawsrc\PhpEcho\PhpEcho $this */
-use rawsrc\PhpEcho\PhpEcho; // LOGIN FORM BLOCK ?>
+<?php /** @var rawsrc\PhpEcho\PhpEcho $this */ // LOGIN FORM BLOCK ?>
 <p>Please login : </p>
 <form method=post action="<?= $this['url_submit'] ?>">
     <label>User</label>
@@ -316,7 +315,7 @@ use rawsrc\PhpEcho\PhpEcho; // LOGIN FORM BLOCK ?>
     <input type="submit" name="submit" value="CONNECT">
 </form>
 ```
-That way, you do not cut the tree ;-)
+This way, you do not cut the tree ;-)
 
 **AUTO WIRING VARS**
 
@@ -336,9 +335,9 @@ $page['login'] = 'rawsrc';
 $page['url_submit'] = 'any/path/for/connection';
 
 // no vars are attached to the block as the second parameter is omitted
-$body = new PhpEcho('block login.php');  
+$body = new PhpEcho('block login.php');  // login expects 2 values (login and url_submit)
 
-// when we inject the block into the parent, the autowiring will automatically
+// when we inject the block into the parent, the auto-wiring will automatically
 // pass a copy of parent's vars to the child   
 $page['body'] = $body; // $body['login'] and $body['url_submit'] are well defined
 
