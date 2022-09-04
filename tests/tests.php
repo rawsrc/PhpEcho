@@ -28,5 +28,6 @@ include 'helpers.php';
 include 'stdHelpers.php';
 include 'core.php';
 include 'view.php';
+include 'heredoc.php';
 
 $pilot->createReport();

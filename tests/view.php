@@ -253,7 +253,7 @@ $html = ob_get_clean();
 $pilot->run(
     id : 'view_11',
     test : fn() => $html,
-    description : 'inserting data into the <head></head> section from the deep of a PhpEcho tree'
+    description : 'inserting data into the <head></head> section from the depths of a PhpEcho tree'
 );
 $pilot->assertEqual(<<<html
 <!DOCTYPE html>
