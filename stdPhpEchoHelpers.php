@@ -136,15 +136,15 @@ PhpEcho::addBindableHelper('raw', $raw, true);
  *
  * @param string|array $keys
  * @param bool $strict_match
- * @return mixed null if not found
+ * @return mixed
+ * @throws InvalidArgumentException If not found
  */
-$key_up = function(array|string $keys, bool $strict_match = true) use ($to_escape, $hsc) {
+$key_up = function(array|string $keys, bool $strict_match = true) use ($to_escape, $hsc): mixed {
     /** @var PhpEcho $this */
     if ( ! $this->hasParent()) {
-        return null;
+        throw new InvalidArgumentException('no.parent.block.available');
     }
     $keys = is_string($keys) ? explode(' ', $keys) : $keys;
-    /** @var PhpEcho $block */
     $block = $this->parent;
     $nb = count($keys);
     $i = 0;
@@ -161,12 +161,12 @@ $key_up = function(array|string $keys, bool $strict_match = true) use ($to_escap
                 ++$i;
             }
         } elseif ($strict_match) {
-            return null;
+            throw new InvalidArgumentException('key.not.found');
         }
         if ($block->hasParent()) {
             $block = $block->parent;
         } else {
-            return null;
+            throw new InvalidArgumentException('no.more.parent.block.available');
         }
     }
 };
@@ -199,7 +199,8 @@ PhpEcho::addBindableHelper('root', $root);
  * If one of the keys contains a space, use an array of keys instead
  *
  * @param array|string $keys
- * @return mixed null if not found
+ * @return mixed
+ * @throws InvalidArgumentException If not found
  */
 $root_var = function(array|string $keys) use ($to_escape, $hsc): mixed {
     /** @var PhpEcho $this */
@@ -223,7 +224,7 @@ $root_var = function(array|string $keys) use ($to_escape, $hsc): mixed {
                 ++$i;
             }
         } else {
-            return null;
+            throw new InvalidArgumentException('key.not.found');
         }
     }
 };
@@ -236,6 +237,7 @@ PhpEcho::addBindableHelper('rootVar', $root_var, true);
  *
  * @param string $name
  * @return null
+ * @throws InvalidArgumentException If not found
  */
 $seek_param = function(string $name): mixed {
     /** @var PhpEcho $block */
@@ -246,7 +248,7 @@ $seek_param = function(string $name): mixed {
         } elseif ($block->hasParent()) {
             $block = $block->parent;
         } else {
-            return null;
+            throw new InvalidArgumentException('param.not.found');
         }
     }
 };
