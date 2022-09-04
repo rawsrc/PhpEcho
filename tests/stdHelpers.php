@@ -98,3 +98,19 @@ $pilot->assertEqual([
     ],
 ]);
 
+
+$block = new PhpEcho();
+$pilot->run(
+    id: 'stdHelpers_008',
+    test: fn() => $block->keyUp(keys: 'any_key', strict_match: true),
+    description: 'try to extract a value from a key from a parent block that does not exist, no strict match'
+);
+$pilot->assertException(InvalidArgumentException::class);
+
+$pilot->run(
+    id: 'stdHelpers_009',
+    test: fn() => $block->keyUp(keys: 'any_key', strict_match: false),
+    description: 'try to extract a value from a key from a parent block that does not exist, strict match'
+);
+$pilot->assertException(InvalidArgumentException::class);
+

@@ -41,10 +41,11 @@ written for the previous version of the engine. The changes impact mainly the co
 generating the helpers. The code for the view part of your project is not impacted by the upgrade.
 
 **NEW FEATURE IN PhpEcho v5.0.0:**<br>
-1. Removing the constants `HELPER_BOUND_TO_CLASS_INSTANCE` and `HELPER_RETURN_ESCAPED_DATA`
-Now, the engine is able to check when data must be escaped and preserve the datatype when it's safe in HTML context
+1. Removing th constant `HELPER_BOUND_TO_CLASS_INSTANCE` which is replaced by `PhpEcho::addBindableHelper`
+2. Removing the constant `HELPER_RETURN_ESCAPED_DATA`. Now, the engine is able to check when data must 
+be escaped and preserve the native datatype when it's safe in HTML context
 2. Instead of dying silently with `null` or empty string, the engine now throws an `Exception`
-You must produce a better code as the engine will crash on each low quality code segment.
+You must produce a better code as it will crash on each low quality segment.
 3. Add new method `renderBlock()` to link easily a child block to its parent  
 4. Many code improvements
 5. Soon "Fully tested": tests are in progress 
