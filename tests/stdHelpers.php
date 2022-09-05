@@ -154,3 +154,33 @@ $pilot->run(
 );
 $pilot->assertIsString();
 $pilot->assertEqual('value_of_key_01');
+
+$pilot->run(
+    id: 'stdHelper_013',
+    test: fn() => $block_01->keyUp('key_03 key_01', strict_match: false),
+    description: 'climbing the tree of PhpEcho blocks to reach a non existing parent block, no strict match'
+);
+$pilot->assertException(InvalidArgumentException::class);
+
+$pilot->run(
+    id: 'stdHelper_014',
+    test: fn() => $layout->keyUp('any_key', strict_match: false),
+    description: 'climbing the tree of PhpEcho blocks above the root, no strict match'
+);
+$pilot->assertException(InvalidArgumentException::class);
+
+$pilot->run(
+    id: 'stdHelper_015',
+    test: fn() => $block_06->keyUp('key_03 wrong_key', strict_match: false),
+    description: 'climbing the tree of PhpEcho blocks and looking for a non existing key, no strict match'
+);
+$pilot->assertException(InvalidArgumentException::class);
+
+$pilot->run(
+    id: 'stdHelper_016',
+    test: fn() => $block_06->root(),
+    description: 'climbing the tree of PhpEcho blocks to reach the root'
+);
+$pilot->assertIsObject();
+$pilot->assertIsInstanceOf(PhpEcho::class);
+$pilot->assertEqual($layout);
