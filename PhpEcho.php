@@ -61,10 +61,11 @@ use const DIRECTORY_SEPARATOR;
  *
  * PhpEcho HELPERS
  * @method mixed raw(string $key) Return the raw value from a PhpEcho block
- * @method bool isScalar($p)
- * @method mixed keyUp($keys, bool $strict_match) Climb the tree of PhpEcho instances while keys match
- * @method mixed rootVar($keys) Extract the value from the top level PhpEcho block (the root)
+ * @method bool isScalar(mixed $p)
+ * @method mixed keyUp(array|string $keys, bool $strict_match) Climb the tree of PhpEcho instances while keys match
+ * @method mixed rootVar(array|string $keys) Extract the value from the top level PhpEcho block (the root)
  * @method PhpEcho root() Return the root PhpEcho instance of the tree
+ * @method mixed seekParam(string $name) Seek the parameter from the current block to the root
  *
  * HTML HELPERS
  * @method mixed hsc($p) Escape the value in parameter (scalar, array, stringifyable)
