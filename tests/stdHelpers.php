@@ -114,3 +114,43 @@ $pilot->run(
 );
 $pilot->assertException(InvalidArgumentException::class);
 
+
+// we create a tree of PhpEcho blocks
+$layout = new PhpEcho('layout_01.php');
+$block_01 = new PhpEcho('block block_01.php');
+$block_01['key_01'] = 'value_of_key_01';
+$block_02 = new PhpEcho('block block_02.php');
+$block_02['key_02'] = 'value_of_key_02';
+$block_03 = new PhpEcho('block block_03.php');
+$block_03['key_03'] = 'value_of_key_03';
+$block_06 = new PhpEcho('block block_06.php');
+$block_06['key_06'] = 'value_of_key_06';
+$block_06['block_06_text'] = 'dummy_value_for_block_06';
+
+$layout['body'] = $block_01;
+$block_01['block_01_text'] = $block_02;
+$block_02['block_02_text'] = $block_03;
+$block_03['block_03_text'] = $block_06;
+
+$pilot->run(
+    id: 'stdHelper_010',
+    test: fn() => $block_06->keyUp('key_03 key_02 key_01', strict_match: true),
+    description: 'climbing the tree of PhpEcho blocks to reach and retrieve the value key_01, strict match'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('value_of_key_01');
+
+$pilot->run(
+    id: 'stdHelper_011',
+    test: fn() => $block_06->keyUp('key_03 key_01', strict_match: true),
+    description: 'climbing the tree of PhpEcho blocks to reach and retrieve the value key_01 omitting the intermediate key, strict match'
+);
+$pilot->assertException(InvalidArgumentException::class);
+
+$pilot->run(
+    id: 'stdHelper_012',
+    test: fn() => $block_06->keyUp('key_03 key_01', strict_match: false),
+    description: 'climbing the tree of PhpEcho blocks to reach and retrieve the value key_01 omitting the intermediate key, no strict match'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('value_of_key_01');
