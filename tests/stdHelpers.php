@@ -117,10 +117,13 @@ $pilot->assertException(InvalidArgumentException::class);
 
 // we create a tree of PhpEcho blocks
 $layout = new PhpEcho('layout_01.php');
+$layout->setParam('layout_param', false);
+$layout->setParam('block_02_param', 'never reached');
 $block_01 = new PhpEcho('block block_01.php');
 $block_01['key_01'] = 'value_of_key_01';
 $block_02 = new PhpEcho('block block_02.php');
 $block_02['key_02'] = 'value_of_key_02';
+$block_02->setParam('block_02_param', true);
 $block_03 = new PhpEcho('block block_03.php');
 $block_03['key_03'] = 'value_of_key_03';
 $block_06 = new PhpEcho('block block_06.php');
@@ -184,3 +187,81 @@ $pilot->run(
 $pilot->assertIsObject();
 $pilot->assertIsInstanceOf(PhpEcho::class);
 $pilot->assertEqual($layout);
+
+
+$pilot->run(
+    id: 'stdHelper_017',
+    test: fn() => $block_06->rootVar('body block_01_text block_02_text key_03'),
+    description: 'reach the root and seek for a value descending the tree of PhpEcho blocks'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('value_of_key_03');
+
+
+$pilot->run(
+    id: 'stdHelper_018',
+    test: fn() => $block_06->rootVar('body block_01_text block_02_text wrong_key'),
+    description: 'reach the root and seek for a non existing key descending the tree of PhpEcho blocks'
+);
+$pilot->assertException(InvalidArgumentException::class);
+
+
+$pilot->run(
+    id: 'stdHelper_019',
+    test: fn() => $block_06->seekParam('block_02_param'),
+    description: 'seek the value of a parameter from the current block to the root'
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(true);
+
+
+$pilot->run(
+    id: 'stdHelper_020',
+    test: fn() => $block_06->seekParam('block_02_param'),
+    description: 'seek the value of a parameter from the current block to the root'
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(true);
+
+
+$pilot->run(
+    id: 'stdHelper_021',
+    test: fn() => $block_06->seekParam('wrong_param'),
+    description: 'seek the value of a no existing parameter from the current block to the root'
+);
+$pilot->assertException(InvalidArgumentException::class);
+
+
+$pilot->run(
+    id: 'stdHelper_022',
+    test: fn() => $layout->selected('abc', 'abc'),
+    description: 'html attribute selected'
+);
+$pilot->assertIsString();
+$pilot->assertEqual(' selected ');
+
+$pilot->run(
+    id: 'stdHelper_023',
+    test: fn() => $layout->selected('abc', 'abcdef'),
+    description: 'html attribute selected'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('');
+
+
+
+$pilot->run(
+    id: 'stdHelper_024',
+    test: fn() => $layout->checked('abc', 'abc'),
+    description: 'html attribute checked'
+);
+$pilot->assertIsString();
+$pilot->assertEqual(' checked ');
+
+$pilot->run(
+    id: 'stdHelper_025',
+    test: fn() => $layout->checked('abc', 'abcdef'),
+    description: 'html attribute checked'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('');
