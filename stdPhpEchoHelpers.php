@@ -412,10 +412,8 @@ $style = function(array $p, bool $escape_url = true) use ($tag, $link): string {
         throw new InvalidArgumentException('attribute.href.or.code.is.required.for.a.style.tag');
     }
 
-    $attr = ['type' => 'text/css'];
-
     if (isset($p['href'])) {
-        $attr += ['rel' => 'stylesheet', 'href' => $p['href']];
+        $attr = ['rel' => 'stylesheet', 'href' => $p['href']];
         unset($p['rel'], $p['href']);
 
         return $link($attr + $p, $escape_url);
@@ -425,7 +423,7 @@ $style = function(array $p, bool $escape_url = true) use ($tag, $link): string {
     unset($p['code'], $p['rel'], $p['href']);
     $p['escaped'] = true;
 
-    return $tag('style', $code, $attr + $p, $escape_url);
+    return $tag('style', $code, $p, $escape_url);
 };
 PhpEcho::addHelper('style', $style, true);
 //endregion style
