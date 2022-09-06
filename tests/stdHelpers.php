@@ -249,7 +249,6 @@ $pilot->assertIsString();
 $pilot->assertEqual('');
 
 
-
 $pilot->run(
     id: 'stdHelper_024',
     test: fn() => $layout->checked('abc', 'abc'),
@@ -265,3 +264,109 @@ $pilot->run(
 );
 $pilot->assertIsString();
 $pilot->assertEqual('');
+
+
+$pilot->run(
+    id: 'stdHelper_026',
+    test: fn() => $layout->attributes(['type' => 'text', 'name' => 'name', 'required', 'value' => ' < > " <script></script>']),
+    description: 'html building secure attributes'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('type="text" name="name" required value=" &lt; &gt; &quot; &lt;script&gt;&lt;/script&gt;"');
+
+$pilot->run(
+    id: 'stdHelper_027',
+    test: fn() => $layout->attributes(['type' => 'text', 'name' => 'name', 'required' => 'required', 'value' => ' < > " <script></script>']),
+    description: 'html building secure attributes'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('type="text" name="name" required="required" value=" &lt; &gt; &quot; &lt;script&gt;&lt;/script&gt;"');
+
+$pilot->run(
+    id: 'stdHelper_028',
+    test: fn() => $layout->attributes(['href' => 'https://localhost/path?q="<script> </script>"', 'src' => 'https://localhost/path?q="<script> </script>"']),
+    description: 'html escaping url'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('href="https://localhost/path?q=&quot;&lt;script&gt; &lt;/script&gt;&quot;" src="https://localhost/path?q=&quot;&lt;script&gt; &lt;/script&gt;&quot;"');
+
+
+$pilot->run(
+    id: 'stdHelper_029',
+    test: fn() => $layout->voidTag('input', ['type' => 'text', 'name' => 'name', 'required', 'value' => ' < > " <script></script>']),
+    description: 'html creating a secure void tag'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('<input type="text" name="name" required value=" &lt; &gt; &quot; &lt;script&gt;&lt;/script&gt;">');
+
+
+$pilot->run(
+    id: 'stdHelper_030',
+    test: fn() => $layout->tag('input', 'Please insert a value', ['type' => 'text', 'name' => 'name', 'required', 'value' => ' < > " <script></script>']),
+    description: 'html creating an input tag'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('<input type="text" name="name" required value=" &lt; &gt; &quot; &lt;script&gt;&lt;/script&gt;">Please insert a value</input>');
+
+
+$pilot->run(
+    id: 'stdHelper_031',
+    test: fn() => $layout->link(['type' => 'text', 'name' => 'name', 'required', 'value' => ' < > " <script></script>']),
+    description: 'html try to create a link tag with missing required param'
+);
+$pilot->assertException(InvalidArgumentException::class);
+
+$pilot->run(
+    id: 'stdHelper_032',
+    test: fn() => $layout->link(['rel' => 'https://localhost/path?q="<script> </script>"']),
+    description: 'html create a link'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('<link rel="https://localhost/path?q=&quot;&lt;script&gt; &lt;/script&gt;&quot;">');
+
+$pilot->run(
+    id: 'stdHelper_033',
+    test: fn() => $layout->style(['type' => 'text', 'name' => 'name', 'required', 'value' => ' < > " <script></script>']),
+    description: 'html try to create a style tag with missing required param'
+);
+$pilot->assertException(InvalidArgumentException::class);
+
+$pilot->run(
+    id: 'stdHelper_034',
+    test: fn() => $layout->style(['href' => 'https://localhost/css/css.min.css?q="<script> </script>"']),
+    description: 'html create a style tag'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('<link rel="stylesheet" href="https://localhost/css/css.min.css?q=&quot;&lt;script&gt; &lt;/script&gt;&quot;">');
+
+$pilot->run(
+    id: 'stdHelper_035',
+    test: fn() => $layout->style(['code' => 'h1 {color:red;} p {color:blue;}']),
+    description: 'html create a plain style tag'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('<style>h1 {color:red;} p {color:blue;}</style>');
+
+
+$pilot->run(
+    id: 'stdHelper_036',
+    test: fn() => $layout->style(['type' => 'text', 'name' => 'name', 'required', 'value' => ' < > " <script></script>']),
+    description: 'html try to create a script tag with missing required param'
+);
+$pilot->assertException(InvalidArgumentException::class);
+
+$pilot->run(
+    id: 'stdHelper_037',
+    test: fn() => $layout->script(['src' => 'https://localhost/js/js.min.js?q="<script> </script>"']),
+    description: 'html create a script tag'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('<script src="https://localhost/js/js.min.js?q=&quot;&lt;script&gt; &lt;/script&gt;&quot;"></script>');
+
+$pilot->run(
+    id: 'stdHelper_038',
+    test: fn() => $layout->script(['code' => 'document.getElementById("demo").innerHTML = "Hello JavaScript!";']),
+    description: 'html create a plain script tag'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('<script>document.getElementById("demo").innerHTML = "Hello JavaScript!";</script>');
