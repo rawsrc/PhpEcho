@@ -73,7 +73,7 @@ use const DIRECTORY_SEPARATOR;
  * @method string selected($p, $ref) Return " selected " if $p == $ref
  * @method string checked($p, $ref) Return " checked "  if $p == $ref
  * @method string voidTag(string $tag, array $attributes = [], bool $escape_url = true) Build a <tag />
- * @method string tag(string $tag, array $attributes = [], bool $escape_url = true) Build a <tag></tag>
+ * @method string tag(string $tag, string $content, array $attr = [], bool $escape_url = true) Build a <tag></tag>
  * @method string link(array $attributes, bool $escape_url = true) [rel => required, attribute => value]
  * @method string style(array $attributes, bool $escape_url = true) [href => url | code => plain css definition, attribute => value]
  * @method string script(array $attributes, bool $escape_url = true) [src => url | code => plain javascript, attribute => value]
