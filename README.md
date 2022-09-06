@@ -565,7 +565,7 @@ These values behave like any standard value and are of course escaped when neces
 
 The last is `keyUp` with the corresponding method `keyUp()`. 
 From a given list of keys (string or array, string: the delimiter for each key is space), the engine will start to climb the tree 
-of blocks while the key is found, and will return the value corresponding to the last key or null if not found.<br>
+of blocks while the key is found, and will return the value corresponding to the last key or throw an exception if not found.<br>
 With the parameter `$strict_match`, it is possible to tell the engine to continue to climb if the current key is still not found.
 ```php
 // imagine you have a tree of PhpEcho blocks corresponding to a part of the DOM
