@@ -387,7 +387,7 @@ PhpEcho::addHelper('tag', $tag, true);
  */
 $link = function(array $p, bool $escape_url = true) use ($void_tag): string {
     if (empty($p['rel'])) {   // rel is required
-        throw new InvalidArgumentException('attribute.rel.is.required.for.a.link');
+        throw new InvalidArgumentException('attribute.rel.is.required.for.a.link.tag');
     } else {
         return $void_tag('link', $p, $escape_url);
     }
@@ -403,12 +403,13 @@ PhpEcho::addHelper('link', $link, true);
  * @param array $p [href => url | code => plain css definition, attribute => value] as many pair (attribute => value) as necessary
  * @param bool $escape_url for href or src attributes
  * @return string
+ * @throws InvalidArgumentException
  *
  * @link https://www.w3schools.com/tags/tag_style.asp
  */
 $style = function(array $p, bool $escape_url = true) use ($tag, $link): string {
     if (empty($p['href']) && empty($p['code'])) {
-        return '';
+        throw new InvalidArgumentException('attribute.href.or.code.is.required.for.a.style.tag');
     }
 
     $attr = ['type' => 'text/css'];
@@ -437,12 +438,13 @@ PhpEcho::addHelper('style', $style, true);
  * @param array $p [src => url | code => plain javascript, attribute => value] as many pair (attribute => value) as necessary
  * @param bool $escape_url for href or src attributes
  * @return string
+ * @throws InvalidArgumentException
  *
  * @link https://www.w3schools.com/tags/tag_script.asp
  */
 $script = function(array $p, bool $escape_url = true) use ($tag): string {
     if (empty($p['src']) && empty($p['code'])) {
-        return '';
+        throw new InvalidArgumentException('attribute.src.or.code.is.required.for.a.script.tag');
     }
     if (isset($p['src'])) {
         $code = '';
