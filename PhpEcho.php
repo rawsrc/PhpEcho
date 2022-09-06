@@ -5,26 +5,21 @@ declare(strict_types=1);
 namespace rawsrc\PhpEcho;
 
 use ArrayAccess;
+use BadMethodCallException;
 use Closure;
+use InvalidArgumentException;
 
-use function array_intersect;
 use function array_key_exists;
-use function array_keys;
 use function array_map;
 use function array_pop;
 use function array_push;
 use function array_shift;
-use function array_unshift;
 use function bin2hex;
 use function chr;
 use function count;
-use function define;
-use function defined;
 use function explode;
 use function implode;
-use function in_array;
 use function is_array;
-use function is_callable;
 use function is_file;
 use function is_string;
 use function mt_rand;
@@ -36,16 +31,7 @@ use function str_replace;
 use function str_shuffle;
 use function substr;
 
-if ( ! defined('HELPER_BOUND_TO_CLASS_INSTANCE')) {
-    define('HELPER_BOUND_TO_CLASS_INSTANCE', 1);
-}
-if ( ! defined('HELPER_RETURN_ESCAPED_DATA')) {
-    define('HELPER_RETURN_ESCAPED_DATA', 2);
-}
-
 use const DIRECTORY_SEPARATOR;
-use const HELPER_RETURN_ESCAPED_DATA;
-use const HELPER_BOUND_TO_CLASS_INSTANCE;
 
 /**
  * PhpEcho : Native PHP Template engine: One class to rule them all ;-)
@@ -53,7 +39,7 @@ use const HELPER_BOUND_TO_CLASS_INSTANCE;
  * @author      rawsrc
  * @copyright   MIT License
  *
- *              Copyright (c) 2020-2021 rawsrc
+ *              Copyright (c) 2020-2022 rawsrc
  *
  *              Permission is hereby granted, free of charge, to any person obtaining a copy
  *              of this software and associated documentation files (the "Software"), to deal
@@ -74,56 +60,59 @@ use const HELPER_BOUND_TO_CLASS_INSTANCE;
  *              SOFTWARE.
  *
  * PhpEcho HELPERS
- * @method mixed raw(string $key)                 Return the raw value from a PhpEcho block
- * @method bool isScalar($p)
- * @method mixed keyUp($keys, bool $strict_match) Climb the tree of PhpEcho instances while keys match
- * @method mixed rootVar($keys)                   Extract the value from the top level PhpEcho block (the root)
- * @method PhpEcho root()                         Return the root PhpEcho instance of the tree
+ * @method mixed raw(string $key) Return the raw value from a PhpEcho block
+ * @method bool isScalar(mixed $p)
+ * @method mixed keyUp(array|string $keys, bool $strict_match) Climb the tree of PhpEcho instances while keys match
+ * @method mixed rootVar(array|string $keys) Extract the value from the top level PhpEcho block (the root)
+ * @method PhpEcho root() Return the root PhpEcho instance of the tree
+ * @method mixed seekParam(string $name) Seek the parameter from the current block to the root
  *
  * HTML HELPERS
- * @method mixed hsc($p)                          Escape the value in parameter (scalar, array, stringifyable)
- * @method string attributes(array $p)            Return the values as escaped attributes: attribute="..."
- * @method string selected($p, $ref)              Return " selected " if $p == $ref
- * @method string checked($p, $ref)               Return " checked "  if $p == $ref
- * @method string voidTag(string $tag, array $attributes = [])  Build a <tag />
- * @method string tag(string $tag, array $attributes = [])      Build a <tag></tag>
- * @method string link(array $attributes)         [rel => required, attribute => value]
- * @method string style(array $attributes)        [href => url | code => plain css definition, attribute => value]
- * @method string script(array $attributes)       [src => url | code => plain javascript, attribute => value]
+ * @method mixed hsc($p) Escape the value in parameter (scalar, array, stringifyable)
+ * @method string attributes(array $p, bool $escape_url = true) Return the values as escaped attributes: attribute="..."
+ * @method string selected($p, $ref) Return " selected " if $p == $ref
+ * @method string checked($p, $ref) Return " checked "  if $p == $ref
+ * @method string voidTag(string $tag, array $attributes = [], bool $escape_url = true) Build a <tag />
+ * @method string tag(string $tag, string $content, array $attr = [], bool $escape_url = true) Build a <tag></tag>
+ * @method string link(array $attributes, bool $escape_url = true) [rel => required, attribute => value]
+ * @method string style(array $attributes, bool $escape_url = true) [href => url | code => plain css definition, attribute => value]
+ * @method string script(array $attributes, bool $escape_url = true) [src => url | code => plain javascript, attribute => value]
  */
 class PhpEcho
 implements ArrayAccess
 {
     private const ALPHA_NUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    private const RESERVED_KEY_RAW = 'raw';
+    private const TOKEN_MIN_LENGTH = 16;
 
     private string $id = '';
     private array $vars = [];
     private array $params = [];
     private array $head = [];
     private string $head_token = '';
-    private bool $head_escape = true;
     /**
-     * Full resolved filepath to the external view file
+     * Partial file path to the external view file (from the template dir root)
      * @var string
      */
     private string $file = '';
+    /**
+     * @var string
+     */
     private string $code = '';
     /**
      * @var array [helper's id => bound closure]
      */
     private array $bound_helpers = [];
-    /*
+    /**
      * Indicates if the current instance contains in its vars other PhpEcho instance(s)
      * @var bool
      */
     private bool $has_children = false;
     /**
-     * @var PhpEcho|null
+     * @var PhpEcho
      */
-    private ?PhpEcho $parent = null;
+    private PhpEcho $parent;
     /**
-     * If true then tke keys should never contain a space between words
+     * If true then the array keys should never contain a space between words
      * Each space will be transformed into a sub-array: 'abc def' => ['abc']['def']
      * @var bool
      */
@@ -137,9 +126,14 @@ implements ArrayAccess
      */
     private static array $helpers = [];
     /**
-     * @var array [helper's name => [type]]
+     * Array of bindable helpers to the class instance
+     * @var array [helper's name => true]
      */
-    private static array $helpers_types = [];
+    private static array $bindable_helpers = [];
+    /**
+     * @var array [helper's name => true]
+     */
+    private static array $helpers_result_escaped = [];
     /**
      * Used tokens
      * @var array [token => true]
@@ -152,7 +146,7 @@ implements ArrayAccess
 
     //region MAGIC METHODS
     /**
-     * @param string $file see setFile() below
+     * @param string $file path from the template dir root
      * @param array $vars
      * @param string $id if empty then auto-generated
      */
@@ -169,10 +163,6 @@ implements ArrayAccess
         }
 
         $this->vars = $vars;
-
-        if ( ! isset($this->vars[self::RESERVED_KEY_RAW])) {
-            $this->vars[self::RESERVED_KEY_RAW] = [];
-        }
     }
 
     /**
@@ -182,46 +172,53 @@ implements ArrayAccess
      * @param string $helper
      * @param mixed $args
      * @return mixed
+     * @throws InvalidArgumentException
      */
     public function __invoke(string $helper, mixed ...$args): mixed
     {
-        if ($helper !== '') {
-            if (self::isHelper($helper)) {
-                if (empty($this->bound_helpers)) {
-                    $this->bound_helpers = self::bindHelpersTo($this);
-                }
-                $helpers = $this->bound_helpers + self::$helpers;
-                $hlp = $helpers[$helper];
-                $result = $hlp(...$args);
-
-                if ($result === null) {
-                    return null;
-                } elseif (self::isHelperOfType($helper, HELPER_RETURN_ESCAPED_DATA)) {
-                    return $result;
-                } else {
-                    // being in a HTML context: in any case, the returned data should be escaped
-                    // if you don't want so, use the specific helper 'raw'
-                    return $this('hsc', $result);
-                }
-            }
+        if ($helper === '') {
+            throw new InvalidArgumentException('helper.cannot.be.empty');
         }
 
-        return null;
+        if (self::isHelper($helper, true)) {
+            if ($this->bound_helpers === []) {
+                $this->bindHelpersTo($this);
+            }
+            $helpers = $this->bound_helpers + self::$helpers;
+            $hlp = $helpers[$helper];
+            $result = $hlp(...$args);
+
+            if (self::isHelperResultEscaped($helper)) {
+                return $result;
+            } elseif ($this('toEscape', $result)) {
+                return $this('hsc', $result);
+            } else {
+                return $result;
+            }
+        }
+    }
+
+    /**
+     * @param string $name
+     * @param array $arguments
+     * @return mixed
+     * @throws InvalidArgumentException
+     */
+    public function __call(string $name, array $arguments): mixed
+    {
+        return $this->__invoke($name, ...$arguments);
     }
 
     /**
      * Magic method that returns a string instead of current instance of the class in a string context
+     * @throws BadMethodCallException
      */
     public function __toString(): string
     {
         $this->render();
         $root = $this('root');
         if (($root === $this) && ( ! empty($this->head_token))) {
-            if ($this->head_escape) {
-                $head = implode('', $this('hsc', $this->head));
-            } else {
-                $head = implode('', $this->head);
-            }
+            $head = implode('', $this->head);
 
             return str_replace($this->head_token, $head, $this->code);
         } else {
@@ -247,6 +244,30 @@ implements ArrayAccess
     }
 
     /**
+     * @return string
+     */
+    public function getFilepath(): string
+    {
+        return $this->file;
+    }
+
+    /**
+     * @param bool $p
+     */
+    public static function setUseSpaceNotation(bool $p): void
+    {
+        self::$use_space_notation = $p;
+    }
+
+    /**
+     * @return bool
+     */
+    public static function useSpaceNotation(): bool
+    {
+        return self::$use_space_notation;
+    }
+
+    /**
      * @param string $id
      */
     public function setId(string $id)
@@ -263,6 +284,8 @@ implements ArrayAccess
     }
 
     /**
+     * Define a local parameter
+     *
      * @param string $name
      * @param mixed $value
      */
@@ -272,14 +295,29 @@ implements ArrayAccess
     }
 
     /**
-     * The param is never escaped
+     * Get the value of a local parameter
+     * The value of the parameter is never escaped
+     *
+     * if the parameter does not exist then throw an exception
      *
      * @param string $name
      * @return mixed
+     * @throws InvalidArgumentException
      */
     public function getParam(string $name): mixed
     {
-        return $this('seekParam', $name);
+        return array_key_exists($name, $this->params)
+            ? $this->params[$name]
+            : throw new InvalidArgumentException("unknown.parameter.{$name}");
+    }
+
+    /**
+     * @param string $name
+     * @return bool
+     */
+    public function hasParam(string $name): bool
+    {
+        return array_key_exists($name, $this->params);
     }
 
     /**
@@ -296,23 +334,26 @@ implements ArrayAccess
     /**
      * @param string $name
      * @return mixed
+     * @throws InvalidArgumentException
      */
     public static function getGlobalParam(string $name): mixed
     {
-        return self::$global_params[$name] ?? null;
+        return array_key_exists($name, self::$global_params)
+            ? self::$global_params[$name]
+            : throw new InvalidArgumentException("unknown.parameter.{$name}");
     }
 
     /**
      * @param string $name
      * @return bool
      */
-    public function hasParam(string $name): bool
+    public function hasGlobalParam(string $name): bool
     {
-        return in_array($name, array_keys($this->params));
+        return array_key_exists($name, self::$global_params);
     }
 
     /**
-     * Generate an unique execution id based on random_bytes()
+     * Generate a unique execution id based on random_bytes()
      * Always start with a letter
      */
     public function generateId()
@@ -364,37 +405,51 @@ implements ArrayAccess
      *
      * @param $offset
      * @return mixed
+     * @throws InvalidArgumentException
      */
     public function offsetGet($offset): mixed
     {
-        if (self::$use_space_notation) {
-            $data = $this->vars;
-            $keys = explode(' ', $offset);
-            $is_raw = $keys[0] === self::RESERVED_KEY_RAW;
-            foreach ($keys as $k) {
-                if (isset($data[$k])) {
-                    $data = $data[$k];
-                } else {
-                    return null;
-                }
-            }
-            $v = $data;
-        } elseif (isset($this->vars[$offset])) {
-            $v = $this->vars[$offset];
-            $is_raw = $offset === self::RESERVED_KEY_RAW;
-        } else {
-            return null;
-        }
+        $v = $this->getOffsetRawValue($offset);
 
-        // intercept the case where $v is an array of PhpEcho blocks
-        if ($this->isArrayOfPhpEchoBlocks($v)) {
+        if ($v === null) {
+            return null;
+        } elseif ($this->isArrayOfPhpEchoBlocks($v)) {
+            // intercept the case where $v is an array of PhpEcho blocks
             return implode('', array_map('strval', $v));
-        } elseif ($is_raw) {
-            return $v;
         } elseif ($this('toEscape', $v)) {
             return $this('hsc', $v);
         } else {
             return $v;
+        }
+    }
+
+    /**
+     * @param $offset
+     * @return mixed
+     * @throws InvalidArgumentException
+     */
+    private function getOffsetRawValue($offset): mixed
+    {
+        if (self::$use_space_notation) {
+            $data = $this->vars;
+            $keys = explode(' ', $offset);
+            $last = array_pop($keys);
+            foreach ($keys as $k) {
+                if (isset($data[$k])) {
+                    $data = $data[$k];
+                } else {
+                    throw new InvalidArgumentException("unknown.offset.{$k}");
+                }
+            }
+            if (array_key_exists($last, $data)) {
+                return $data[$last];
+            } else {
+                throw new InvalidArgumentException("unknown.offset.{$last}");
+            }
+        } elseif (isset($this->vars[$offset])) {
+            return $this->vars[$offset];
+        } else {
+            throw new InvalidArgumentException("unknown.offset.{$offset}");
         }
     }
 
@@ -441,6 +496,7 @@ implements ArrayAccess
                 return;
             }
         }
+
         $this->vars[$offset] = $value;
     }
 
@@ -462,49 +518,32 @@ implements ArrayAccess
                     if (isset($data[$k])) {
                         $data =& $data[$k];
                     } else {
-                        return;
+                        throw new InvalidArgumentException("unknown.offset.{$k}");
                     }
                 }
-                unset($data[$last]);
 
-                return;
-            } elseif ($offset === self::RESERVED_KEY_RAW) {
-                $this->vars[self::RESERVED_KEY_RAW] = [];
-
-                return;
+                if (array_key_exists($last, $data)) {
+                    unset($data[$last]);
+                } else {
+                    throw new InvalidArgumentException("unknown.offset.{$last}");
+                }
             }
+        } elseif (array_key_exists($offset, $this->vars)) {
+            unset($this->vars[$offset]);
+        } else {
+            throw new InvalidArgumentException("unknown.offset.{$offset}");
         }
-        unset($this->vars[$offset]);
     }
-    //endregion
+    //endregion ARRAY ACCESS
 
     //region HELPER ZONE
-    /**
-     * @param string $name
-     * @param array $arguments
-     * @return mixed
-     */
-    public function __call(string $name, array $arguments): mixed
-    {
-        if (isset(self::$helpers[$name])) {
-            return $this->__invoke($name, ...$arguments);
-        } else {
-            return null;
-        }
-    }
-
-    public static function injectStandardHelpers(): void
-    {
-        self::injectHelpers(__DIR__.DIRECTORY_SEPARATOR.'stdPhpEchoHelpers.php');
-    }
-
     /**
      * @param int $length min = 12 chars
      * @return string
      */
-    public static function getToken(int $length = 12): string
+    public static function getToken(int $length = self::TOKEN_MIN_LENGTH): string
     {
-        $length = ($length < 12) ? 12 : $length;
+        $length = max(self::TOKEN_MIN_LENGTH, $length);
         do {
             $token = substr(str_shuffle(self::ALPHA_NUM.mt_rand(100000000, 999999999)), 0, $length);
         } while (isset(self::$tokens[$token]));
@@ -514,104 +553,106 @@ implements ArrayAccess
         return $token;
     }
 
-    /**
-     * @param string $name
-     * @param callable|Closure $helper
-     * @param int ...$types  HELPER_BOUND_TO_CLASS_INSTANCE HELPER_RETURN_ESCAPED_DATA
-     */
-    public static function addHelper(string $name, callable|Closure $helper, int ...$types): void
+    public static function injectStandardHelpers(): void
     {
-        self::$helpers[$name] = $helper;
-        foreach ($types as $t) {
-            self::$helpers_types[$name][] = $t;
-        }
-    }
-
-    /**
-     * @param array $helpers [name => callable|Closure | name => [callable|Closure, ...type]]
-     */
-    public static function addHelpers(array $helpers): void
-    {
-        foreach ($helpers as $name => $h) {
-            if (($h instanceof Closure) || is_callable($h)) {
-                self::$helpers[$name] = $h;
-            } elseif (is_array($h)) {
-                self::addHelper($name, array_shift($h), ...$h);
-            }
-        }
+        self::injectHelpers(__DIR__.DIRECTORY_SEPARATOR.'stdPhpEchoHelpers.php');
     }
 
     /**
      * Inject the helpers from a file
-     * @param string $path
+     * @param string $path full path file from the root
      */
     public static function injectHelpers(string $path): void
     {
         if (is_file($path)) {
-            self::addHelpers(include $path);
+            include $path;
+        } else {
+            throw new InvalidArgumentException("helpers.file.not.found.{$path}");
+        }
+    }
+
+    /**
+     * @param string $name
+     * @param Closure $helper
+     * @param bool $result_escaped
+     */
+    public static function addHelper(string $name, Closure $helper, bool $result_escaped = false): void
+    {
+        self::$helpers[$name] = $helper;
+        if ($result_escaped) {
+            self::$helpers_result_escaped[$name] = true;
+        }
+    }
+
+    /**
+     * @param string $name
+     * @param Closure $helper
+     * @param bool $result_escaped
+     */
+    public static function addBindableHelper(string $name, Closure $helper, bool $result_escaped = false): void
+    {
+        self::$helpers[$name] = $helper;
+        self::$bindable_helpers[$name] = true;
+        if ($result_escaped) {
+            self::$helpers_result_escaped[$name] = true;
+        }
+    }
+
+    /**
+     * @param string $name
+     * @return Closure
+     * @throws InvalidArgumentException
+     */
+    public static function getHelper(string $name): Closure
+    {
+        if (self::isHelper($name, true)) {
+            return self::$helpers[$name];
         }
     }
 
     /**
      * @return array [name => closure]
      */
-    public static function helpers(): array
+    public static function getHelpers(): array
     {
         return self::$helpers;
     }
 
     /**
-     * @param string $helper_name
-     * @return array [int]
-     */
-    public static function getHelperTypes(string $helper_name): array
-    {
-        return self::$helpers_types[$helper_name] ?? [];
-    }
-
-    /**
-     * @param string $helper_name
+     * @param string $name
+     * @param bool $throw_if_not
      * @return bool
+     * @throws InvalidArgumentException
      */
-    public static function isHelper(string $helper_name): bool
+    public static function isHelper(string $name, bool $throw_if_not = false): bool
     {
-        return isset(self::$helpers[$helper_name]);
-    }
-
-    /**
-     * Check if the helper has the defined type
-     *
-     * @param string $helper_name
-     * @param int $type
-     * @return bool
-     */
-    public static function isHelperOfType(string $helper_name, int $type): bool
-    {
-        return isset(self::$helpers_types[$helper_name]) && in_array($type, self::$helpers_types[$helper_name]);
-    }
-
-    /**
-     * @param array $type array of types [type]
-     * @param bool $strict when matched, check if the helper has only the asked types
-     * @return array [helper's name => closure]
-     */
-    public static function getHelpersByType(array $type, bool $strict = false): array
-    {
-        $data = [];
-        foreach (self::$helpers_types as $name => $v) {
-            $intersect = array_intersect($type, $v);
-            if (( ! empty($intersect)) && (count($type) === count($intersect))) {
-                if ($strict) {
-                    if  (count($type) === count($v)) {
-                        $data[$name] = self::$helpers[$name];
-                    }
-                } else {
-                    $data[$name] = self::$helpers[$name];
-                }
-            }
+        if (isset(self::$helpers[$name])) {
+            return true;
+        } else {
+            return $throw_if_not ? throw new InvalidArgumentException("unknown.helper.{$name}") : false;
         }
+    }
 
-        return $data;
+    /**
+     * @param string $name
+     * @return bool
+     * @throws InvalidArgumentException
+     */
+    public static function isHelperResultEscaped(string $name): bool
+    {
+        return self::isHelper($name, true) && isset(self::$helpers_result_escaped[$name]);
+    }
+
+    /**
+     * Check if the helper must be bound to a class instance
+     *
+     * @param string $name
+     * @return bool
+     * @throws InvalidArgumentException
+     */
+    public static function isHelperBindable(string $name): bool
+    {
+        return self::isHelper($name, true) && isset(self::$bindable_helpers[$name]);
     }
 
     /**
@@ -619,19 +660,17 @@ implements ArrayAccess
      * Only for helpers bound to a class instance
      *
      * @param object $p
-     * @return array [helper's id => bound closure]
      */
-    private function bindHelpersTo(object $p): array
+    private function bindHelpersTo(object $p): void
     {
         $helpers = [];
-        foreach (self::getHelpersByType([HELPER_BOUND_TO_CLASS_INSTANCE], false) as $name => $hlp) {
+        foreach (array_keys(self::$bindable_helpers) as $name) {
+            $hlp = self::$helpers[$name];
             $helpers[$name] = $hlp->bindTo($p, $p);
         }
         $this->bound_helpers = $helpers;
-
-        return $helpers;
     }
-    //endregion
+    //endregion HELPER ZONE
 
     /**
      * @param mixed $p
@@ -661,23 +700,22 @@ implements ArrayAccess
     }
 
     /**
-     * Define the filepath to the external view file to include
+     * Define the filepath to the external view file to include from the template dir root
+     * The full resolved filepath is built using the template directory root
      *
      * Rule R001 : Any space inside a name will be automatically converted to DIRECTORY_SEPARATOR
      *
-     * For strings : $parts = 'www user view login.php';
+     * For strings : $path = 'www user view login.php';
      *  - become "www/user/view/login.php"  if DIRECTORY_SEPARATOR = '/'
      *  - become "www\user\view\login.php"  if DIRECTORY_SEPARATOR = '\'
      *
      * File inclusion remove the inline code
      *
-     * If a template dir root is defined then the path is automatically prepend with
-     *
      * @param string $path
      */
     public function setFile(string $path): void
     {
-        $this->file = self::getFullFilepath($path);
+        $this->file = $path;
         $this->code = '';
     }
 
@@ -713,18 +751,13 @@ implements ArrayAccess
      * If a template dir root is defined then the path is automatically prepend with
      *
      * @param string $var_name the var used in the current template targeting the child block
-     * @param string $path_from_tpl_dir
+     * @param string $path path from template dir root
      * @param array|null $vars if null then the parent transfers its internal vars to the child
      * @param string $id
      * @return self
      */
-    public function addBlock(string $var_name, string $path_from_tpl_dir, ?array $vars = null, string $id = ''): self
+    public function addBlock(string $var_name, string $path, ?array $vars = null, string $id = ''): self
     {
-        $parts = explode(' ', $path_from_tpl_dir);
-        if (self::$template_dir_root !== '') {
-            array_unshift($parts, self::$template_dir_root);
-        }
-        $path = implode(DIRECTORY_SEPARATOR, $parts);
         $block = new PhpEcho($path, $vars ?? $this->vars, $id);
         $block->parent = $this;
         $this->has_children = true;
@@ -735,22 +768,37 @@ implements ArrayAccess
 
     /**
      * @param string $var_name
-     * @param string $path_from_tpl_dir
+     * @param string $path path from template dir root
      * @param array|null $vars
      * @param string $id
-     * @return self|null
+     * @return self
+     * @throws InvalidArgumentException
      */
-    public function renderByDefault(string $var_name, string $path_from_tpl_dir, ?array $vars = null, string $id = ''): ?self
+    public function renderByDefault(string $var_name, string $path, ?array $vars = null, string $id = ''): self
     {
         if (isset($this->vars[$var_name])) {
             if ($this->vars[$var_name] instanceof self) {
                 return $this->vars[$var_name];
+            } else {
+                throw new InvalidArgumentException('a.partial.view.must.be.a.PhpEcho.block');
             }
         } else {
-            return $this->addBlock($var_name, $path_from_tpl_dir, $vars, $id);
+            return $this->addBlock($var_name, $path, $vars, $id);
         }
+    }
 
-        return null;
+    /**
+     * Same as addBlock() but without having a $var_name to define
+     * The block is not accessible using a variable
+     *
+     * @param string $path
+     * @param array|null $vars
+     * @param string $id
+     * @return self
+     */
+    public function renderBlock(string $path, ?array $vars = null, string $id = ''): self
+    {
+        return $this->addBlock(self::getToken(), $path, $vars, $id);
     }
 
     /**
@@ -758,7 +806,7 @@ implements ArrayAccess
      */
     public function hasParent(): bool
     {
-        return ($this->parent instanceof self);
+        return isset($this->parent);
     }
 
     /**
@@ -780,35 +828,40 @@ implements ArrayAccess
         } elseif ($nb >= 2) {
             // the first param should be a helper
             $helper = array_shift($args);
-            if (self::isHelper($helper)) {
+            if (self::isHelper($helper, true)) {
                 $root->head[] = $this($helper, ...$args);
             }
         }
     }
 
     /**
-     * @param bool $escape  If you don't want to escape the head, set it to false
      * @return string
      */
-    public function getHead(bool $escape): string
+    public function getHead(): string
     {
         // generate a token that will be replaced after rendering the whole HTML
         $this->head_token = self::getToken(26);
-        $this->head_escape = $escape;
 
         return $this->head_token;
     }
 
     /**
-     * Manually render the block
+     * @throws BadMethodCallException
      */
     public function render(): void
     {
         if ($this->code === '') {
-            if (($this->file !== '') && is_file($this->file)) {
-                ob_start();
-                include $this->file;
-                $this->code = ob_get_clean();
+            if ($this->file !== '') {
+                $path = self::getFullFilepath($this->file);
+                if (is_file($path)) {
+                    ob_start();
+                    include $path;
+                    $this->code = ob_get_clean();
+                } else {
+                    throw new BadMethodCallException("unknown.view.file.{$this->file}");
+                }
+            } else {
+                throw new BadMethodCallException('no.view.to.render');
             }
         }
     }

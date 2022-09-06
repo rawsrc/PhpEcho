@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 use rawsrc\PhpEcho\PhpEcho;
 
-$helpers = [];
-
 //region STANDALONE HELPERS
 //region is_scalar
 /**
@@ -17,8 +15,8 @@ $helpers = [];
 $is_scalar = function(mixed $p): bool {
     return is_scalar($p) || (is_object($p) && method_exists($p, '__toString'));
 };
-$helpers['isScalar'] = [$is_scalar, HELPER_RETURN_ESCAPED_DATA];
-//endregion
+PhpEcho::addHelper('isScalar', $is_scalar, true);
+//endregion is_scalar
 
 //region to_escape
 /**
@@ -27,21 +25,19 @@ $helpers['isScalar'] = [$is_scalar, HELPER_RETURN_ESCAPED_DATA];
  * @param mixed $p
  * @return bool
  */
-$to_escape = function(mixed $p) use ($is_scalar): bool  {
+$to_escape = function(mixed $p): bool  {
     if (is_string($p)) {
         return true;
-    } elseif (is_bool($p) || is_int($p) || is_float($p) || ($p instanceof PhpEcho)) {
+    } elseif (is_bool($p) || is_int($p) || is_float($p) || ($p instanceof PhpEcho) || ($p === null)) {
         return false;
-    } elseif ($is_scalar($p)) {
-        return true;
     } elseif (is_object($p)) {
-        return false;
+        return method_exists($p, '__toString');
     } else {
         return true;
     }
 };
-$helpers['toEscape'] = [$to_escape, HELPER_RETURN_ESCAPED_DATA];
-//endregion
+PhpEcho::addHelper('toEscape', $to_escape, true);
+//endregion to_escape
 
 //region hsc_array
 /**
@@ -58,13 +54,14 @@ $helpers['toEscape'] = [$to_escape, HELPER_RETURN_ESCAPED_DATA];
  */
 $hsc_array = function(array $part) use (&$hsc_array, $to_escape): array {
     $data = [];
+    $hsc = fn($p) => htmlspecialchars((string)$p, ENT_QUOTES, 'utf-8');
     foreach ($part as $k => $v) {
-        $sk = htmlspecialchars((string)$k, ENT_QUOTES, 'utf-8');
+        $sk = $hsc($k);
         if ($to_escape($v)) {
             if (is_array($v)) {
                 $data[$sk] = $hsc_array($v);
             } else {
-                $data[$sk] = htmlspecialchars((string)$v, ENT_QUOTES, 'utf-8');
+                $data[$sk] = $hsc($v);
             }
         } else {
             $data[$sk] = $v;
@@ -73,7 +70,7 @@ $hsc_array = function(array $part) use (&$hsc_array, $to_escape): array {
 
     return $data;
 };
-//endregion
+//endregion hsc_array
 
 //region hsc
 /**
@@ -89,7 +86,9 @@ $hsc_array = function(array $part) use (&$hsc_array, $to_escape): array {
  * @return array|string
  */
 $hsc = function(mixed $p) use ($hsc_array, $is_scalar): array|string {
-    if ($is_scalar($p)) {
+    if ($p instanceof PhpEcho) {
+        return $p;
+    } elseif ($is_scalar($p)) {
         return htmlspecialchars((string)$p, ENT_QUOTES, 'utf-8');
     } elseif (is_array($p)) {
         return $hsc_array($p);
@@ -97,11 +96,11 @@ $hsc = function(mixed $p) use ($hsc_array, $is_scalar): array|string {
         return '';
     }
 };
-$helpers['hsc'] = [$hsc, HELPER_RETURN_ESCAPED_DATA];
-//endregion
-//endregion
+PhpEcho::addHelper('hsc', $hsc, true);
+//endregion hsc
+//endregion STANDALONE HELPERS
 
-//region PHPECHO INSTANCE HELPERS
+//region BINDABLE HELPERS
 //region raw
 /**
  * Return the raw value from the key in parameter
@@ -115,26 +114,14 @@ $helpers['hsc'] = [$hsc, HELPER_RETURN_ESCAPED_DATA];
  *
  * @param string $key
  * @return mixed
+ * @throws InvalidArgumentException
  */
 $raw = function(string $key): mixed {
-    if (isset($this->vars[$key])) {
-        return $this->vars[$key];
-    } else {
-        $keys = explode(' ', $key);
-        $cursor = $this->vars;
-        foreach ($keys as $k) {
-            if (isset($cursor[$k])) {
-                $cursor = $cursor[$k];
-            } else {
-                return null;
-            }
-        }
-
-        return $cursor;
-    }
+    /** @var PhpEcho $this */
+    return $this->getOffsetRawValue($key);
 };
-$helpers['raw'] = [$raw, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
-//endregion
+PhpEcho::addBindableHelper('raw', $raw, true);
+//endregion raw
 
 //region key_up
 /**
@@ -149,15 +136,15 @@ $helpers['raw'] = [$raw, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_D
  *
  * @param string|array $keys
  * @param bool $strict_match
- * @return mixed null if not found
+ * @return mixed
+ * @throws InvalidArgumentException If not found
  */
-$key_up = function(array|string $keys, bool $strict_match = true) use ($to_escape, $hsc) {
+$key_up = function(array|string $keys, bool $strict_match = true) use ($to_escape, $hsc): mixed {
     /** @var PhpEcho $this */
     if ( ! $this->hasParent()) {
-        return null;
+        throw new InvalidArgumentException('no.parent.block.available');
     }
     $keys = is_string($keys) ? explode(' ', $keys) : $keys;
-    /** @var PhpEcho $block */
     $block = $this->parent;
     $nb = count($keys);
     $i = 0;
@@ -174,17 +161,17 @@ $key_up = function(array|string $keys, bool $strict_match = true) use ($to_escap
                 ++$i;
             }
         } elseif ($strict_match) {
-            return null;
+            throw new InvalidArgumentException('key.not.found');
         }
         if ($block->hasParent()) {
             $block = $block->parent;
         } else {
-            return null;
+            throw new InvalidArgumentException('no.more.parent.block.available');
         }
     }
 };
-$helpers['keyUp'] = [$key_up, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
-//endregion
+PhpEcho::addBindableHelper('keyUp', $key_up, true);
+//endregion key_up
 
 //region root
 /**
@@ -200,8 +187,8 @@ $root = function(): PhpEcho {
 
     return $block;
 };
-$helpers['root'] = [$root, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
-//endregion
+PhpEcho::addBindableHelper('root', $root);
+//endregion root
 
 //region root_var
 /**
@@ -212,7 +199,8 @@ $helpers['root'] = [$root, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED
  * If one of the keys contains a space, use an array of keys instead
  *
  * @param array|string $keys
- * @return mixed null if not found
+ * @return mixed
+ * @throws InvalidArgumentException If not found
  */
 $root_var = function(array|string $keys) use ($to_escape, $hsc): mixed {
     /** @var PhpEcho $this */
@@ -236,12 +224,12 @@ $root_var = function(array|string $keys) use ($to_escape, $hsc): mixed {
                 ++$i;
             }
         } else {
-            return null;
+            throw new InvalidArgumentException('key.not.found');
         }
     }
 };
-$helpers['rootVar'] = [$root_var, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
-//endregion
+PhpEcho::addBindableHelper('rootVar', $root_var, true);
+//endregion root_var
 
 //region seek_param
 /**
@@ -249,8 +237,9 @@ $helpers['rootVar'] = [$root_var, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_
  *
  * @param string $name
  * @return null
+ * @throws InvalidArgumentException If not found
  */
-$seek_param = function(string $name) {
+$seek_param = function(string $name): mixed {
     /** @var PhpEcho $block */
     $block = $this;
     while (true) {
@@ -259,13 +248,13 @@ $seek_param = function(string $name) {
         } elseif ($block->hasParent()) {
             $block = $block->parent;
         } else {
-            return null;
+            throw new InvalidArgumentException('param.not.found');
         }
     }
 };
-$helpers['seekParam'] = [$seek_param, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RETURN_ESCAPED_DATA];
-//endregion
-//endregion
+PhpEcho::addBindableHelper('seekParam', $seek_param, true);
+//endregion seek_param
+//endregion BINDABLE HELPERS
 
 //region HTML HELPERS
 //region selected
@@ -280,8 +269,8 @@ $helpers['seekParam'] = [$seek_param, HELPER_BOUND_TO_CLASS_INSTANCE, HELPER_RET
 $selected = function(mixed $p, mixed $ref) use ($is_scalar): string {
     return $is_scalar($p) && $is_scalar($ref) && ((string)$p === (string)$ref) ? ' selected ' : '';
 };
-$helpers['selected'] = [$selected, HELPER_RETURN_ESCAPED_DATA];
-//endregion
+PhpEcho::addHelper('selected', $selected, true);
+//endregion selected
 
 //region checked
 /**
@@ -295,8 +284,8 @@ $helpers['selected'] = [$selected, HELPER_RETURN_ESCAPED_DATA];
 $checked = function(mixed $p, mixed $ref) use ($is_scalar): string {
     return $is_scalar($p) && $is_scalar($ref) && ((string)$p === (string)$ref) ? ' checked ' : '';
 };
-$helpers['checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
-//endregion
+PhpEcho::addHelper('checked', $checked, true);
+//endregion checked
 
 //region attribute
 /**
@@ -307,20 +296,24 @@ $helpers['checked'] = [$checked, HELPER_RETURN_ESCAPED_DATA];
  *  - 2 => "selected" => will render selected
  *
  * @param array $p [attribute_name => value]
+ * @param bool $escape_url for href or src attributes
  * @return string
  */
-$attributes = function(array $p): string {
+$attributes = function(array $p, bool $escape_url = true): string {
     $data = [];
     foreach ($p as $attr => $value) {
         if (is_int($attr)) {
             $data[] = $value;
         } elseif ($value !== '') {
             $str = null;
-            // consider that href or src are already escaped
             if (in_array($attr, ['href', 'src'], true)) {
-                $str = $value;
-                // intercept js for DOMEvent : starting with onXXX
+                if ($escape_url) {
+                    $str = htmlspecialchars($value, ENT_QUOTES, 'utf-8');
+                } else {
+                    $str = $value;
+                }
             } elseif (mb_substr($attr, 0, 2, 'utf-8') === 'on') {
+                // intercept js for DOMEvent : starting with onXXX
                 $str = str_replace('"', '&quot;', $value);
             } elseif (ctype_alpha($attr) || (mb_substr($attr, 0, 5) === 'data-')) {
                 $str = htmlspecialchars($value, ENT_QUOTES, 'utf-8');
@@ -333,8 +326,8 @@ $attributes = function(array $p): string {
 
     return implode(' ', $data);
 };
-$helpers['attributes'] = [$attributes, HELPER_RETURN_ESCAPED_DATA];
-//endregion
+PhpEcho::addHelper('attributes', $attributes, true);
+//endregion attribute
 
 //region void_tag
 /**
@@ -343,107 +336,113 @@ $helpers['attributes'] = [$attributes, HELPER_RETURN_ESCAPED_DATA];
  *
  * @param string $tag
  * @param array $attr
+ * @param bool $escape_url for href or src attributes
  * @return string
  */
-$void_tag = function(string $tag, array $attr = []) use ($attributes): string {
-    $str = $attributes($attr);
+$void_tag = function(string $tag, array $attr = [], bool $escape_url = true) use ($attributes): string {
+    $str = $attributes($attr, $escape_url);
     if ($str !== '') {
         $str = ' '.$str;
     }
 
     return "<{$tag}{$str}>";
 };
-$helpers['voidTag'] = [$void_tag, HELPER_RETURN_ESCAPED_DATA];
-//endregion
+PhpEcho::addHelper('voidTag', $void_tag, true);
+//endregion void_tag
 
 //region tag
 /**
  * Return the HTML code for a tag: <tag>content</tag>
  * Attributes and content are escaped
  *
- * To avoid double escaping on content : set $attr['escaped'] = true
+ * To avoid double escaping only on content : set $attr['escaped'] = true
  *
  * @param string $tag
  * @param string $content
  * @param array $attr
+ * @param bool $escape_url for href or src attributes
  * @return string
  */
-$tag = function(string $tag, string $content, array $attr = []) use ($void_tag, $hsc) {
+$tag = function(string $tag, string $content, array $attr = [], bool $escape_url = true) use ($void_tag, $hsc) {
     if (( ! isset($attr['escaped'])) || ($attr['escaped'] !== true)) {
         $content = $hsc($content);
     }
     unset($attr['escaped']);
 
-    return $void_tag($tag, $attr).$content."</{$tag}>";
+    return $void_tag($tag, $attr, $escape_url).$content."</{$tag}>";
 };
-$helpers['tag'] = [$tag, HELPER_RETURN_ESCAPED_DATA];
-//endregion
+PhpEcho::addHelper('tag', $tag, true);
+//endregion tag
 
 //region link
 /**
  * HTML TAG : <link>
  *
- * @param array $p  [rel => value, attribute => value] as many pair (attribute => value) as necessary
+ * @param array $p [rel => value, attribute => value] as many pair (attribute => value) as necessary
+ * @param bool $escape_url for href or src attributes
  * @return string
+ * @throws InvalidArgumentException
  *
  * @link https://www.w3schools.com/tags/tag_link.asp
  */
-$link = function(array $p) use ($void_tag): string {
+$link = function(array $p, bool $escape_url = true) use ($void_tag): string {
     if (empty($p['rel'])) {   // rel is required
-        return '';
+        throw new InvalidArgumentException('attribute.rel.is.required.for.a.link.tag');
     } else {
-        return $void_tag('link', $p);
+        return $void_tag('link', $p, $escape_url);
     }
 };
-$helpers['link'] = [$link, HELPER_RETURN_ESCAPED_DATA];
-//endregion
+PhpEcho::addHelper('link', $link, true);
+//endregion link
 
 //region style
 /**
  * HTML TAG : <style></style>
  *
  * The url if defined goes over the plain code
- * @param array $p  [href => url | code => plain css definition, attribute => value] as many pair (attribute => value) as necessary
+ * @param array $p [href => url | code => plain css definition, attribute => value] as many pair (attribute => value) as necessary
+ * @param bool $escape_url for href or src attributes
  * @return string
+ * @throws InvalidArgumentException
  *
  * @link https://www.w3schools.com/tags/tag_style.asp
  */
-$style = function(array $p) use ($tag, $link): string {
+$style = function(array $p, bool $escape_url = true) use ($tag, $link): string {
     if (empty($p['href']) && empty($p['code'])) {
-        return '';
+        throw new InvalidArgumentException('attribute.href.or.code.is.required.for.a.style.tag');
     }
 
-    $attr = ['type' => 'text/css'];
-
     if (isset($p['href'])) {
-        $attr += ['rel' => 'stylesheet', 'href' => $p['href']];
+        $attr = ['rel' => 'stylesheet', 'href' => $p['href']];
         unset($p['rel'], $p['href']);
 
-        return $link($attr + $p);
+        return $link($attr + $p, $escape_url);
     }
 
     $code = $p['code'];
     unset($p['code'], $p['rel'], $p['href']);
     $p['escaped'] = true;
 
-    return $tag('style', $code, $attr + $p);
+    return $tag('style', $code, $p, $escape_url);
 };
-$helpers['style'] = [$style, HELPER_RETURN_ESCAPED_DATA];
-//endregion
+PhpEcho::addHelper('style', $style, true);
+//endregion style
 
 //region script
 /**
  * HTML TAG : <script></script>
  *
  * The url if defined goes over the plain code
- * @param array $p  [src => url | code => plain javascript, attribute => value] as many pair (attribute => value) as necessary
+ * @param array $p [src => url | code => plain javascript, attribute => value] as many pair (attribute => value) as necessary
+ * @param bool $escape_url for href or src attributes
  * @return string
+ * @throws InvalidArgumentException
  *
  * @link https://www.w3schools.com/tags/tag_script.asp
  */
-$script = function(array $p) use ($tag): string {
+$script = function(array $p, bool $escape_url = true) use ($tag): string {
     if (empty($p['src']) && empty($p['code'])) {
-        return '';
+        throw new InvalidArgumentException('attribute.src.or.code.is.required.for.a.script.tag');
     }
     if (isset($p['src'])) {
         $code = '';
@@ -453,11 +452,8 @@ $script = function(array $p) use ($tag): string {
     }
     $p['escaped'] = true;
 
-    return $tag('script', $code, $p);
+    return $tag('script', $code, $p, $escape_url);
 };
-$helpers['script'] = [$script, HELPER_RETURN_ESCAPED_DATA];
-//endregion
-//endregion
-
-// return the array of helpers to PhpEcho
-return $helpers;
+PhpEcho::addHelper('script', $script, true);
+//endregion script
+//endregion HTML HELPERS
