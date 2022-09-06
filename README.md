@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2022-08-14` `PHP 8.0+` `v.5.0.0`
+`2022-09-06` `PHP 8.0+` `v.5.0.0`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **VERSION 5.X IS ONLY FOR PHP 8 AND ABOVE**
@@ -41,18 +41,18 @@ written for the previous version of the engine. The changes impact mainly the co
 generating the helpers. The code for the view part of your project is not impacted by the upgrade.
 
 **NEW FEATURE IN PhpEcho v5.0.0:**<br>
-1. Removing th constant `HELPER_BOUND_TO_CLASS_INSTANCE` which is replaced by `PhpEcho::addBindableHelper`
+1. Removing th constant `HELPER_BOUND_TO_CLASS_INSTANCE`, it's replaced by `PhpEcho::addBindableHelper`
 2. Removing the constant `HELPER_RETURN_ESCAPED_DATA`. Now, the engine is able to check when data must 
 be escaped and preserve the native datatype when it's safe in HTML context
-2. Instead of dying silently with `null` or empty string, the engine now throws an `Exception`
+2. Instead of dying silently with `null` or empty string, the engine now throws in all case an `Exception`
 You must produce a better code as it will crash on each low quality segment.
 3. Add new method `renderBlock()` to link easily a child block to its parent  
 4. Many code improvements
-5. Soon "Fully tested": tests are in progress 
+5. Fully tested: the core and all helpers have been fully tested 
 
 **What you must know to use it**
 1. All values read from a PhpEcho instance are escaped and safe in HTML context.
-2. Parameters stored in any PhpEcho instance are NEVER escaped
+2. Parameters stored in any PhpEcho instance are **NEVER** escaped
 3. Inside an external view file, the instance of the class PhpEcho is always available through `$this`.
 4. You MUST NEVER use a space in a name anywhere (block, helper, folder, path): a space is always read as a `DIRECTORY_SEPARATOR`
 
@@ -90,6 +90,7 @@ Usually, the architecture is generic and quite simple:
 - a block can be built on others blocks and so on
 
 Remember: the unit of `PhpEcho` is the block. Others components are usually built with blocks.
+In the sunny world of PhpEcho, a layout or a page are also seen as blocks. 
 
 In the bootstrap of your webapp, you just have to tell `PhpEcho` where is the root directory:<br>
 Example:
@@ -177,8 +178,8 @@ This helper is a standalone closure, there's no need to have access to an instan
 As everything is escaped by default in PhpEcho, we can consider the word "checked" is safe and does not need to be escaped again, 
 this is why, with the helper definition, the third parameter is set to `true`.<br>
 To call this helper inside your code (2 ways) : <br>
-* `$this('checked', 'your value', 'ref value');`
-* `$this->checked('your value', 'ref value');`
+* `$this('checked', 'your value', 'ref value'); // based on __invoke`
+* `$this->checked('your value', 'ref value'); // based on __call`
  
 Now, have a look at the helper that returns the raw value from the stored key-value pair `raw`:
 ```php
@@ -201,7 +202,7 @@ To define a helper, there are 2 ways:
 
 When you write a new helper that will be bound to a class instance and needs to use another bound helper,
 to be sure the two helpers refer to the same context, you must use this syntax `$existing_helper = $this->bound_helpers['$existing_helper_name'];` inside your code. 
-Please have a look at the `$root_var` helper (how the link to another bound helper is created: `$root`).
+Please have a look at the `$root_var` helper (how the link to another bound helper `$root` is created).
 
 ## **Simple example**
 
