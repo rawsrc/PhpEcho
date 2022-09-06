@@ -381,12 +381,13 @@ PhpEcho::addHelper('tag', $tag, true);
  * @param array $p [rel => value, attribute => value] as many pair (attribute => value) as necessary
  * @param bool $escape_url for href or src attributes
  * @return string
+ * @throws InvalidArgumentException
  *
  * @link https://www.w3schools.com/tags/tag_link.asp
  */
 $link = function(array $p, bool $escape_url = true) use ($void_tag): string {
     if (empty($p['rel'])) {   // rel is required
-        return '';
+        throw new InvalidArgumentException('attribute.rel.is.required.for.a.link');
     } else {
         return $void_tag('link', $p, $escape_url);
     }
