@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2022-09-06` `PHP 8.0+` `v.5.0.0`
+`2022-09-13` `PHP 8.0+` `v.5.0.1`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **VERSION 5.X IS ONLY FOR PHP 8 AND ABOVE**
@@ -40,7 +40,7 @@ This version is a major update and breaks the compatibility with the code
 written for the previous version of the engine. The changes impact mainly the code
 generating the helpers. The code for the view part of your project is not impacted by the upgrade.
 
-**NEW FEATURE IN PhpEcho v5.0.0:**<br>
+**NEW FEATURE IN PhpEcho v5.0.1:**<br>
 1. Removing th constant `HELPER_BOUND_TO_CLASS_INSTANCE`, it's replaced by `PhpEcho::addBindableHelper`
 2. Removing the constant `HELPER_RETURN_ESCAPED_DATA`. Now, the engine is able to check when data must 
 be escaped and preserve the native datatype when it's safe in HTML context
@@ -48,7 +48,9 @@ be escaped and preserve the native datatype when it's safe in HTML context
 You must produce a better code as it will crash on each low quality segment.
 3. Add new method `renderBlock()` to link easily a child block to its parent  
 4. Many code improvements
-5. Fully tested: the core and all helpers have been fully tested 
+5. Fully tested: the core and all helpers have been fully tested
+6. Add new helper to the standard library `renderIfNotSet()` that render a default value instead 
+of throwing an `Exception` for any missing key in the stored key-value pairs 
 
 **What you must know to use it**
 1. All values read from a PhpEcho instance are escaped and safe in HTML context.
