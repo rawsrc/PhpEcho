@@ -123,6 +123,23 @@ $raw = function(string $key): mixed {
 PhpEcho::addBindableHelper('raw', $raw, true);
 //endregion raw
 
+//region render_if_not_set
+/**
+ * @param string $key
+ * @param mixed $default_value
+ * @return mixed
+ */
+$render_if_not_set = function(string $key, mixed $default_value) use ($hsc): mixed {
+    /** @var PhpEcho $this */
+    try {
+        return $this[$key];
+    } catch (Exception $e) {
+        return $hsc($default_value);
+    }
+};
+PhpEcho::addBindableHelper('renderIfNotSet', $render_if_not_set, true);
+//endregion render_if_not_set
+
 //region key_up
 /**
  * This helper will climb the tree of PhpEcho instances from the current block while the key match

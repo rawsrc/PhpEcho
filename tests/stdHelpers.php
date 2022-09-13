@@ -370,3 +370,14 @@ $pilot->run(
 );
 $pilot->assertIsString();
 $pilot->assertEqual('<script>document.getElementById("demo").innerHTML = "Hello JavaScript!";</script>');
+
+
+$block = new PhpEcho();
+$block['foo'] = 'abc " < >';
+$pilot->run(
+    id: 'stdHelper_039',
+    test: fn() => $block->renderIfNotSet('xyz', 'default value is: abc " < >'),
+    description: 'renderIfNotSet helper'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('default value is: abc &quot; &lt; &gt;');

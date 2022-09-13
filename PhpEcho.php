@@ -66,6 +66,7 @@ use const DIRECTORY_SEPARATOR;
  * @method mixed rootVar(array|string $keys) Extract the value from the top level PhpEcho block (the root)
  * @method PhpEcho root() Return the root PhpEcho instance of the tree
  * @method mixed seekParam(string $name) Seek the parameter from the current block to the root
+ * @method mixed renderIfNotSet(string $key, mixed $default_value) If the key is not defined then render the default value
  *
  * HTML HELPERS
  * @method mixed hsc($p) Escape the value in parameter (scalar, array, stringifyable)
