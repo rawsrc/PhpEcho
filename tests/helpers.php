@@ -11,7 +11,7 @@ PhpEcho::injectStandardHelpers();
 
 $pilot->run(
     id: 'helpers_001',
-    test: fn() => PhpEcho::getHelper('hsc'),
+    test: fn() => PhpEcho::getHelperBase('hsc'),
     description: 'inject default helpers and check the declaration of a standard helper (hsc)'
 );
 $pilot->assertIsInstanceOf(Closure::class);
@@ -26,7 +26,7 @@ $pilot->assertException(InvalidArgumentException::class);
 PhpEcho::addHelper('basic_helper', fn() => 'foo_bar_helper_result');
 $pilot->run(
     id: 'helpers_003',
-    test: fn() => PhpEcho::getHelper('basic_helper'),
+    test: fn() => PhpEcho::getHelperBase('basic_helper'),
     description: 'create a helper on the fly and retrieve it'
 );
 $pilot->assertIsInstanceOf(Closure::class);
@@ -41,7 +41,7 @@ $pilot->assertEqual(true);
 
 $pilot->run(
     id: 'helpers_005',
-    test: fn() => PhpEcho::getHelper('wrong_helper'),
+    test: fn() => PhpEcho::getHelperBase('wrong_helper'),
     description: 'try to extract a wrong helper'
 );
 $pilot->assertException(InvalidArgumentException::class);
@@ -49,7 +49,7 @@ $pilot->assertException(InvalidArgumentException::class);
 PhpEcho::addHelper('basic_helper', fn() => 'foo_bar_helper_result_new');
 $pilot->run(
     id: 'helpers_006',
-    test: fn() => PhpEcho::getHelper('basic_helper'),
+    test: fn() => PhpEcho::getHelperBase('basic_helper'),
     description: 'redefine a helper on the fly and retrieve it'
 );
 $pilot->assertIsInstanceOf(Closure::class);

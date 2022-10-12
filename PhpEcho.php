@@ -177,25 +177,15 @@ implements ArrayAccess
      */
     public function __invoke(string $helper, mixed ...$args): mixed
     {
-        if ($helper === '') {
-            throw new InvalidArgumentException('helper.cannot.be.empty');
-        }
+        $hlp = $this->getHelper($helper);
+        $result = $hlp(...$args);
 
-        if (self::isHelper($helper, true)) {
-            if ($this->bound_helpers === []) {
-                $this->bindHelpersTo($this);
-            }
-            $helpers = $this->bound_helpers + self::$helpers;
-            $hlp = $helpers[$helper];
-            $result = $hlp(...$args);
-
-            if (self::isHelperResultEscaped($helper)) {
-                return $result;
-            } elseif ($this('toEscape', $result)) {
-                return $this('hsc', $result);
-            } else {
-                return $result;
-            }
+        if (self::isHelperResultEscaped($helper)) {
+            return $result;
+        } elseif ($this('toEscape', $result)) {
+            return $this('hsc', $result);
+        } else {
+            return $result;
         }
     }
 
@@ -600,14 +590,56 @@ implements ArrayAccess
     }
 
     /**
+     * Return the helper closure (already bound to the current instance if bindable) otherwise the base closure
+     *
      * @param string $name
      * @return Closure
      * @throws InvalidArgumentException
      */
-    public static function getHelper(string $name): Closure
+    public function getHelper(string $name): Closure
     {
-        if (self::isHelper($name, true)) {
-            return self::$helpers[$name];
+        $helper = self::getHelperDetails($name);
+        // return the bound version (if available)
+        if ($helper['bindable']) {
+            if ($this->bound_helpers === []) {
+                $this->bindHelpersTo($this);
+            }
+            $helpers = $this->bound_helpers + self::$helpers;
+
+            return $helpers[$name];
+        } else {
+            return $helper['closure'];
+        }
+    }
+
+    /**
+     * @param string $name
+     * @return Closure
+     * @throws InvalidArgumentException
+     */
+    public static function getHelperBase(string $name): Closure
+    {
+        return self::getHelperDetails($name)['closure'];
+    }
+
+    /**
+     * @param string $name
+     * @return array [name, helper, bindable, escaped]
+     * @throws InvalidArgumentException
+     */
+    protected static function getHelperDetails(string $name): array
+    {
+        if ($name === '') {
+            throw new InvalidArgumentException('helper.cannot.be.empty');
+        } elseif (self::isHelper($name)) {
+            return [
+                'name' => $name,
+                'closure' => self::$helpers[$name],
+                'bindable' => isset(self::$bindable_helpers[$name]),
+                'escaped' => isset(self::$helpers_result_escaped[$name]),
+            ];
+        } else {
+            throw new InvalidArgumentException("unknown.helper.{$name}");
         }
     }
 
@@ -621,17 +653,11 @@ implements ArrayAccess
 
     /**
      * @param string $name
-     * @param bool $throw_if_not
      * @return bool
-     * @throws InvalidArgumentException
      */
-    public static function isHelper(string $name, bool $throw_if_not = false): bool
+    public static function isHelper(string $name): bool
     {
-        if (isset(self::$helpers[$name])) {
-            return true;
-        } else {
-            return $throw_if_not ? throw new InvalidArgumentException("unknown.helper.{$name}") : false;
-        }
+        return isset(self::$helpers[$name]);
     }
 
     /**
@@ -641,7 +667,7 @@ implements ArrayAccess
      */
     public static function isHelperResultEscaped(string $name): bool
     {
-        return self::isHelper($name, true) && isset(self::$helpers_result_escaped[$name]);
+        return self::getHelperDetails($name)['escaped'];
     }
 
     /**
@@ -653,7 +679,7 @@ implements ArrayAccess
      */
     public static function isHelperBindable(string $name): bool
     {
-        return self::isHelper($name, true) && isset(self::$bindable_helpers[$name]);
+        return self::getHelperDetails($name)['bindable'];
     }
 
     /**

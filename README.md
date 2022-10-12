@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2022-09-13` `PHP 8.0+` `v.5.0.1`
+`2022-10-12` `PHP 8.0+` `v.5.1.0`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **VERSION 5.X IS ONLY FOR PHP 8 AND ABOVE**
@@ -40,7 +40,7 @@ This version is a major update and breaks the compatibility with the code
 written for the previous version of the engine. The changes impact mainly the code
 generating the helpers. The code for the view part of your project is not impacted by the upgrade.
 
-**NEW FEATURE IN PhpEcho v5.0.1:**<br>
+**Changelog v5.0.0:**<br>
 1. Removing th constant `HELPER_BOUND_TO_CLASS_INSTANCE`, it's replaced by `PhpEcho::addBindableHelper`
 2. Removing the constant `HELPER_RETURN_ESCAPED_DATA`. Now, the engine is able to check when data must 
 be escaped and preserve the native datatype when it's safe in HTML context
@@ -51,6 +51,12 @@ You must produce a better code as it will crash on each low quality segment.
 5. Fully tested: the core and all helpers have been fully tested
 6. Add new helper to the standard library `renderIfNotSet()` that render a default value instead 
 of throwing an `Exception` for any missing key in the stored key-value pairs 
+
+**Changelog v5.1.0:**<br>
+1. The method `getHelper(string $name): Closure` is not static anymore
+2. The equivalent static is now defined as `getHelperBase(string $name): Closure`
+3. The method `isHelper(string $name): bool` does not throw any `Exception` anymore and only returns a strict boolean
+4. Internally some code optimization and better logic segmentation: new method `getHelperDetails(string $name): array` 
 
 **What you must know to use it**
 1. All values read from a PhpEcho instance are escaped and safe in HTML context.
