@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 namespace rawsrc\PhpEcho;
 
@@ -39,7 +37,7 @@ use const DIRECTORY_SEPARATOR;
  * @author      rawsrc
  * @copyright   MIT License
  *
- *              Copyright (c) 2020-2022 rawsrc
+ *              Copyright (c) 2020-2022+ rawsrc
  *
  *              Permission is hereby granted, free of charge, to any person obtaining a copy
  *              of this software and associated documentation files (the "Software"), to deal
@@ -144,6 +142,10 @@ implements ArrayAccess
      * @var array
      */
     private static array $global_params = [];
+    /**
+     * @var bool
+     */
+    private static bool $std_helpers_injected = false;
 
     //region MAGIC METHODS
     /**
@@ -153,6 +155,10 @@ implements ArrayAccess
      */
     public function __construct(string $file = '', array $vars = [], string $id = '')
     {
+        if (self::$std_helpers_injected === false) {
+            self::injectStandardHelpers();
+        }
+
         if ($file !== '') {
             $this->setFile($file);
         }
@@ -547,6 +553,7 @@ implements ArrayAccess
     public static function injectStandardHelpers(): void
     {
         self::injectHelpers(__DIR__.DIRECTORY_SEPARATOR.'stdPhpEchoHelpers.php');
+        self::$std_helpers_injected = true;
     }
 
     /**

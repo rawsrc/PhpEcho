@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2022-10-12` `PHP 8.0+` `v.5.1.0`
+`2022-12-01` `PHP 8.0+` `v.5.1.1`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **VERSION 5.X IS ONLY FOR PHP 8 AND ABOVE**
@@ -56,7 +56,10 @@ of throwing an `Exception` for any missing key in the stored key-value pairs
 1. The method `getHelper(string $name): Closure` is not static anymore
 2. The equivalent static is now defined as `getHelperBase(string $name): Closure`
 3. The method `isHelper(string $name): bool` does not throw any `Exception` anymore and only returns a strict boolean
-4. Internally some code optimization and better logic segmentation: new method `getHelperDetails(string $name): array` 
+4. Internally some code optimization and better logic segmentation: new method `getHelperDetails(string $name): array`
+
+**Changelog v5.1.1:**<br>
+1. Standard helpers are now injected once automatically
 
 **What you must know to use it**
 1. All values read from a PhpEcho instance are escaped and safe in HTML context.
@@ -129,12 +132,13 @@ www
  |--- bootstrap.php
  |--- index.php
 ```
-In your `bootstrap.php` file, you must inject the standard helpers and set up the main template directory:<br>
+Before v.5.1.1, in your `bootstrap.php` file, you must inject the standard helpers and set up the main template directory.<br>
+Since v.5.1.1, standard helpers are now injected once automatically, you still have to set up the main template directory.<br> 
 ```php
 
 use rawsrc\PhpEcho\PhpEcho;
 
-PhpEcho::injectStandardHelpers();
+// PhpEcho::injectStandardHelpers();   // before v.5.1.1
 PhpEcho::setTemplateDirRoot(__DIR__.DIRECTORY_SEPARATOR.'View'.DIRECTORY_SEPARATOR.'Template01');
 ```
 Then you will code for example the homepage `page homepage.php` based on `layout main.php` like that:
