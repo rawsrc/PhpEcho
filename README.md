@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2022-12-01` `PHP 8.0+` `v.5.1.1`
+`2022-12-14` `PHP 8.0+` `v.5.1.1`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **VERSION 5.X IS ONLY FOR PHP 8 AND ABOVE**
@@ -356,6 +356,39 @@ $body = new PhpEcho('block login.php');  // login expects 2 values (login and ur
 $page['body'] = $body; // $body['login'] and $body['url_submit'] are well defined
 
 echo $page;
+```
+
+**AUTO ESCAPING VARS**
+
+I was asked to clarify the auto-escaping feature. 
+The submitted problem concerned some PHP code using arrays.
+```php
+<?php
+// suppose you have data like that:
+$data = ['"name"' => 'rawsrc'];
+// now we inject the data into a PhpEcho block
+$block = new PhpEcho('dummy_block.php', ['my_data' => $data]);
+// inside the block (in HTML context), we have to test the value of the key
+// something like that:
+?>
+<?php foreach ($this['my_data'] as $key => $value) {
+    // wrong code
+    if ($key === '"name"') { // this will never be true as the key has been automatically escaped
+        echo $value; // $value is automatically escaped
+    }
+    // correct code
+    if ($key === '&quot;name&quot;') { // ($key === '&quot ;name&quot ;') 
+        echo $value; // $value is automatically escaped
+    }    
+}
+```
+or you can do it manually using the helper `raw()` and do not forget to escape the value:
+```php
+foreach ($this->raw('my_data') as $key => $value) {
+    if ($key === '"name"') { 
+        echo $this->hsc($value); // $value is manually escaped
+    }   
+}
 ```
 
 ## **Array of PhpEcho blocks**
