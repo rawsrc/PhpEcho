@@ -40,7 +40,8 @@ composer require rawsrc/phpecho
 1. Space is not used as directory separator anymore, the only admitted directory separator is now / (slash)
 Space is now preserved in the filepath.
 Everywhere you wrote for example `new PhpEcho('block dummy_block.php');`, you must replace it with `new PhpEcho('block/dummy_block.php');`
-The same thing for `$this->render('block dummy_block.php');` which must be replaced by `$this->render('block/dummy_block.php');`
+The same thing for `$this->renderblock('block dummy_block.php');` which must be replaced by `$this->renderBlock('block/dummy_block.php');`
+and also for `this->renderByDefault('preloader', 'block preloader.php')` which become `this->renderByDefault('preloader', 'block/preloader.php')` 
 If you have previously used a space as directory separator, you'll have to review all the view files. 
 If you stayed stuck with slash (/), no problems, this upgrade won't impact your code. 
 
