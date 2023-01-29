@@ -6,6 +6,6 @@
     <?= $this->getHead() ?>
 </head>
 <body>
-<?= $this->renderBlock('block block_04.php') ?>
+<?= $this->renderBlock('block/block_04.php') ?>
 </body>
 </html>

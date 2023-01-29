@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2022-12-14` `PHP 8.0+` `v.5.1.1`
+`2023-01-29` `PHP 8.0+` `v.5.2.0`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **VERSION 5.X IS ONLY FOR PHP 8 AND ABOVE**
@@ -35,10 +35,23 @@ The class will manage :
 ```bash
 composer require rawsrc/phpecho
 ```
-**NEW VERSION PhpEcho v5.0.0:**<br>
-This version is a major update and breaks the compatibility with the code 
-written for the previous version of the engine. The changes impact mainly the code
-generating the helpers. The code for the view part of your project is not impacted by the upgrade.
+
+**Changelog v5.2.0:**<br>
+1. Space is not used as directory separator anymore, the only admitted directory separator is now / (slash)
+Space is now preserved in the filepath.
+Everywhere you wrote for example `new PhpEcho('block dummy_block.php');`, you must replace it with `new PhpEcho('block/dummy_block.php');`
+The same thing for `$this->render('block dummy_block.php');` which must be replaced by `$this->render('block/dummy_block.php');`
+If you have previously used a space as directory separator, you'll have to review all the view files. 
+If you stayed stuck with slash (/), no problems, this upgrade won't impact your code. 
+
+**Changelog v5.1.1:**<br>
+1. Standard helpers are now injected once automatically
+
+**Changelog v5.1.0:**<br>
+1. The method `getHelper(string $name): Closure` is not static anymore
+2. The equivalent static is now defined as `getHelperBase(string $name): Closure`
+3. The method `isHelper(string $name): bool` does not throw any `Exception` anymore and only returns a strict boolean
+4. Internally some code optimization and better logic segmentation: new method `getHelperDetails(string $name): array`
 
 **Changelog v5.0.0:**<br>
 1. Removing th constant `HELPER_BOUND_TO_CLASS_INSTANCE`, it's replaced by `PhpEcho::addBindableHelper`
@@ -50,22 +63,18 @@ You must produce a better code as it will crash on each low quality segment.
 4. Many code improvements
 5. Fully tested: the core and all helpers have been fully tested
 6. Add new helper to the standard library `renderIfNotSet()` that render a default value instead 
-of throwing an `Exception` for any missing key in the stored key-value pairs 
+of throwing an `Exception` for any missing key in the stored key-value pairs
 
-**Changelog v5.1.0:**<br>
-1. The method `getHelper(string $name): Closure` is not static anymore
-2. The equivalent static is now defined as `getHelperBase(string $name): Closure`
-3. The method `isHelper(string $name): bool` does not throw any `Exception` anymore and only returns a strict boolean
-4. Internally some code optimization and better logic segmentation: new method `getHelperDetails(string $name): array`
-
-**Changelog v5.1.1:**<br>
-1. Standard helpers are now injected once automatically
+**NEW VERSION PhpEcho v5.0.0:**<br>
+This version is a major update and breaks the compatibility with the code
+written for the previous version of the engine. The changes impact mainly the code
+generating the helpers. The code for the view part of your project is not impacted by the upgrade.
 
 **What you must know to use it**
 1. All values read from a PhpEcho instance are escaped and safe in HTML context.
 2. Parameters stored in any PhpEcho instance are **NEVER** escaped
 3. Inside an external view file, the instance of the class PhpEcho is always available through `$this`.
-4. You MUST NEVER use a space in a name anywhere (block, helper, folder, path): a space is always read as a `DIRECTORY_SEPARATOR`
+4. The only admitted directory separator is / (slash)
 
 **SHORT EXAMPLE**
 ```php
@@ -141,7 +150,7 @@ use rawsrc\PhpEcho\PhpEcho;
 // PhpEcho::injectStandardHelpers();   // before v.5.1.1
 PhpEcho::setTemplateDirRoot(__DIR__.DIRECTORY_SEPARATOR.'View'.DIRECTORY_SEPARATOR.'Template01');
 ```
-Then you will code for example the homepage `page homepage.php` based on `layout main.php` like that:
+Then you will code for example the homepage `page/homepage.php` based on `layout/main.php` like that:
 ```php
 <?php
 
@@ -149,13 +158,13 @@ declare(strict_types=1);
 
 use rawsrc\PhpEcho\PhpEcho;
 
-$homepage = new PhpEcho('layout main.php', [
-    'header' => new PhpEcho('block header.php', [
+$homepage = new PhpEcho('layout/main.php', [
+    'header' => new PhpEcho('block/header.php', [
         'user' => 'rawsrc',
-        'navbar' => new PhpEcho('block navbar.php'),
+        'navbar' => new PhpEcho('block/navbar.php'),
     ]),
-    'body' => new PhpEcho('block home.php'),
-    'footer' => new PhpEcho('block footer.php'),      
+    'body' => new PhpEcho('block/home.php'),
+    'footer' => new PhpEcho('block/footer.php'),      
 ]);
 
 echo $homepage;
@@ -265,7 +274,7 @@ use rawsrc\PhpEcho\PhpEcho;
 echo new PhpEcho('layout main.php', [
     'title' => 'My first use case of PhpEcho',
     'description' => 'PhpEcho, PHP template engine, easy to learn and use',
-    'body' => new PhpEcho('block login.php', [
+    'body' => new PhpEcho('block/login.php', [
         'login' => 'rawsrc',
         'url_submit' => 'any/path/for/connection',
     ]),
@@ -279,11 +288,11 @@ declare(strict_types=1);
 
 use rawsrc\PhpEcho\PhpEcho;
 
-$page = new PhpEcho('layout main.php');
+$page = new PhpEcho('layout/main.php');
 $page['title'] = 'My first use case of PhpEcho';
 $page['description'] = 'PhpEcho, PHP template engine, easy to learn and use';
 
-$body = new PhpEcho('block login.php');
+$body = new PhpEcho('block/login.php');
 $body['login'] = 'rawsrc';
 $body['url_submit'] = 'any/path/for/connection';
 
@@ -311,7 +320,7 @@ use rawsrc\PhpEcho\PhpEcho; // LOGIN FORM BLOCK ?>
 <p>Please login : </p>
 <form method=post action="<?= $this['url_submit'] ?>">
     <label>User</label>
-    <input type="text" name="login" value="<?= new PhpEcho('block login_input_text.php') ?>"><br>
+    <input type="text" name="login" value="<?= new PhpEcho('block/login_input_text.php') ?>"><br>
     <label>Password</label>
     <input type="password" name="pwd" value=""><br>
     <input type="submit" name="submit" value="CONNECT">
@@ -323,7 +332,7 @@ it should be replaced with one of the methods described just above:
 <p>Please login : </p>
 <form method=post action="<?= $this['url_submit'] ?>">
     <label>User</label>
-    <input type="text" name="login" value="<?= $this->renderBlock('block login_input_text.php') ?>"><br>
+    <input type="text" name="login" value="<?= $this->renderBlock('block/login_input_text.php') ?>"><br>
     <label>Password</label>
     <input type="password" name="pwd" value=""><br>
     <input type="submit" name="submit" value="CONNECT">
@@ -342,7 +351,7 @@ declare(strict_types=1);
 
 use rawsrc\PhpEcho\PhpEcho;
 
-$page = new PhpEcho('layout main.php');
+$page = new PhpEcho('layout/main.php');
 $page['title'] = 'My first use case of PhpEcho';
 $page['description'] = 'PhpEcho, PHP template engine, easy to learn and use';
 $page['login'] = 'rawsrc';
@@ -390,6 +399,24 @@ foreach ($this->raw('my_data') as $key => $value) {
     }   
 }
 ```
+or you can create a helper for this purpose that will not escape the keys but only values:
+
+```php
+use rawsrc\PhpEcho\PhpEcho;$hsc_array_values = function(array $part) use (&$hsc_array_values): array {
+    $data = [];
+    $hsc = PhpEcho::getHelperBase('hsc');    
+    foreach ($part as $k => $v) {
+        if ($to_escape($v)) {
+            $data[$k] = $hsc($v);
+        } else {
+            $data[$sk] = $v;
+        }
+    }
+
+    return $data;
+};
+
+```
 
 ## **Array of PhpEcho blocks**
 You can define many strategies for views especially regarding the level of details (the granularity) of complex layouts and pages.
@@ -420,13 +447,13 @@ When you want to preserve some flexibility using the abstract code, since v4 it 
 use rawsrc\PhpEcho\PhpEcho;
 
 $page['body'] = [
-    new PhpEcho('block preloader.php'),
-    new PhpEcho('block top_header.php'),
-    new PhpEcho('block navbar.php'),
-    new PhpEcho('block navbar_mobile.php'),
-    new PhpEcho('block body.php'),
-    new PhpEcho('block footer.php'),
-    new PhpEcho('block copyright.php'),
+    new PhpEcho('block/preloader.php'),
+    new PhpEcho('block/top_header.php'),
+    new PhpEcho('block/navbar.php'),
+    new PhpEcho('block/navbar_mobile.php'),
+    new PhpEcho('block/body.php'),
+    new PhpEcho('block/footer.php'),
+    new PhpEcho('block/copyright.php'),
 ];
 ```
 The blocks are rendered in the order they appear. You can omit one or many, swap them. You are free to render the code as you need.
@@ -437,13 +464,13 @@ Since v4, it's possible to define a default block view to render:
 ```php
 <?php /** @var rawsrc\PhpEcho\PhpEcho $this */ ?>
 <body>
-<?= $this->renderByDefault('preloader', 'block preloader.php') ?>
-<?= $this->renderByDefault('top_header', 'block top_header.php') ?>
-<?= $this->renderByDefault('navbar', 'block navbar.php') ?>
-<?= $this->renderByDefault('navbar_mobile', 'block navbar_mobile.php') ?>
+<?= $this->renderByDefault('preloader', 'block/preloader.php') ?>
+<?= $this->renderByDefault('top_header', 'block/top_header.php') ?>
+<?= $this->renderByDefault('navbar', 'block/navbar.php') ?>
+<?= $this->renderByDefault('navbar_mobile', 'block/navbar_mobile.php') ?>
 <?= $this['body'] ?>
-<?= $this->renderByDefault('footer', 'block footer.php') ?>
-<?= $this->renderByDefault('copyright', 'block copyright.php') ?>
+<?= $this->renderByDefault('footer', 'block/footer.php') ?>
+<?= $this->renderByDefault('copyright', 'block/copyright.php') ?>
 </body>
 ```
 All keys except `body` are optional.
@@ -487,7 +514,7 @@ Let's swap the login form file:
 
 use rawsrc\PhpEcho\PhpEcho;
 
-$page = new PhpEcho('layout main.php', [
+$page = new PhpEcho('layout/main.php', [
     'title' => 'My first use case of PhpEcho',
     'description' => 'PhpEcho, PHP template engine, easy to learn and use',
 ]);

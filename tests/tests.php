@@ -15,12 +15,8 @@ include_once '../PhpEcho.php';
 
 use Exacodis\Pilot;
 
-$pilot = new Pilot('PhpEcho - A native PHP template engine');
+$pilot = new Pilot('PhpEcho - A native PHP template engine - v.5.2.0');
 $pilot->injectStandardHelpers();
-
-// fast filepath builder
-$pilot->addResource('filepath', fn(string $p): string => str_replace(' ', DIRECTORY_SEPARATOR, $p));
-//endregion
 
 include 'filepath.php';
 include 'params.php';

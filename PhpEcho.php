@@ -37,7 +37,7 @@ use const DIRECTORY_SEPARATOR;
  * @author      rawsrc
  * @copyright   MIT License
  *
- *              Copyright (c) 2020-2022+ rawsrc
+ *              Copyright (c) 2020-2023+ rawsrc
  *
  *              Permission is hereby granted, free of charge, to any person obtaining a copy
  *              of this software and associated documentation files (the "Software"), to deal
@@ -227,12 +227,14 @@ implements ArrayAccess
     /**
      * Return the full path to a view file, prepend it with the template dir root
      *
-     * @param string $path space separated of path segments
+     * @param string $path
      * @return string
      */
     public static function getFullFilepath(string $path): string
     {
-        $path = str_replace(' ', DIRECTORY_SEPARATOR, $path);
+        if (DIRECTORY_SEPARATOR !== '/') {
+            $path = str_replace('/', DIRECTORY_SEPARATOR, $path);
+        }
         if ((self::$template_dir_root !== '') && ( ! str_contains($path, self::$template_dir_root))) {
             $path = self::$template_dir_root.DIRECTORY_SEPARATOR.$path;
         }
@@ -730,16 +732,20 @@ implements ArrayAccess
      */
     public static function setTemplateDirRoot(string $p): void
     {
-        self::$template_dir_root = $p;
+        if (DIRECTORY_SEPARATOR !== '/') {
+            self::$template_dir_root = str_replace('/', DIRECTORY_SEPARATOR, $p);
+        } else {
+            self::$template_dir_root = $p;
+        }
     }
 
     /**
      * Define the filepath to the external view file to include from the template dir root
      * The full resolved filepath is built using the template directory root
      *
-     * Rule R001 : Any space inside a name will be automatically converted to DIRECTORY_SEPARATOR
+     * Watch carefully the directory separators as they will be replaced by the system constant: DIRECTORY_SEPARATOR
      *
-     * For strings : $path = 'www user view login.php';
+     * Including space in the directory separators: $path = 'www user view login.php';
      *  - become "www/user/view/login.php"  if DIRECTORY_SEPARATOR = '/'
      *  - become "www\user\view\login.php"  if DIRECTORY_SEPARATOR = '\'
      *

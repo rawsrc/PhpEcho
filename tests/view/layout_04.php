@@ -6,6 +6,6 @@
     <?= $this->getHead() ?>
 </head>
 <body>
-<?= $this->renderByDefault('abc', 'block block_03.php', ['block_03_text' => 'default value for block']) ?>
+<?= $this->renderByDefault('abc', 'block/block_03.php', ['block_03_text' => 'default value for block']) ?>
 </body>
 </html>

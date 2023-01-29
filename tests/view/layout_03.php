@@ -6,6 +6,6 @@
     <?= $this->getHead() ?>
 </head>
 <body>
-<?= $this->addBlock('abc', 'block block_04.php') ?>
+<?= $this->addBlock('abc', 'block/block_04.php') ?>
 </body>
 </html>

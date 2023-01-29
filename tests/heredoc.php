@@ -10,7 +10,7 @@ use rawsrc\PhpEcho\PhpEcho;
 PhpEcho::setTemplateDirRoot(__DIR__.DIRECTORY_SEPARATOR.'view');
 
 $block = new PhpEcho();
-$block['body'] = new PhpEcho('block block_01.php', ['block_01_text' => 'run_txt_block_01']);
+$block['body'] = new PhpEcho('block/block_01.php', ['block_01_text' => 'run_txt_block_01']);
 
 $view = <<<html
 <!DOCTYPE html>
@@ -49,7 +49,7 @@ $pilot->assertEqual(<<<html
 html);
 
 $block = new PhpEcho();
-$block['body'] = new PhpEcho('block block_01.php', ['block_01_text' => 'abc " < >']);
+$block['body'] = new PhpEcho('block/block_01.php', ['block_01_text' => 'abc " < >']);
 
 $view = <<<html
 <!DOCTYPE html>
@@ -90,8 +90,8 @@ html);
 
 $block = new PhpEcho();
 $block['body'] = [
-    new PhpEcho('block block_01.php', ['block_01_text' => 'run_txt_block_01']),
-    new PhpEcho('block block_02.php', ['block_02_text' => 'abc " < >']),
+    new PhpEcho('block/block_01.php', ['block_01_text' => 'run_txt_block_01']),
+    new PhpEcho('block/block_02.php', ['block_02_text' => 'abc " < >']),
 ];
 
 $view = <<<html
@@ -133,8 +133,8 @@ html);
 
 
 $block = new PhpEcho(vars: ['body' => [
-    new PhpEcho('block block_01.php', ['block_01_text' => 'run_txt_block_01']),
-    new PhpEcho('block block_02.php', ['block_02_text' => 'abc " < >']),
+    new PhpEcho('block/block_01.php', ['block_01_text' => 'run_txt_block_01']),
+    new PhpEcho('block/block_02.php', ['block_02_text' => 'abc " < >']),
 ]]);
 
 $view = <<<html
@@ -176,8 +176,8 @@ html);
 
 
 $block = new PhpEcho();
-$block['block_01'] = new PhpEcho('block block_01.php', ['block_01_text' => 'run_txt_block_01']);
-$block['block_02'] = new PhpEcho('block block_02.php', ['block_02_text' => 'abc " < >']);
+$block['block_01'] = new PhpEcho('block/block_01.php', ['block_01_text' => 'run_txt_block_01']);
+$block['block_02'] = new PhpEcho('block/block_02.php', ['block_02_text' => 'abc " < >']);
 
 $view = <<<html
 <!DOCTYPE html>
@@ -230,7 +230,7 @@ $view = <<<html
     {$block->getHead()}
 </head>
 <body>
-{$block->addBlock('abc', 'block block_04.php')}
+{$block->addBlock('abc', 'block/block_04.php')}
 </body>
 </html>
 html;
@@ -270,7 +270,7 @@ $view = <<<html
     {$block->getHead()}
 </head>
 <body>
-{$block->renderByDefault('abc', 'block block_03.php', ['block_03_text' => 'default value for block'])}
+{$block->renderByDefault('abc', 'block/block_03.php', ['block_03_text' => 'default value for block'])}
 </body>
 </html>
 html;
@@ -300,7 +300,7 @@ html);
 
 
 $block = new PhpEcho();
-$block['abc'] = new PhpEcho('block block_02.php', ['block_02_text' => 'abc']);
+$block['abc'] = new PhpEcho('block/block_02.php', ['block_02_text' => 'abc']);
 
 $view = <<<html
 <!DOCTYPE html>
@@ -310,7 +310,7 @@ $view = <<<html
     {$block->getHead()}
 </head>
 <body>
-{$block->renderByDefault('abc', 'block block_03.php', ['block_03_text' => 'default value for block'])}
+{$block->renderByDefault('abc', 'block/block_03.php', ['block_03_text' => 'default value for block'])}
 </body>
 </html>
 html;
@@ -340,7 +340,7 @@ html);
 
 
 $block = new PhpEcho();
-$block['abc'] = new PhpEcho('block block_02.php', ['block_02_text' => 'abc']);
+$block['abc'] = new PhpEcho('block/block_02.php', ['block_02_text' => 'abc']);
 
 $view = <<<html
 <!DOCTYPE html>
@@ -350,7 +350,7 @@ $view = <<<html
     {$block->getHead()}
 </head>
 <body>
-{$block->renderBlock('block block_04.php')}
+{$block->renderBlock('block/block_04.php')}
 </body>
 </html>
 html;
@@ -382,7 +382,7 @@ html);
 
 $block = new PhpEcho();
 $block['block_03_text'] = 'foo_text';
-$block->addBlock('block', 'block block_03.php'); // bloc_03 expects to have a value for 'block_03_text' which is defined in the layout
+$block->addBlock('block', 'block/block_03.php'); // bloc_03 expects to have a value for 'block_03_text' which is defined in the layout
 
 $view = <<<html
 <!DOCTYPE html>
@@ -422,7 +422,7 @@ html);
 
 
 $block = new PhpEcho();
-$block['block'] = new PhpEcho('block block_05.php');
+$block['block'] = new PhpEcho('block/block_05.php');
 
 $view = <<<html
 <!DOCTYPE html>

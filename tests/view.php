@@ -10,7 +10,7 @@ use rawsrc\PhpEcho\PhpEcho;
 PhpEcho::setTemplateDirRoot(__DIR__.DIRECTORY_SEPARATOR.'view');
 
 $layout = new PhpEcho('layout_01.php');
-$layout['body'] = new PhpEcho('block block_01.php', ['block_01_text' => 'run_txt_block_01']);
+$layout['body'] = new PhpEcho('block/block_01.php', ['block_01_text' => 'run_txt_block_01']);
 ob_start();
 echo $layout;
 $html = ob_get_clean();
@@ -33,7 +33,7 @@ html);
 
 
 $layout = new PhpEcho('layout_01.php');
-$layout['body'] = new PhpEcho('block block_01.php', ['block_01_text' => 'abc " < >']);
+$layout['body'] = new PhpEcho('block/block_01.php', ['block_01_text' => 'abc " < >']);
 ob_start();
 echo $layout;
 $html = ob_get_clean();
@@ -57,8 +57,8 @@ html);
 
 $layout = new PhpEcho('layout_01.php');
 $layout['body'] = [
-    new PhpEcho('block block_01.php', ['block_01_text' => 'run_txt_block_01']),
-    new PhpEcho('block block_02.php', ['block_02_text' => 'abc " < >']),
+    new PhpEcho('block/block_01.php', ['block_01_text' => 'run_txt_block_01']),
+    new PhpEcho('block/block_02.php', ['block_02_text' => 'abc " < >']),
 ];
 ob_start();
 echo $layout;
@@ -83,8 +83,8 @@ html);
 
 
 $layout = new PhpEcho('layout_01.php', ['body' => [
-    new PhpEcho('block block_01.php', ['block_01_text' => 'run_txt_block_01']),
-    new PhpEcho('block block_02.php', ['block_02_text' => 'abc " < >']),
+    new PhpEcho('block/block_01.php', ['block_01_text' => 'run_txt_block_01']),
+    new PhpEcho('block/block_02.php', ['block_02_text' => 'abc " < >']),
 ]]);
 
 ob_start();
@@ -110,8 +110,8 @@ html);
 
 
 $layout = new PhpEcho('layout_02.php');
-$layout['block_01'] = new PhpEcho('block block_01.php', ['block_01_text' => 'run_txt_block_01']);
-$layout['block_02'] = new PhpEcho('block block_02.php', ['block_02_text' => 'abc " < >']);
+$layout['block_01'] = new PhpEcho('block/block_01.php', ['block_01_text' => 'run_txt_block_01']);
+$layout['block_02'] = new PhpEcho('block/block_02.php', ['block_02_text' => 'abc " < >']);
 
 ob_start();
 echo $layout;
@@ -178,7 +178,7 @@ html);
 
 
 $layout = new PhpEcho('layout_04.php');
-$layout['abc'] = new PhpEcho('block block_02.php', ['block_02_text' => 'abc']);
+$layout['abc'] = new PhpEcho('block/block_02.php', ['block_02_text' => 'abc']);
 ob_start();
 echo $layout;
 $html = ob_get_clean();
@@ -224,7 +224,7 @@ html);
 
 $layout = new PhpEcho('layout_06.php');
 $layout['block_03_text'] = 'foo_text';
-$layout->addBlock('block', 'block block_03.php'); // bloc_03 expects to have a value for 'block_03_text' which is defined in the layout
+$layout->addBlock('block', 'block/block_03.php'); // bloc_03 expects to have a value for 'block_03_text' which is defined in the layout
 ob_start();
 echo $layout;
 $html = ob_get_clean();
@@ -246,7 +246,7 @@ html);
 
 
 $layout = new PhpEcho('layout_07.php');
-$layout['block'] = new PhpEcho('block block_05.php');
+$layout['block'] = new PhpEcho('block/block_05.php');
 ob_start();
 echo $layout;
 $html = ob_get_clean();
