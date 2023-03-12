@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2023-01-29` `PHP 8.0+` `v.5.2.0`
+`2023-03-12` `PHP 8.0+` `v.5.2.1`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **VERSION 5.X IS ONLY FOR PHP 8 AND ABOVE**
@@ -35,6 +35,13 @@ The class will manage :
 ```bash
 composer require rawsrc/phpecho
 ```
+**Changelog v5.2.1:**<br>
+1. Improving the local and global parameters' management<br>
+Add new method `getAnyParam(string $name)` that will return first the local value of the parameter if defined
+or the global value instead or throw finally an exception if the parameter is unknown<br>
+Offers the possibility to unset any local or global parameter using `unsetParam(string $name)` or `unsetGlobalParam(string $name)`<br>
+You can now check if a parameter is defined either in the local or global array using `hasAnyParam(string $name)`<br>
+Test files are updated
 
 **Changelog v5.2.0:**<br>
 1. Space is not used as directory separator anymore, the only admitted directory separator is now / (slash)

@@ -15,7 +15,7 @@ include_once '../PhpEcho.php';
 
 use Exacodis\Pilot;
 
-$pilot = new Pilot('PhpEcho - A native PHP template engine - v.5.2.0');
+$pilot = new Pilot('PhpEcho - A native PHP template engine - v.5.2.1');
 $pilot->injectStandardHelpers();
 
 include 'filepath.php';

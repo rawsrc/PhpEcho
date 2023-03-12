@@ -269,7 +269,7 @@ implements ArrayAccess
     /**
      * @param string $id
      */
-    public function setId(string $id)
+    public function setId(string $id): void
     {
         $this->id = $id;
     }
@@ -288,9 +288,22 @@ implements ArrayAccess
      * @param string $name
      * @param mixed $value
      */
-    public function setParam(string $name, mixed $value)
+    public function setParam(string $name, mixed $value): void
     {
         $this->params[$name] = $value;
+    }
+
+    /**
+     * @param string $name
+     * @return void
+     */
+    public function unsetParam(string $name): void
+    {
+        if (array_key_exists($name, $this->params)) {
+            unset ($this->params[$name]);
+        } else {
+            throw new InvalidArgumentException("unknown.parameter.{$name}");
+        }
     }
 
     /**
@@ -311,6 +324,21 @@ implements ArrayAccess
     }
 
     /**
+     * Return a parameter value from the local parameters array if found or from the
+     * global parameters array if found or throw an exception
+     *
+     * @param string $name
+     * @return mixed
+     * @throws InvalidArgumentException
+     */
+    public function getAnyParam(string $name): mixed
+    {
+        return array_key_exists($name, $this->params)
+            ? $this->params[$name]
+            : self::getGlobalParam($name);
+    }
+
+    /**
      * @param string $name
      * @return bool
      */
@@ -325,9 +353,24 @@ implements ArrayAccess
      * @param string $name
      * @param mixed $value
      */
-    public static function setGlobalParam(string $name, mixed $value)
+    public static function setGlobalParam(string $name, mixed $value): void
     {
         self::$global_params[$name] = $value;
+    }
+
+    /**
+     * @param string $name
+     * @throws InvalidArgumentException
+     */
+    public static function unsetGlobalParam(string $name): void
+    {
+        if (array_key_exists($name, self::$global_params)) {
+            unset (self::$global_params[$name]);
+        } elseif (array_key_exists($name, self::$global_params)) {
+            unset (self::$global_params[$name]);
+        } else {
+            throw new InvalidArgumentException("unknown.parameter.{$name}");
+        }
     }
 
     /**
@@ -349,6 +392,17 @@ implements ArrayAccess
     public function hasGlobalParam(string $name): bool
     {
         return array_key_exists($name, self::$global_params);
+    }
+
+    /**
+     * Check if the parameter is defined either in the local array storage or in the global one
+     *
+     * @param string $name
+     * @return bool
+     */
+    public function hasAnyParam(string $name): bool
+    {
+        return $this->hasParam($name) || self::hasGlobalParam($name);
     }
 
     /**
