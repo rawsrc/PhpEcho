@@ -410,20 +410,27 @@ foreach ($this->raw('my_data') as $key => $value) {
 or you can create a helper for this purpose that will not escape the keys but only values:
 
 ```php
-use rawsrc\PhpEcho\PhpEcho;$hsc_array_values = function(array $part) use (&$hsc_array_values): array {
+use rawsrc\PhpEcho\PhpEcho;
+
+$hsc_array_values = function(array $part) use (&$hsc_array_values): array {
+    $hsc = PhpEcho::getHelperBase('hsc');
+    $to_escape = PhpEcho::getHelperBase('toEscape')    
     $data = [];
-    $hsc = PhpEcho::getHelperBase('hsc');    
     foreach ($part as $k => $v) {
         if ($to_escape($v)) {
-            $data[$k] = $hsc($v);
+            if (is_array($v)) {
+                $data[$k] = $hsc_array_values($v);
+            } else {
+                $data[$k] = $hsc($v);
+            }
         } else {
-            $data[$sk] = $v;
+            $data[$k] = $v;
         }
     }
 
     return $data;
 };
-
+PhpEcho::addBindableHelper('hscArrayValues', $hsc_array_values, true);
 ```
 
 ## **Array of PhpEcho blocks**
