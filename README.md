@@ -608,12 +608,13 @@ $is_popup = $this->getParam('document.isPopup'); // true
 ```
 
 It's also possible to define some global parameter common to all instances
+
 ```php
 // In any block, set a parameter
-$this->setGlobalParam('document.isPopup', true);
+PhpEcho::setGlobalParam('document.isPopup', true);
 
 // get the parameter
-$is_popup = $this->getGlobalParam('document.isPopup'); // true
+$is_popup = PhpEcho::getGlobalParam('document.isPopup'); // true
 ```
 
 You can check if a param is defined, and retrieve its value:
@@ -623,8 +624,14 @@ $this->hasGlobalParam('document.isPopup'); // In the global context
 $this->hasAnyParam('document.isPopup'); // seek in the current block first then in the global context
 
 $is_popup = $this->getParam('document.isPopup'); // From current block
-$is_popup = $this->getGlobalParam('document.isPopup'); // From global context
+$is_popup = PhpEcho::getGlobalParam('document.isPopup'); // From global context
 $is_popup = $this->getAnyParam('document.isPopup'); // From current block if found and then from the global context
+```
+
+It's also possible to unset a parameter:
+```php
+$this->unsetParam('document.isPopup'); // from the current block
+PhpEcho::unsetGlobalParam('document.isPopup'); // from the global context
 ```
 
 ## **Let's play with helpers**
