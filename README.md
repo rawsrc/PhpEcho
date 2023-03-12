@@ -596,19 +596,36 @@ our css tests without interfering with others parts of HTML. It's also possible 
 
 ## **Parameters**
 
-Since PhpEcho 2.3.1, each instance of PhpEcho can now have their own parameters.<br>
-Please note that the parameters are never escaped. 
+Since PhpEcho 2.3.1, each instance of PhpEcho can now have their local parameters.<br>
+Please note that the parameters are never escaped.
+If a parameter is unknown then you'll have an `Exception`
 ```php
-// In any block
-// set a parameter
+// In current block, set a parameter
 $this->setParam('document.isPopup', true);
 
 // get the parameter
 $is_popup = $this->getParam('document.isPopup'); // true
 ```
-There's an interesting point to keep in mind, when the parameter is not defined in the current instance
-then the engine will automatically seek for it through the parent PhpEcho instances. It will climb the other leaves to the root 
-and stop if the parameter is found or return null.
+
+It's also possible to define some global parameter common to all instances
+```php
+// In any block, set a parameter
+$this->setGlobalParam('document.isPopup', true);
+
+// get the parameter
+$is_popup = $this->getGlobalParam('document.isPopup'); // true
+```
+
+You can check if a param is defined, and retrieve its value:
+```php
+$this->hasParam('document.isPopup'); // In current block
+$this->hasGlobalParam('document.isPopup'); // In the global context
+$this->hasAnyParam('document.isPopup'); // seek in the current block first then in the global context
+
+$is_popup = $this->getParam('document.isPopup'); // From current block
+$is_popup = $this->getGlobalParam('document.isPopup'); // From global context
+$is_popup = $this->getAnyParam('document.isPopup'); // From current block if found and then from the global context
+```
 
 ## **Let's play with helpers**
 As mentioned above, there's some new helpers that have been added to the standard helpers library `stdPhpEchoHelpers.php`.
