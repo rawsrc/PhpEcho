@@ -42,6 +42,7 @@ composer require rawsrc/phpecho
 3. You can now define the seek order to get the first value either 
 from the `local` or `global` context using `getAnyParam(string $name, string $seek_order = 'local'): mixed`
 4. It's possible to unset at once a parameter from the local and the global context using `unsetAnyParam(string $name): void`
+Test files are updated
 
 **Changelog v5.2.1:**<br>
 1. Improving the local and global parameters' management<br>

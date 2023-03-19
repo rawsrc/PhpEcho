@@ -1,6 +1,6 @@
 # PhpEcho : a native PHP templating engine in one class 
 
-`2023-03-12` `PHP 8.0+` `v.5.2.1`
+`2023-03-19` `PHP 8.0+` `v.5.3.0`
 
 ## TESTS
 
