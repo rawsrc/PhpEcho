@@ -635,6 +635,10 @@ You can check if a param is defined either in local or global context:
 ```php
 $this->hasAnyParam('document.isPopup'); // seek in the current block first then in the global context
 ```
+You can set a local and global parameter at once
+```php
+$this->setAnyParam('document.isPopup', true); // the value is available in both contexts (local and global)
+```
 It's also possible to unset a parameter from the local and global context at once:
 ```php
 $this->unsetAnyParam('document.isPopup');
