@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2023-03-12` `PHP 8.0+` `v.5.2.1`
+`2023-03-19` `PHP 8.0+` `v.5.3.0`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **VERSION 5.X IS ONLY FOR PHP 8 AND ABOVE**
@@ -35,6 +35,14 @@ The class will manage :
 ```bash
 composer require rawsrc/phpecho
 ```
+
+**Changelog v5.3.0:**<br>
+1. Code optimization and improvement of the parameters management
+2. The method `hasGlobalParam(string $name)` is now `static`
+3. You can now define the seek order to get the first value either 
+from the `local` or `global` context using `getAnyParam(string $name, string $seek_order = 'local'): mixed`
+4. It's possible to unset at once a parameter from the local and the global context using `unsetAnyParam(string $name): void`
+
 **Changelog v5.2.1:**<br>
 1. Improving the local and global parameters' management<br>
 Add new method `getAnyParam(string $name)` that will return first the local value of the parameter if defined
@@ -596,42 +604,39 @@ our css tests without interfering with others parts of HTML. It's also possible 
 
 ## **Parameters**
 
-Since PhpEcho 2.3.1, each instance of PhpEcho can now have their local parameters.<br>
+There's two level of parameters: local and global contexts<br>
 Please note that the parameters are never escaped.
 If a parameter is unknown then you'll have an `Exception`
 ```php
-// In current block, set a parameter
+// for a specific block
 $this->setParam('document.isPopup', true);
-
-// get the parameter
 $is_popup = $this->getParam('document.isPopup'); // true
+$has = $this->hasParam('document.isPopup'); // true
+$this->unsetParam('document.isPopup'); 
 ```
-
-It's also possible to define some global parameter common to all instances
-
 ```php
-// In any block, set a parameter
+// for all blocks
 PhpEcho::setGlobalParam('document.isPopup', true);
-
-// get the parameter
 $is_popup = PhpEcho::getGlobalParam('document.isPopup'); // true
+$has = PhpEcho::hasGlobalParam('document.isPopup');
+PhpEcho::unsetGlobalParam('document.isPopup');;
 ```
 
-You can check if a param is defined, and retrieve its value:
+If you want the parameter's local value first then the global one if not defined
 ```php
-$this->hasParam('document.isPopup'); // In current block
-$this->hasGlobalParam('document.isPopup'); // In the global context
+$is_popup = $this->getAnyParam(name: 'document.isPopup', seek_order: 'local');
+```
+If you want the parameter's global value first then the local one if not defined
+```php
+$is_popup = $this->getAnyParam(name: 'document.isPopup', seek_order: 'global');
+```
+You can check if a param is defined either in local or global context:
+```php
 $this->hasAnyParam('document.isPopup'); // seek in the current block first then in the global context
-
-$is_popup = $this->getParam('document.isPopup'); // From current block
-$is_popup = PhpEcho::getGlobalParam('document.isPopup'); // From global context
-$is_popup = $this->getAnyParam('document.isPopup'); // From current block if found and then from the global context
 ```
-
-It's also possible to unset a parameter:
+It's also possible to unset a parameter from the local and global context at once:
 ```php
-$this->unsetParam('document.isPopup'); // from the current block
-PhpEcho::unsetGlobalParam('document.isPopup'); // from the global context
+$this->unsetAnyParam('document.isPopup');
 ```
 
 ## **Let's play with helpers**

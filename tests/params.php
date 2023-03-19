@@ -157,7 +157,7 @@ $pilot->assertEqual(true);
 PhpEcho::unsetGlobalParam('to_be_unset');
 $pilot->run(
     id: 'param_058',
-    test: fn() => $block->hasGlobalParam('to_be_unset'),
+    test: fn() => PhpEcho::hasGlobalParam('to_be_unset'),
     description: 'unset a global parameter and check if it was removed from the global parameters array'
 );
 $pilot->assertIsBool();
@@ -175,17 +175,107 @@ PhpEcho::setGlobalParam('any_param', 'global_param_value');
 $pilot->run(
     id: 'param_060',
     test: fn() => $block->getAnyParam('any_param') === 'local_param_value',
-    description: "check getAnyParam returns the local parameter value first"
+    description: "check getAnyParam returns the local parameter value first and by default"
 );
 $pilot->assertIsBool();
 $pilot->assertEqual(true);
 
-$block->unsetParam('any_param');
 $pilot->run(
     id: 'param_061',
+    test: fn() => $block->getAnyParam('any_param', 'global') === 'global_param_value',
+    description: "check getAnyParam returns the global parameter value first when order is global"
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(true);
+
+$pilot->run(
+    id: 'param_062',
+    test: fn() => $block->getAnyParam('any_param', 'local') === 'local_param_value',
+    description: "check getAnyParam returns the local parameter value first when order is local"
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(true);
+
+$pilot->run(
+    id: 'param_063',
+    test: fn() => $block->getAnyParam('any_param', 'unknown_order') === 'local_param_value',
+    description: "check getAnyParam throws an exception when the order is unknown"
+);
+$pilot->assertException(InvalidArgumentException::class);
+
+$block->unsetParam('any_param');
+$pilot->run(
+    id: 'param_064',
     test: fn() => $block->getAnyParam('any_param') === 'global_param_value',
     description: "unset the local parameter value and check if getAnyParam returns the global parameter value instead"
 );
 $pilot->assertIsBool();
 $pilot->assertEqual(true);
 
+$block->setParam('any_param', 'local_param_value');
+PhpEcho::unsetGlobalParam('any_param');
+$pilot->run(
+    id: 'param_065',
+    test: fn() => $block->getAnyParam('any_param') === 'local_param_value',
+    description: "unset the global parameter value and check if getAnyParam returns the local parameter value instead"
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(true);
+
+$pilot->run(
+    id: 'param_066',
+    test: fn() => $block->getAnyParam('any_param', 'global') === 'local_param_value',
+    description: "unset the local parameter value and check if getAnyParam returns the global parameter value instead even when seek order is local"
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(true);
+
+$block->setAnyParam('any_param_local_and_global', 'any_param_value_local_and_global');
+$pilot->run(
+    id: 'param_067',
+    test: fn() => $block->hasParam('any_param_local_and_global'),
+    description: "define local and global param at once, check if the param is in the local array"
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(true);
+
+$pilot->run(
+    id: 'param_068',
+    test: fn() => PhpEcho::hasGlobalParam('any_param_local_and_global'),
+    description: "define local and global param at once, check if the param is in the global array"
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(true);
+
+$pilot->run(
+    id: 'param_069',
+    test: fn() => $block->getAnyParam('any_param_local_and_global') === 'any_param_value_local_and_global',
+    description: "define local and global param at once, check the local param value when seek order is local first"
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(true);
+
+$pilot->run(
+    id: 'param_070',
+    test: fn() => $block->getAnyParam('any_param_local_and_global', 'global') === 'any_param_value_local_and_global',
+    description: "define local and global param at once, check the global param value"
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(true);
+
+$block->unsetAnyParam('any_param_local_and_global');
+$pilot->run(
+    id: 'param_071',
+    test: fn() => $block->hasParam('any_param_local_and_global'),
+    description: "unset local and global param at once, check if the param is removed from the local array"
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(false);
+
+$pilot->run(
+    id: 'param_072',
+    test: fn() => PhpEcho::hasGlobalParam('any_param_local_and_global'),
+    description: "unset local and global param at once, check if the param is removed from the global array"
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(false);
