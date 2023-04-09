@@ -146,6 +146,10 @@ implements ArrayAccess
      * @var bool
      */
     private static bool $std_helpers_injected = false;
+    /**
+     * @var bool
+     */
+    private static bool $null_if_not_exist = false;
 
     //region MAGIC METHODS
     /**
@@ -456,6 +460,14 @@ implements ArrayAccess
     }
 
     /**
+     * @param bool $p
+     */
+    public static function setNullIfNotExists(bool $p): void
+    {
+        self::$null_if_not_exist = $p;
+    }
+
+    /**
      * Generate a unique execution id based on random_bytes()
      * Always start with a letter
      */
@@ -541,18 +553,18 @@ implements ArrayAccess
                 if (isset($data[$k])) {
                     $data = $data[$k];
                 } else {
-                    throw new InvalidArgumentException("unknown.offset.{$k}");
+                    return self::$null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$k}");
                 }
             }
             if (array_key_exists($last, $data)) {
                 return $data[$last];
             } else {
-                throw new InvalidArgumentException("unknown.offset.{$last}");
+                return self::$null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$last}");
             }
         } elseif (isset($this->vars[$offset])) {
             return $this->vars[$offset];
         } else {
-            throw new InvalidArgumentException("unknown.offset.{$offset}");
+            return self::$null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$offset}");
         }
     }
 

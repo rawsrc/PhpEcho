@@ -26,9 +26,27 @@ $pilot->run(
 );
 $pilot->assertException(InvalidArgumentException::class);
 
-$block['foo bar'] = 'xyz';
+
+PhpEcho::setNullIfNotExists(true);
 $pilot->run(
     id: 'core_003',
+    test: fn() => $block['abc'],
+    description: 'after setting setNullIfNotExists to true try to extract a undefined key from a block'
+);
+$pilot->assertEqual(null);
+
+PhpEcho::setNullIfNotExists(false);
+$pilot->run(
+    id: 'core_004',
+    test: fn() => $block['abc'],
+    description: 'after setting setNullIfNotExists to false try to extract a undefined key from a block'
+);
+$pilot->assertException(InvalidArgumentException::class);
+
+
+$block['foo bar'] = 'xyz';
+$pilot->run(
+    id: 'core_005',
     test: fn() => $block['foo'],
     description: 'using space notation by default, check auto creation of sub-arrays'
 );
@@ -36,7 +54,7 @@ $pilot->assertIsArray();
 $pilot->assertEqual(['bar' => 'xyz']);
 
 $pilot->run(
-    id: 'core_004',
+    id: 'core_006',
     test: fn() => $block['foo bar'],
     description: 'using space notation by default, check auto expanding into sub-array'
 );
@@ -46,7 +64,7 @@ $pilot->assertEqual('xyz');
 PhpEcho::setUseSpaceNotation(false);
 $block['foo bar'] = 'xxx';
 $pilot->run(
-    id: 'core_005',
+    id: 'core_007',
     test: fn() => $block['foo bar'],
     description: 'space notation disabled, check if key with space is preserved'
 );
@@ -55,7 +73,7 @@ $pilot->assertEqual('xxx');
 
 $block['klm'] = 12;
 $pilot->run(
-    id: 'core_006',
+    id: 'core_008',
     test: fn() => $block['klm'],
     description: 'for non string values, check data type preservation (int)'
 );
@@ -64,7 +82,7 @@ $pilot->assertEqual(12);
 
 $block['klm'] = true;
 $pilot->run(
-    id: 'core_007',
+    id: 'core_009',
     test: fn() => $block['klm'],
     description: 'for non string values, check data type preservation (bool)'
 );
@@ -73,7 +91,7 @@ $pilot->assertEqual(true);
 
 $block['klm'] = new stdClass();
 $pilot->run(
-    id: 'core_008',
+    id: 'core_010',
     test: fn() => $block['klm'],
     description: 'for non string values, check data type preservation (object without __toString)'
 );
@@ -89,7 +107,7 @@ class Foo {
 
 $block['klm'] = new Foo();
 $pilot->run(
-    id: 'core_009',
+    id: 'core_011',
     test: fn() => $block['klm'],
     description: 'for non string values, object with __toString is assimilated to a string and escaped'
 );

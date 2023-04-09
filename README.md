@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2023-03-19` `PHP 8.0+` `v.5.3.0`
+`2023-04-09` `PHP 8.0+` `v.5.3.1`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **VERSION 5.X IS ONLY FOR PHP 8 AND ABOVE**
@@ -35,13 +35,18 @@ The class will manage :
 ```bash
 composer require rawsrc/phpecho
 ```
+**Changelog v5.3.1:**<br>
+1. Add option to return natively `null` when a key doesn't exist instead of throwing an `Exception`
+By default this option is not activated. To activate, use: `PhpEcho::setNullIfNotExist(true);`; to deactivate, 
+use: `PhpEcho::setNullIfNotExist(false);` 
 
 **Changelog v5.3.0:**<br>
 1. Code optimization and improvement of the parameters management
 2. The method `hasGlobalParam(string $name)` is now `static`
 3. You can now define the seek order to get the first value either 
 from the `local` or `global` context using `getAnyParam(string $name, string $seek_order = 'local'): mixed`
-4. It's possible to unset at once a parameter from the local and the global context using `unsetAnyParam(string $name): void`
+4. It's possible to set at once a parameter into the local and global context using `setAnyParam(string $name, mixed $value)`
+4. It's possible to unset at once a parameter from the local and the global context using `unsetAnyParam(string $name)`<br>
 Test files are updated
 
 **Changelog v5.2.1:**<br>
@@ -169,9 +174,7 @@ PhpEcho::setTemplateDirRoot(__DIR__.DIRECTORY_SEPARATOR.'View'.DIRECTORY_SEPARAT
 ```
 Then you will code for example the homepage `page/homepage.php` based on `layout/main.php` like that:
 ```php
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 use rawsrc\PhpEcho\PhpEcho;
 
@@ -299,9 +302,7 @@ echo new PhpEcho('layout main.php', [
 ```
 This is also equivalent:<br>
 ```php
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 use rawsrc\PhpEcho\PhpEcho;
 
