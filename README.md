@@ -651,7 +651,7 @@ It's also possible to unset a parameter from the local and global context at onc
 $this->unsetAnyParam('document.isPopup');
 ```
 
-## **Using the component `ViewBuilder` **
+## **Using the component `ViewBuilder`**
 For complex view, it's often easier to manipulate the whole view as an object.
 Let's have a look at the example about the login page.
 You can now consider this view as a class using `ViewBuilder`.
