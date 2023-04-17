@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2023-04-09` `PHP 8.0+` `v.5.3.1`
+`2023-04-17` `PHP 8.0+` `v.5.4.0`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **VERSION 5.X IS ONLY FOR PHP 8 AND ABOVE**
@@ -35,6 +35,10 @@ The class will manage :
 ```bash
 composer require rawsrc/phpecho
 ```
+
+**Changelog v5.4.0:**<br>
+1. Add new abstract class `ViewBuilder` that help to manipulate abstract views as objects 
+
 **Changelog v5.3.1:**<br>
 1. Add option to return natively `null` when a key doesn't exist instead of throwing an `Exception`
 By default this option is not activated. To activate, use: `PhpEcho::setNullIfNotExist(true);`; to deactivate, 
@@ -149,6 +153,7 @@ www
  |     |     |     |--- header.php
  |     |     |     |--- home.php
  |     |     |     |--- navbar.php
+ |     |     |     |--- login.php
  |     |     |     |--- ...
  |     |     |--- layout
  |     |     |     |--- err.php
@@ -159,6 +164,7 @@ www
  |     |     |     |--- cart.php
  |     |     |     |--- err.php
  |     |     |     |--- homepage.php
+ |     |     |     |--- login.php
  |     |     |     |--- ...
  |--- bootstrap.php
  |--- index.php
@@ -644,6 +650,69 @@ It's also possible to unset a parameter from the local and global context at onc
 ```php
 $this->unsetAnyParam('document.isPopup');
 ```
+
+## **Using the component `ViewBuilder` **
+For complex view, it's often easier to manipulate the whole view as an object.
+Let's have a look at the example about the login page.
+You can now consider this view as a class using `ViewBuilder`.
+We're going to reuse the whole code in a different way:
+
+```php
+namespace YourProject\View\Page;
+
+use rawsrc\PhpEcho\PhpEcho;
+use rawsrc\PhpEcho\ViewBuilder;
+
+class Login extends ViewBuilder
+{
+    public function build(): PhpEcho
+    {
+        // here you can build the page as you want 
+        $layout = new PhpEcho('layout/main.php');
+        $layout['description'] = 'dummy.description';
+        $layout['title'] = 'dummy.title';
+        $layout['body'] = new PhpEcho('block/login.php', [
+            'login' => 'rawsrc',
+            'url_submit' => 'any/path/for/connection',
+            /*
+             * Note that the ViewBuilder implements the array access interface
+             * So you have plenty of ways to pass your values to the view, 
+             * eg: passing values from the current ViewBuilder to the block view:
+             * 'abc' => $this['name'],
+             * 'def' => $this['postal.code'],
+             * 
+             * 'abc' and 'def' are keys to be used in the block/login.php and 
+             * 'name' and 'postal.code' are keys from the current ViewBuilder
+             * (see below)
+             */
+        ]);
+        
+        return $layout;
+    } 
+}
+````
+In a controller that must render the login page, you can now code something like that:
+```php
+namespace YourProject\Controller\Login;
+
+use YourProject\View\Page\Login;
+
+class Login
+extends YourAbstractController 
+{
+    public function invoke(array $url_data = []): void
+    {
+        $page = new YourProject\View\Page\Login;
+        // we pass some values to the page builder
+        $page['name'] = 'rawsrc';
+        $page['postal.code'] = 'foo.bar';
+        
+        // an example of ending the process sought from a framework
+        $this->task->setResponse(Response::$html($page));
+    }
+}
+```
+Much more easy with that addon.
 
 ## **Let's play with helpers**
 As mentioned above, there's some new helpers that have been added to the standard helpers library `stdPhpEchoHelpers.php`.
