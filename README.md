@@ -708,7 +708,7 @@ extends YourAbstractController
         $page['postal.code'] = 'foo.bar';
         
         // an example of ending the process sought from a framework
-        $this->task->setResponse(Response::$html($page));
+        $this->task->setResponse(Response::html($page));
     }
 }
 ```
