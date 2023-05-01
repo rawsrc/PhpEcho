@@ -114,3 +114,37 @@ $pilot->run(
 $pilot->assertIsString();
 $pilot->assertEqual('abc &quot; &lt; &gt;');
 
+
+$data = [new PhpEcho(), new PhpEcho()];
+$pilot->runClassMethod(
+    id: 'core_012',
+    class: $block,
+    description: 'check isArrayOfPhpEchoBlocks with a full array of PhpEcho blocks',
+    method: 'isArrayOfPhpEchoBlocks',
+    params: [$data]
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(true);
+
+$data = [new PhpEcho(), new PhpEcho(), 25];
+$pilot->runClassMethod(
+    id: 'core_013',
+    class: $block,
+    description: 'check isArrayOfPhpEchoBlocks with an mixed array',
+    method: 'isArrayOfPhpEchoBlocks',
+    params: [$data]
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(false);
+
+
+$data = [];
+$pilot->runClassMethod(
+    id: 'core_014',
+    class: $block,
+    description: 'check isArrayOfPhpEchoBlocks with an empty array',
+    method: 'isArrayOfPhpEchoBlocks',
+    params: [$data]
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(false);

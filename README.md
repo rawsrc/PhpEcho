@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2023-04-17` `PHP 8.0+` `v.5.4.0`
+`2023-05-01` `PHP 8.0+` `v.5.4.1`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **VERSION 5.X IS ONLY FOR PHP 8 AND ABOVE**
@@ -35,6 +35,8 @@ The class will manage :
 ```bash
 composer require rawsrc/phpecho
 ```
+**Changelog v5.4.1:**<br>
+1. Minor bugfix in method `isArrayOfPhpEchoBlocks(mixed $p)` when `$p` is an empty array
 
 **Changelog v5.4.0:**<br>
 1. Add new abstract class `ViewBuilder` that help to manipulate abstract views as objects 

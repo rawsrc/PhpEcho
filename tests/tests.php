@@ -11,12 +11,14 @@ declare(strict_types=1);
 
 //region setup test environment
 include_once '../vendor/exacodis/Pilot.php';
+include_once '../vendor/exacodis/Report.php';
+include_once '../vendor/exacodis/Runner.php';
 include_once '../PhpEcho.php';
 include_once '../ViewBuilder.php';
 
 use Exacodis\Pilot;
 
-$pilot = new Pilot('PhpEcho - A native PHP template engine - v.5.4.0');
+$pilot = new Pilot('PhpEcho - A native PHP template engine - v.5.4.1');
 $pilot->injectStandardHelpers();
 
 include 'filepath.php';

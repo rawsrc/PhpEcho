@@ -830,7 +830,7 @@ implements ArrayAccess
      */
     private function isArrayOfPhpEchoBlocks(mixed $p): bool
     {
-        if (is_array($p)) {
+        if (is_array($p) && ($p !== [])) {
             foreach ($p as $v) {
                 if ( ! ($v instanceof self)) {
                     return false;
