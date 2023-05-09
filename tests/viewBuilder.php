@@ -58,3 +58,21 @@ $pilot->assertEqual(<<<html
 </body>
 </html>
 html);
+
+$login->data['xyz'] = 'bar002';
+$pilot->run(
+    id: 'view.builder.004',
+    test: fn() => $login->data['xyz'],
+    description: 'public access to the ViewBuilder data array'
+);
+$pilot->assertIsString();
+$pilot->assertEqual('bar002');
+
+$pilot->run(
+    id: 'view.builder.005',
+    test: fn() => $login->getData()['xyz'] === 'bar002',
+    description: 'view builder, share data with ArrayAccess and public visibility'
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(true);
+
