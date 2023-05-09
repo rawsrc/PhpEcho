@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2023-05-01` `PHP 8.0+` `v.5.4.1`
+`2023-05-09` `PHP 8.0+` `v.5.4.2`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **VERSION 5.X IS ONLY FOR PHP 8 AND ABOVE**
