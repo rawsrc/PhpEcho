@@ -67,7 +67,7 @@ use const DIRECTORY_SEPARATOR;
  * @method mixed renderIfNotSet(string $key, mixed $default_value) If the key is not defined then render the default value
  *
  * HTML HELPERS
- * @method mixed hsc($p) Escape the value in parameter (scalar, array, stringifyable)
+ * @method mixed hsc($p) Escape the value in parameter (scalar, array, stringable)
  * @method string attributes(array $p, bool $escape_url = true) Return the values as escaped attributes: attribute="..."
  * @method string selected($p, $ref) Return " selected " if $p == $ref
  * @method string checked($p, $ref) Return " checked "  if $p == $ref
