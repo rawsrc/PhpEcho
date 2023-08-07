@@ -8,14 +8,11 @@ use Closure;
 use InvalidArgumentException;
 
 use function array_key_exists;
-use function array_map;
-use function array_pop;
 use function array_push;
 use function array_shift;
 use function bin2hex;
 use function chr;
 use function count;
-use function explode;
 use function implode;
 use function is_array;
 use function is_file;
@@ -60,22 +57,22 @@ use const DIRECTORY_SEPARATOR;
  * PhpEcho HELPERS
  * @method mixed raw(string $key) Return the raw value from a PhpEcho block
  * @method bool isScalar(mixed $p)
- * @method mixed keyUp(array|string $keys, bool $strict_match) Climb the tree of PhpEcho instances while keys match
- * @method mixed rootVar(array|string $keys) Extract the value from the top level PhpEcho block (the root)
- * @method PhpEcho root() Return the root PhpEcho instance of the tree
- * @method mixed seekParam(string $name) Seek the parameter from the current block to the root
- * @method mixed renderIfNotSet(string $key, mixed $default_value) If the key is not defined then render the default value
+ * @method mixed keyUp(array|string $keys, bool $strict_match) // Climb the tree of PhpEcho instances while keys match
+ * @method mixed rootVar(array|string $keys) // Extract the value from the top level PhpEcho block (the root)
+ * @method PhpEcho root() // Return the root PhpEcho instance of the tree
+ * @method mixed seekParam(string $name) // Seek the parameter from the current block to the root
+ * @method mixed renderIfNotSet(string $key, mixed $default_value) // If the key is not defined then render the default value
  *
  * HTML HELPERS
- * @method mixed hsc($p) Escape the value in parameter (scalar, array, stringable)
- * @method string attributes(array $p, bool $escape_url = true) Return the values as escaped attributes: attribute="..."
- * @method string selected($p, $ref) Return " selected " if $p == $ref
- * @method string checked($p, $ref) Return " checked "  if $p == $ref
- * @method string voidTag(string $tag, array $attributes = [], bool $escape_url = true) Build a <tag />
- * @method string tag(string $tag, string $content, array $attr = [], bool $escape_url = true) Build a <tag></tag>
- * @method string link(array $attributes, bool $escape_url = true) [rel => required, attribute => value]
- * @method string style(array $attributes, bool $escape_url = true) [href => url | code => plain css definition, attribute => value]
- * @method string script(array $attributes, bool $escape_url = true) [src => url | code => plain javascript, attribute => value]
+ * @method mixed hsc($p) // Escape the value in parameter (scalar, array, stringable)
+ * @method string attributes(array $p, bool $escape_url = true) // Return the values as escaped attributes: attribute="..."
+ * @method string selected($p, $ref) // Return " selected " if $p == $ref
+ * @method string checked($p, $ref) // Return " checked "  if $p == $ref
+ * @method string voidTag(string $tag, array $attributes = [], bool $escape_url = true) // Build a <tag />
+ * @method string tag(string $tag, string $content, array $attr = [], bool $escape_url = true) // Build a <tag></tag>
+ * @method string link(array $attributes, bool $escape_url = true) // [rel => required, attribute => value]
+ * @method string style(array $attributes, bool $escape_url = true) // [href => url | code => plain css definition, attribute => value]
+ * @method string script(array $attributes, bool $escape_url = true) // [src => url | code => plain javascript, attribute => value]
  */
 class PhpEcho
 implements ArrayAccess
@@ -90,12 +87,8 @@ implements ArrayAccess
     private string $head_token = '';
     /**
      * Partial file path to the external view file (from the template dir root)
-     * @var string
      */
     private string $file = '';
-    /**
-     * @var string
-     */
     private string $code = '';
     /**
      * @var array [helper's id => bound closure]
@@ -103,22 +96,9 @@ implements ArrayAccess
     private array $bound_helpers = [];
     /**
      * Indicates if the current instance contains in its vars other PhpEcho instance(s)
-     * @var bool
      */
     private bool $has_children = false;
-    /**
-     * @var PhpEcho
-     */
     private PhpEcho $parent;
-    /**
-     * If true then the array keys should never contain a space between words
-     * Each space will be transformed into a sub-array: 'abc def' => ['abc']['def']
-     * @var bool
-     */
-    private static bool $use_space_notation = true;
-    /**
-     * @var string
-     */
     private static string $template_dir_root = '';
     /**
      * @var array  [name => closure]
@@ -252,22 +232,6 @@ implements ArrayAccess
     public function getFilepath(): string
     {
         return $this->file;
-    }
-
-    /**
-     * @param bool $p
-     */
-    public static function setUseSpaceNotation(bool $p): void
-    {
-        self::$use_space_notation = $p;
-    }
-
-    /**
-     * @return bool
-     */
-    public static function useSpaceNotation(): bool
-    {
-        return self::$use_space_notation;
     }
 
     /**
@@ -478,32 +442,12 @@ implements ArrayAccess
 
     //region ARRAY ACCESS
     /**
-     * If "support the space notation for array and sub-arrays" is activated then
-     * if $offset = 'abc def' then the engine will search for the key in $vars['abc']['def']
-     *
      * Interface ArrayAccess
      * @param  $offset
      * @return bool
      */
     public function offsetExists($offset): bool
     {
-        if (self::$use_space_notation) {
-            $keys = explode(' ', $offset);
-            if (count($keys) > 1) {
-                $last = array_pop($keys);
-                $data = $this->vars;
-                foreach ($keys as $k) {
-                    if (isset($data[$k])) {
-                        $data = $data[$k];
-                    } else {
-                        return false;
-                    }
-                }
-
-                return array_key_exists($last, $data);
-            }
-        }
-
         return array_key_exists($offset, $this->vars);
     }
 
@@ -515,9 +459,6 @@ implements ArrayAccess
      * For array of PhpEcho blocks, the array is imploded and the blocks are rendered int the order they appear
      * Otherwise, the value is cast to a string and escaped
      *
-     * If "support the space notation for array and sub-arrays" is activated then
-     * if $offset = 'abc def' then the engine will search for the key in $vars['abc']['def']
-     *
      * @param $offset
      * @return mixed
      * @throws InvalidArgumentException
@@ -526,15 +467,35 @@ implements ArrayAccess
     {
         $v = $this->getOffsetRawValue($offset);
 
+        $get_escaped = function(mixed $p): mixed {
+            if ($p instanceof PhpEcho) {
+                return (string)$p;
+            } elseif ($this('toEscape', $p)) {
+                return $this('hsc', $p);
+            } else {
+                return $p;
+            }
+        };
+
+        $for_array = function(array $p) use (&$for_array, $get_escaped): string {
+            $data = [];
+            foreach ($p as $z) {
+                if (is_array($z) && ($z !== [])) {
+                    return $for_array($z);
+                } else {
+                    $data[] = $get_escaped($z);
+                }
+            }
+
+            return implode('', $data);
+        };
+
         if ($v === null) {
             return null;
-        } elseif ($this->isArrayOfPhpEchoBlocks($v)) {
-            // intercept the case where $v is an array of PhpEcho blocks
-            return implode('', array_map('strval', $v));
-        } elseif ($this('toEscape', $v)) {
-            return $this('hsc', $v);
-        } else {
-            return $v;
+        } elseif (is_array($v)) {
+            return implode('', $for_array($v));
+        } else{
+            return $get_escaped($v);
         }
     }
 
@@ -545,23 +506,7 @@ implements ArrayAccess
      */
     private function getOffsetRawValue($offset): mixed
     {
-        if (self::$use_space_notation) {
-            $data = $this->vars;
-            $keys = explode(' ', $offset);
-            $last = array_pop($keys);
-            foreach ($keys as $k) {
-                if (isset($data[$k])) {
-                    $data = $data[$k];
-                } else {
-                    return self::$null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$k}");
-                }
-            }
-            if (array_key_exists($last, $data)) {
-                return $data[$last];
-            } else {
-                return self::$null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$last}");
-            }
-        } elseif (isset($this->vars[$offset])) {
+        if (isset($this->vars[$offset])) {
             return $this->vars[$offset];
         } else {
             return self::$null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$offset}");
@@ -587,63 +532,33 @@ implements ArrayAccess
             if (empty($value->vars)) {
                 $value->vars = $this->vars;
             }
-        } elseif ($this->isArrayOfPhpEchoBlocks($value)) {
-            $this->has_children = true;
-            /** @var self $block */
-            foreach ($value as $block) {
-                $block->parent = $this;
-                if (empty($block->vars)) {
-                    $block->vars = $this->vars;
+        } elseif (is_array($value)) {
+            $values = [];
+            foreach ($value as $z) {
+                if ($z instanceof PhpEcho) {
+                    $this->has_children = true;
+                    $z->parent = $this;
+                    if ($z->vars === []) {
+                        $z->vars = $this->vars;
+                    }
                 }
+                $values[] = $z;
             }
-        }
+            $this->vars[$offset] = $values;
 
-        if (self::$use_space_notation) {
-            $keys = explode(' ', $offset);
-            if (count($keys) > 1) {
-                $data =& $this->vars;
-                foreach ($keys as $k) {
-                    $data[$k] = [];
-                    $data =& $data[$k];
-                }
-                $data = $value;
-
-                return;
-            }
+            return;
         }
 
         $this->vars[$offset] = $value;
     }
 
     /**
-     * If "support the space notation for array and sub-arrays" is activated then
-     * if $offset = 'abc def' then the engine will unset the key in $vars['abc']['def']
-     *
      * Interface ArrayAccess
      * @param $offset
      */
     public function offsetUnset($offset): void
     {
-        if (self::$use_space_notation) {
-            $keys = explode(' ', $offset);
-            if (count($keys) > 1) {
-                $last = array_pop($keys);
-                $data =& $this->vars;
-                foreach ($keys as $k) {
-                    if (isset($data[$k])) {
-                        $data =& $data[$k];
-                    } else {
-                        throw new InvalidArgumentException("unknown.offset.{$k}");
-                    }
-                }
-
-                if (array_key_exists($last, $data)) {
-                    unset($data[$last]);
-                } else {
-                    throw new InvalidArgumentException("unknown.offset.{$last}");
-                }
-            }
-        } elseif (array_key_exists($offset, $this->vars)) {
+        if (array_key_exists($offset, $this->vars)) {
             unset($this->vars[$offset]);
         } else {
             throw new InvalidArgumentException("unknown.offset.{$offset}");
@@ -825,25 +740,6 @@ implements ArrayAccess
     //endregion HELPER ZONE
 
     /**
-     * @param mixed $p
-     * @return bool
-     */
-    private function isArrayOfPhpEchoBlocks(mixed $p): bool
-    {
-        if (is_array($p) && ($p !== [])) {
-            foreach ($p as $v) {
-                if ( ! ($v instanceof self)) {
-                    return false;
-                }
-            }
-
-            return true;
-        } else {
-            return false;
-        }
-    }
-
-    /**
      * @param string $p The path to the root directory of the view files
      */
     public static function setTemplateDirRoot(string $p): void
@@ -984,7 +880,7 @@ implements ArrayAccess
         } elseif ($nb >= 2) {
             // the first param should be a helper
             $helper = array_shift($args);
-            if (self::isHelper($helper, true)) {
+            if (self::isHelper($helper)) {
                 $root->head[] = $this($helper, ...$args);
             }
         }

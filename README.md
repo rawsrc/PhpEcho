@@ -269,7 +269,7 @@ In the layout, some values are required:
 <html>
 <head>
     <meta charset="UTF-8">
-    <meta name="description" content="<?= $this['description]'] ?>">
+    <meta name="description" content="<?= $this['description'] ?>">
     <title><?= $this['title'] ?></title>
 </head>
 <body>
