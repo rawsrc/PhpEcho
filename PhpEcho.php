@@ -8,7 +8,6 @@ use Closure;
 use InvalidArgumentException;
 
 use function array_key_exists;
-use function array_merge;
 use function array_push;
 use function array_shift;
 use function bin2hex;
@@ -376,7 +375,7 @@ implements ArrayAccess
      * Generate a unique execution id based on random_bytes()
      * Always start with a letter
      */
-    public function generateId()
+    public function generateId(): void
     {
         $this->id = chr(mt_rand(97, 122)).bin2hex(random_bytes(4));
     }
