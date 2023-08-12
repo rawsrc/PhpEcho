@@ -306,25 +306,34 @@ This way, you do not cut the tree ;-)
 
 **AUTO WIRING VARS**
 
-The engine fills the vars attached to a block automatically if there's no other values defined. 
-In that case the child gets a copy of the vars defined in the parent block.
+Coming from versions prior to 6, this change may slightly break your existing code.
+Before, the engine used to copy the vars from the parent block to its child only when the child had 
+no vars defined at all. Now, you must provide the values expected to be rendered by the current block, 
+there's no more copy.
+
+As many developers, I usually store all the needed values in the root and then I used to create my blocks without
+defining specific values, so the child blocks got a copy of the parent values and so on.
+
+This is exactly the new approach.
+
+Now if the value is not defined/found in the current block, then the engine will automatically seek for it in the root of the tree.
+You can store all the values needed by the child blocks in the root and let the engine pick them up on rendering.
 ```php
 <?php declare(strict_types=1);
 
 use rawsrc\PhpEcho\PhpEcho;
 
+// $page is the root of the tree
 $page = new PhpEcho('layout/main.php');
 $page['title'] = 'My first use case of PhpEcho';
 $page['description'] = 'PhpEcho, PHP template engine, easy to learn and use';
 $page['login'] = 'rawsrc';
 $page['url_submit'] = 'any/path/for/connection';
 
-// no vars are attached to the block as the second parameter is omitted
 $body = new PhpEcho('block/login.php');  // login expects 2 values (login and url_submit)
 
-// when we inject the block into the parent, the auto-wiring will automatically
-// pass a copy of parent's vars to the child   
-$page['body'] = $body; // $body['login'] and $body['url_submit'] are well defined
+$page['body'] = $body; // $body['login'] and $body['url_submit'] are well-defined
+// both are sought from the $page block (root)
 
 echo $page;
 ```

@@ -487,17 +487,18 @@ implements ArrayAccess
 
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        $block = function(PhpEcho $p) {
+        $block = function(PhpEcho $p): self {
             $this->has_children = true;
             $p->parent = $this;
+
+            return $p;
         };
 
         $for_array = function(array $p) use (&$for_array, $block): array {
             $data = [];
             foreach ($p as $k => $v) {
                 if ($v instanceof PhpEcho) {
-                    $block($v);
-                    $data[$k] = $v;
+                    $data[$k] = $block($v);
                 } elseif (is_array($v)) {
                     $data[$k] = $for_array($v);
                 } else {
@@ -509,8 +510,7 @@ implements ArrayAccess
         };
 
         if ($value instanceof self) {
-            $block($value);
-            $this->vars[$offset] = $value;
+            $this->vars[$offset] = $block($value);
         } elseif (is_array($value)) {
             $this->vars[$offset] = $for_array($value);
         } else {
