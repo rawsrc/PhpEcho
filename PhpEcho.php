@@ -190,8 +190,6 @@ implements ArrayAccess
     public function __clone(): void
     {
         unset($this->parent);
-        $this->vars = [];
-        $this->has_children = false;
     }
     //endregion
 
@@ -383,10 +381,31 @@ implements ArrayAccess
         $this->id = chr(mt_rand(97, 122)).bin2hex(random_bytes(4));
     }
 
+    /**
+     * Local values
+     */
+    public function setVars(array $vars): void
+    {
+        $this->has_children = false;
+        if ($vars === []) {
+            $this->vars = [];
+        } else {
+            foreach ($vars as $k => $v) {
+                $this->offsetSet($k, $v);
+            }
+        }
+    }
+
+    /**
+     * Values available for the whole tree of blocks
+     */
     public function injectVars(array $vars): void
     {
+        /** @var PhpEcho $root */
         $root = $this('root');
-        $root->vars = array_merge($root->vars, $vars);
+        foreach ($vars as $k => $v) {
+            $root->offsetSet($k, $v);
+        }
     }
 
     //region ARRAY ACCESS INTERFACE
@@ -449,7 +468,7 @@ implements ArrayAccess
      */
     private function getOffsetRawValue(mixed $offset): mixed
     {
-        if (isset($this->vars[$offset])) {
+        if (array_key_exists($offset, $this->vars)) {
             return $this->vars[$offset];
         }
 
@@ -469,11 +488,34 @@ implements ArrayAccess
 
     public function offsetSet(mixed $offset, mixed $value): void
     {
-        $this->vars[$offset] = $value;
+        $block = function(PhpEcho $p) {
+            $this->has_children = true;
+            $p->parent = $this;
+        };
+
+        $for_array = function(array $p) use (&$for_array, $block): array {
+            $data = [];
+            foreach ($p as $k => $v) {
+                if ($v instanceof PhpEcho) {
+                    $block($v);
+                    $data[$k] = $v;
+                } elseif (is_array($v)) {
+                    $data[$k] = $for_array($v);
+                } else {
+                    $data[$k] = $v;
+                }
+            }
+
+            return $data;
+        };
 
         if ($value instanceof self) {
-            $this->has_children = true;
-            $value->parent = $this;
+            $block($value);
+            $this->vars[$offset] = $value;
+        } elseif (is_array($value)) {
+            $this->vars[$offset] = $for_array($value);
+        } else {
+            $this->vars[$offset] = $value;
         }
     }
 

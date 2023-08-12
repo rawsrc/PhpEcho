@@ -1,14 +1,14 @@
 # **PhpEcho**
 
-`2023-05-09` `PHP 8.0+` `v.5.4.2`
+`2023-08-12` `PHP 8.0+` `6.0.0`
 
 ## **A native PHP template engine : One class to rule them all**
-## **VERSION 5.X IS ONLY FOR PHP 8 AND ABOVE**
+## **IS ONLY FOR PHP 8 AND ABOVE**
 
 When you develop a web application, the rendering of views may be a real challenge.
 Especially if you just want to use only native PHP syntax and avoid external templating language.
 
-This is exactly the goal of `PhpEcho`: providing a pure PHP template engine with no other dependencies.<br>
+This is exactly the goal of `PhpEcho`: providing a pure NATIVE PHP TEMPLATE ENGINE with no other dependencies.<br>
 
 `PhpEcho` is very simple to use, it's very close to the native PHP way of rendering HTML/CSS/JS.<br>
 It is based on an OOP approach using only one class to get the job done.<br>
@@ -35,68 +35,6 @@ The class will manage :
 ```bash
 composer require rawsrc/phpecho
 ```
-**Changelog v5.4.1:**<br>
-1. Minor bugfix in method `isArrayOfPhpEchoBlocks(mixed $p)` when `$p` is an empty array
-
-**Changelog v5.4.0:**<br>
-1. Add new abstract class `ViewBuilder` that help to manipulate abstract views as objects 
-
-**Changelog v5.3.1:**<br>
-1. Add option to return natively `null` when a key doesn't exist instead of throwing an `Exception`
-By default this option is not activated. To activate, use: `PhpEcho::setNullIfNotExist(true);`; to deactivate, 
-use: `PhpEcho::setNullIfNotExist(false);` 
-
-**Changelog v5.3.0:**<br>
-1. Code optimization and improvement of the parameters management
-2. The method `hasGlobalParam(string $name)` is now `static`
-3. You can now define the seek order to get the first value either 
-from the `local` or `global` context using `getAnyParam(string $name, string $seek_order = 'local'): mixed`
-4. It's possible to set at once a parameter into the local and global context using `setAnyParam(string $name, mixed $value)`
-4. It's possible to unset at once a parameter from the local and the global context using `unsetAnyParam(string $name)`<br>
-Test files are updated
-
-**Changelog v5.2.1:**<br>
-1. Improving the local and global parameters' management<br>
-Add new method `getAnyParam(string $name)` that will return first the local value of the parameter if defined
-or the global value instead or throw finally an exception if the parameter is unknown<br>
-Offers the possibility to unset any local or global parameter using `unsetParam(string $name)` or `unsetGlobalParam(string $name)`<br>
-You can now check if a parameter is defined either in the local or global array using `hasAnyParam(string $name)`<br>
-Test files are updated
-
-**Changelog v5.2.0:**<br>
-1. Space is not used as directory separator anymore, the only admitted directory separator is now / (slash)
-Space is now preserved in the filepath.
-Everywhere you wrote for example `new PhpEcho('block dummy_block.php');`, you must replace it with `new PhpEcho('block/dummy_block.php');`
-The same thing for `$this->renderblock('block dummy_block.php');` which must be replaced by `$this->renderBlock('block/dummy_block.php');`
-and also for `this->renderByDefault('preloader', 'block preloader.php')` which become `this->renderByDefault('preloader', 'block/preloader.php')` 
-If you have previously used a space as directory separator, you'll have to review all the view files. 
-If you stayed stuck with slash (/), no problems, this upgrade won't impact your code. 
-
-**Changelog v5.1.1:**<br>
-1. Standard helpers are now injected once automatically
-
-**Changelog v5.1.0:**<br>
-1. The method `getHelper(string $name): Closure` is not static anymore
-2. The equivalent static is now defined as `getHelperBase(string $name): Closure`
-3. The method `isHelper(string $name): bool` does not throw any `Exception` anymore and only returns a strict boolean
-4. Internally some code optimization and better logic segmentation: new method `getHelperDetails(string $name): array`
-
-**Changelog v5.0.0:**<br>
-1. Removing th constant `HELPER_BOUND_TO_CLASS_INSTANCE`, it's replaced by `PhpEcho::addBindableHelper`
-2. Removing the constant `HELPER_RETURN_ESCAPED_DATA`. Now, the engine is able to check when data must 
-be escaped and preserve the native datatype when it's safe in HTML context
-2. Instead of dying silently with `null` or empty string, the engine now throws in all case an `Exception`
-You must produce a better code as it will crash on each low quality segment.
-3. Add new method `renderBlock()` to link easily a child block to its parent  
-4. Many code improvements
-5. Fully tested: the core and all helpers have been fully tested
-6. Add new helper to the standard library `renderIfNotSet()` that render a default value instead 
-of throwing an `Exception` for any missing key in the stored key-value pairs
-
-**NEW VERSION PhpEcho v5.0.0:**<br>
-This version is a major update and breaks the compatibility with the code
-written for the previous version of the engine. The changes impact mainly the code
-generating the helpers. The code for the view part of your project is not impacted by the upgrade.
 
 **What you must know to use it**
 1. All values read from a PhpEcho instance are escaped and safe in HTML context.
@@ -371,9 +309,7 @@ This way, you do not cut the tree ;-)
 The engine fills the vars attached to a block automatically if there's no other values defined. 
 In that case the child gets a copy of the vars defined in the parent block.
 ```php
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 use rawsrc\PhpEcho\PhpEcho;
 
@@ -384,7 +320,7 @@ $page['login'] = 'rawsrc';
 $page['url_submit'] = 'any/path/for/connection';
 
 // no vars are attached to the block as the second parameter is omitted
-$body = new PhpEcho('block login.php');  // login expects 2 values (login and url_submit)
+$body = new PhpEcho('block/login.php');  // login expects 2 values (login and url_submit)
 
 // when we inject the block into the parent, the auto-wiring will automatically
 // pass a copy of parent's vars to the child   
