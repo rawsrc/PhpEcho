@@ -8,14 +8,11 @@ use Closure;
 use InvalidArgumentException;
 
 use function array_key_exists;
-use function array_map;
-use function array_pop;
 use function array_push;
 use function array_shift;
 use function bin2hex;
 use function chr;
 use function count;
-use function explode;
 use function implode;
 use function is_array;
 use function is_file;
@@ -60,29 +57,26 @@ use const DIRECTORY_SEPARATOR;
  * PhpEcho HELPERS
  * @method mixed raw(string $key) Return the raw value from a PhpEcho block
  * @method bool isScalar(mixed $p)
- * @method mixed keyUp(array|string $keys, bool $strict_match) Climb the tree of PhpEcho instances while keys match
- * @method mixed rootVar(array|string $keys) Extract the value from the top level PhpEcho block (the root)
- * @method PhpEcho root() Return the root PhpEcho instance of the tree
- * @method mixed seekParam(string $name) Seek the parameter from the current block to the root
- * @method mixed renderIfNotSet(string $key, mixed $default_value) If the key is not defined then render the default value
+ * @method mixed keyUp(array|string $keys, bool $strict_match) // Climb the tree of PhpEcho instances while keys match
+ * @method mixed rootVar(array|string $keys) // Extract the value from the top level PhpEcho block (the root)
+ * @method PhpEcho root() // Return the root PhpEcho instance of the tree
+ * @method mixed seekParam(string $name) // Seek the parameter from the current block to the root
+ * @method mixed renderIfNotSet(string $key, mixed $default_value) // If the key is not defined then render the default value
  *
  * HTML HELPERS
- * @method mixed hsc($p) Escape the value in parameter (scalar, array, stringable)
- * @method string attributes(array $p, bool $escape_url = true) Return the values as escaped attributes: attribute="..."
- * @method string selected($p, $ref) Return " selected " if $p == $ref
- * @method string checked($p, $ref) Return " checked "  if $p == $ref
- * @method string voidTag(string $tag, array $attributes = [], bool $escape_url = true) Build a <tag />
- * @method string tag(string $tag, string $content, array $attr = [], bool $escape_url = true) Build a <tag></tag>
- * @method string link(array $attributes, bool $escape_url = true) [rel => required, attribute => value]
- * @method string style(array $attributes, bool $escape_url = true) [href => url | code => plain css definition, attribute => value]
- * @method string script(array $attributes, bool $escape_url = true) [src => url | code => plain javascript, attribute => value]
+ * @method mixed hsc($p) // Escape the value in parameter (scalar, array, stringable)
+ * @method string attributes(array $p, bool $escape_url = true) // Return the values as escaped attributes: attribute="..."
+ * @method string selected($p, $ref) // Return " selected " if $p == $ref
+ * @method string checked($p, $ref) // Return " checked "  if $p == $ref
+ * @method string voidTag(string $tag, array $attributes = [], bool $escape_url = true) // Build a <tag />
+ * @method string tag(string $tag, string $content, array $attr = [], bool $escape_url = true) // Build a <tag></tag>
+ * @method string link(array $attributes, bool $escape_url = true) // [rel => required, attribute => value]
+ * @method string style(array $attributes, bool $escape_url = true) // [href => url | code => plain css definition, attribute => value]
+ * @method string script(array $attributes, bool $escape_url = true) // [src => url | code => plain javascript, attribute => value]
  */
 class PhpEcho
 implements ArrayAccess
 {
-    private const ALPHA_NUM = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-    private const TOKEN_MIN_LENGTH = 16;
-
     private string $id = '';
     private array $vars = [];
     private array $params = [];
@@ -90,72 +84,42 @@ implements ArrayAccess
     private string $head_token = '';
     /**
      * Partial file path to the external view file (from the template dir root)
-     * @var string
      */
     private string $file = '';
-    /**
-     * @var string
-     */
     private string $code = '';
     /**
-     * @var array [helper's id => bound closure]
+     * @var array<string, Closure> [helper's id => bound closure]
      */
     private array $bound_helpers = [];
     /**
      * Indicates if the current instance contains in its vars other PhpEcho instance(s)
-     * @var bool
      */
     private bool $has_children = false;
-    /**
-     * @var PhpEcho
-     */
     private PhpEcho $parent;
-    /**
-     * If true then the array keys should never contain a space between words
-     * Each space will be transformed into a sub-array: 'abc def' => ['abc']['def']
-     * @var bool
-     */
-    private static bool $use_space_notation = true;
-    /**
-     * @var string
-     */
     private static string $template_dir_root = '';
     /**
-     * @var array  [name => closure]
+     * @var array<string, Closure> [helper's name => closure]
      */
     private static array $helpers = [];
     /**
-     * Array of bindable helpers to the class instance
-     * @var array [helper's name => true]
+     * @var array<string, true> [helper's name => true]
      */
     private static array $bindable_helpers = [];
     /**
-     * @var array [helper's name => true]
+     * @var array<string, true> [helper's name => true]
      */
     private static array $helpers_result_escaped = [];
     /**
-     * Used tokens
-     * @var array [token => true]
+     * @var array<string, true> [token => true]
      */
-    private static array $tokens = [];
-    /**
-     * @var array
-     */
+    private static array $used_tokens = [];
     private static array $global_params = [];
-    /**
-     * @var bool
-     */
     private static bool $std_helpers_injected = false;
-    /**
-     * @var bool
-     */
-    private static bool $null_if_not_exist = false;
+    private static bool $return_null_if_not_exist = false;
 
     //region MAGIC METHODS
     /**
-     * @param string $file path from the template dir root
-     * @param array $vars
-     * @param string $id if empty then auto-generated
+     * Expect: the partial filepath from the template directory root
      */
     public function __construct(string $file = '', array $vars = [], string $id = '')
     {
@@ -173,16 +137,15 @@ implements ArrayAccess
             $this->id = $id;
         }
 
-        $this->vars = $vars;
+        foreach ($vars as $k => $v) {
+            $this->offsetSet($k, $v);
+        }
     }
 
     /**
      * This function call a helper defined elsewhere or dynamically
      * Auto-escape if necessary
      *
-     * @param string $helper
-     * @param mixed $args
-     * @return mixed
      * @throws InvalidArgumentException
      */
     public function __invoke(string $helper, mixed ...$args): mixed
@@ -200,9 +163,6 @@ implements ArrayAccess
     }
 
     /**
-     * @param string $name
-     * @param array $arguments
-     * @return mixed
      * @throws InvalidArgumentException
      */
     public function __call(string $name, array $arguments): mixed
@@ -211,14 +171,13 @@ implements ArrayAccess
     }
 
     /**
-     * Magic method that returns a string instead of current instance of the class in a string context
      * @throws BadMethodCallException
      */
     public function __toString(): string
     {
         $this->render();
         $root = $this('root');
-        if (($root === $this) && ( ! empty($this->head_token))) {
+        if (($root === $this) && ($this->head_token !== '')) {
             $head = implode('', $this->head);
 
             return str_replace($this->head_token, $head, $this->code);
@@ -226,13 +185,15 @@ implements ArrayAccess
             return $this->code;
         }
     }
+
+    public function __clone(): void
+    {
+        unset($this->parent);
+    }
     //endregion
 
     /**
      * Return the full path to a view file, prepend it with the template dir root
-     *
-     * @param string $path
-     * @return string
      */
     public static function getFullFilepath(string $path): string
     {
@@ -246,51 +207,24 @@ implements ArrayAccess
         return str_replace(DIRECTORY_SEPARATOR.DIRECTORY_SEPARATOR, DIRECTORY_SEPARATOR, $path);
     }
 
-    /**
-     * @return string
-     */
     public function getFilepath(): string
     {
         return $this->file;
     }
 
-    /**
-     * @param bool $p
-     */
-    public static function setUseSpaceNotation(bool $p): void
-    {
-        self::$use_space_notation = $p;
-    }
-
-    /**
-     * @return bool
-     */
-    public static function useSpaceNotation(): bool
-    {
-        return self::$use_space_notation;
-    }
-
-    /**
-     * @param string $id
-     */
     public function setId(string $id): void
     {
         $this->id = $id;
     }
 
-    /**
-     * @return string
-     */
     public function getId(): string
     {
         return $this->id;
     }
 
+    //region PARAMETERS
     /**
      * Define a local parameter
-     *
-     * @param string $name
-     * @param mixed $value
      */
     public function setParam(string $name, mixed $value): void
     {
@@ -301,10 +235,6 @@ implements ArrayAccess
      * Get the value of a local parameter
      * The value of the parameter is never escaped
      *
-     * if the parameter does not exist then throw an exception
-     *
-     * @param string $name
-     * @return mixed
      * @throws InvalidArgumentException
      */
     public function getParam(string $name): mixed
@@ -316,10 +246,6 @@ implements ArrayAccess
         }
     }
 
-    /**
-     * @param string $name
-     * @return void
-     */
     public function unsetParam(string $name): void
     {
         if ($this->hasParam($name)) {
@@ -329,20 +255,13 @@ implements ArrayAccess
         }
     }
 
-    /**
-     * @param string $name
-     * @return bool
-     */
     public function hasParam(string $name): bool
     {
         return array_key_exists($name, $this->params);
     }
 
     /**
-     * Parameter that is available through all PhpEcho instances
-     *
-     * @param string $name
-     * @param mixed $value
+     * Parameter available through all PhpEcho instances
      */
     public static function setGlobalParam(string $name, mixed $value): void
     {
@@ -350,8 +269,6 @@ implements ArrayAccess
     }
 
     /**
-     * @param string $name
-     * @return mixed
      * @throws InvalidArgumentException
      */
     public static function getGlobalParam(string $name): mixed
@@ -364,7 +281,6 @@ implements ArrayAccess
     }
 
     /**
-     * @param string $name
      * @throws InvalidArgumentException
      */
     public static function unsetGlobalParam(string $name): void
@@ -376,10 +292,6 @@ implements ArrayAccess
         }
     }
 
-    /**
-     * @param string $name
-     * @return bool
-     */
     public static function hasGlobalParam(string $name): bool
     {
         return array_key_exists($name, self::$global_params);
@@ -387,9 +299,6 @@ implements ArrayAccess
 
     /**
      * Define or override a local and global parameter value at once
-     *
-     * @param string $name
-     * @param mixed $value
      */
     public function setAnyParam(string $name, mixed $value): void
     {
@@ -406,9 +315,7 @@ implements ArrayAccess
      *
      * Finally, if the parameter is not found, throw an InvalidArgumentException
      *
-     * @param string $name
      * @param string $seek_order local|global
-     * @return mixed
      * @throws InvalidArgumentException
      */
     public function getAnyParam(string $name, string $seek_order = 'local'): mixed
@@ -434,9 +341,6 @@ implements ArrayAccess
 
     /**
      * Check if the parameter is defined either in the local array storage or in the global one
-     *
-     * @param string $name
-     * @return bool
      */
     public function hasAnyParam(string $name): bool
     {
@@ -446,7 +350,6 @@ implements ArrayAccess
     /**
      * Unset a parameter value from the local and global context
      *
-     * @param string $name
      * @throws InvalidArgumentException
      */
     public function unsetAnyParam(string $name): void
@@ -458,192 +361,166 @@ implements ArrayAccess
             throw new InvalidArgumentException("unknown.parameter.{$name}");
         }
     }
+    //endregion PARAMETERS
 
     /**
-     * @param bool $p
+     * If a key is not defined then return null instead of throwing an Exception
      */
     public static function setNullIfNotExists(bool $p): void
     {
-        self::$null_if_not_exist = $p;
+        self::$return_null_if_not_exist = $p;
     }
 
     /**
      * Generate a unique execution id based on random_bytes()
      * Always start with a letter
      */
-    public function generateId()
+    public function generateId(): void
     {
         $this->id = chr(mt_rand(97, 122)).bin2hex(random_bytes(4));
     }
 
-    //region ARRAY ACCESS
     /**
-     * If "support the space notation for array and sub-arrays" is activated then
-     * if $offset = 'abc def' then the engine will search for the key in $vars['abc']['def']
-     *
-     * Interface ArrayAccess
-     * @param  $offset
-     * @return bool
+     * Local values
      */
-    public function offsetExists($offset): bool
+    public function setVars(array $vars): void
     {
-        if (self::$use_space_notation) {
-            $keys = explode(' ', $offset);
-            if (count($keys) > 1) {
-                $last = array_pop($keys);
-                $data = $this->vars;
-                foreach ($keys as $k) {
-                    if (isset($data[$k])) {
-                        $data = $data[$k];
-                    } else {
-                        return false;
-                    }
-                }
-
-                return array_key_exists($last, $data);
+        $this->has_children = false;
+        if ($vars === []) {
+            $this->vars = [];
+        } else {
+            foreach ($vars as $k => $v) {
+                $this->offsetSet($k, $v);
             }
         }
+    }
 
+    /**
+     * Values available for the whole tree of blocks
+     */
+    public function injectVars(array $vars): void
+    {
+        /** @var PhpEcho $root */
+        $root = $this('root');
+        foreach ($vars as $k => $v) {
+            $root->offsetSet($k, $v);
+        }
+    }
+
+    //region ARRAY ACCESS INTERFACE
+    public function offsetExists(mixed $offset): bool
+    {
         return array_key_exists($offset, $this->vars);
     }
 
     /**
-     * Interface ArrayAccess
      * The returned value is escaped
      *
      * Some types are preserved : true bool, true int, true float, PhpEcho instance, object without __toString()
      * For array of PhpEcho blocks, the array is imploded and the blocks are rendered int the order they appear
      * Otherwise, the value is cast to a string and escaped
      *
-     * If "support the space notation for array and sub-arrays" is activated then
-     * if $offset = 'abc def' then the engine will search for the key in $vars['abc']['def']
-     *
-     * @param $offset
-     * @return mixed
      * @throws InvalidArgumentException
      */
-    public function offsetGet($offset): mixed
+    public function offsetGet(mixed $offset): mixed
     {
         $v = $this->getOffsetRawValue($offset);
 
+        $get_escaped = function(mixed $p): mixed {
+            if ($p instanceof PhpEcho) {
+                return $p;
+            } elseif ($this('toEscape', $p)) {
+                return $this('hsc', $p);
+            } else {
+                return $p;
+            }
+        };
+
+        $for_array = function(array $p) use (&$for_array, $get_escaped): array {
+            $data = [];
+            foreach ($p as $k => $z) {
+                if (is_array($z) && ($z !== [])) {
+                    $data[$get_escaped($k)] = $for_array($z);
+                } else {
+                    $data[$get_escaped($k)] = $get_escaped($z);
+                }
+            }
+
+            return $data;
+        };
+
         if ($v === null) {
             return null;
-        } elseif ($this->isArrayOfPhpEchoBlocks($v)) {
-            // intercept the case where $v is an array of PhpEcho blocks
-            return implode('', array_map('strval', $v));
-        } elseif ($this('toEscape', $v)) {
-            return $this('hsc', $v);
-        } else {
-            return $v;
-        }
-    }
-
-    /**
-     * @param $offset
-     * @return mixed
-     * @throws InvalidArgumentException
-     */
-    private function getOffsetRawValue($offset): mixed
-    {
-        if (self::$use_space_notation) {
-            $data = $this->vars;
-            $keys = explode(' ', $offset);
-            $last = array_pop($keys);
-            foreach ($keys as $k) {
-                if (isset($data[$k])) {
-                    $data = $data[$k];
-                } else {
-                    return self::$null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$k}");
-                }
-            }
-            if (array_key_exists($last, $data)) {
-                return $data[$last];
+        } elseif (is_array($v)) {
+            if ($this->isArrayOfPhpEchoBlocks($v)) {
+                return implode('', $for_array($v));
             } else {
-                return self::$null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$last}");
+                return $for_array($v);
             }
-        } elseif (isset($this->vars[$offset])) {
+        } else{
+            return $get_escaped($v);
+        }
+    }
+
+    /**
+     * @throws InvalidArgumentException only if $return_null_if_not_exist is set to false
+     */
+    private function getOffsetRawValue(mixed $offset): mixed
+    {
+        if (array_key_exists($offset, $this->vars)) {
             return $this->vars[$offset];
-        } else {
-            return self::$null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$offset}");
-        }
-    }
-
-    /**
-     * If "support the space notation for array and sub-arrays" is activated then
-     * if $offset = 'abc def' then the engine will define an array and a sub-array: $vars['abc']['def']
-     *
-     * Interface ArrayAccess
-     * @param $offset
-     * @param mixed $value
-     */
-    public function offsetSet($offset, mixed $value): void
-    {
-        // we keep the rule from addBlock():
-        // if $value is a PhpEcho instance and if there's no defined vars
-        // then the parent block transfers its internal vars to the child
-        if ($value instanceof PhpEcho) {
-            $this->has_children = true;
-            $value->parent = $this;
-            if (empty($value->vars)) {
-                $value->vars = $this->vars;
-            }
-        } elseif ($this->isArrayOfPhpEchoBlocks($value)) {
-            $this->has_children = true;
-            /** @var self $block */
-            foreach ($value as $block) {
-                $block->parent = $this;
-                if (empty($block->vars)) {
-                    $block->vars = $this->vars;
-                }
-            }
         }
 
-        if (self::$use_space_notation) {
-            $keys = explode(' ', $offset);
-            if (count($keys) > 1) {
-                $data =& $this->vars;
-                foreach ($keys as $k) {
-                    $data[$k] = [];
-                    $data =& $data[$k];
-                }
-                $data = $value;
-
-                return;
-            }
-        }
-
-        $this->vars[$offset] = $value;
-    }
-
-    /**
-     * If "support the space notation for array and sub-arrays" is activated then
-     * if $offset = 'abc def' then the engine will unset the key in $vars['abc']['def']
-     *
-     * Interface ArrayAccess
-     * @param $offset
-     */
-    public function offsetUnset($offset): void
-    {
-        if (self::$use_space_notation) {
-            $keys = explode(' ', $offset);
-            if (count($keys) > 1) {
-                $last = array_pop($keys);
-                $data =& $this->vars;
-                foreach ($keys as $k) {
-                    if (isset($data[$k])) {
-                        $data =& $data[$k];
-                    } else {
-                        throw new InvalidArgumentException("unknown.offset.{$k}");
-                    }
-                }
-
-                if (array_key_exists($last, $data)) {
-                    unset($data[$last]);
+        $block = $this;
+        while (true) {
+            if (isset($block->parent)) {
+                if (array_key_exists($offset, $block->parent->vars)) {
+                    return $block->parent->vars[$offset];
                 } else {
-                    throw new InvalidArgumentException("unknown.offset.{$last}");
+                    $block = $block->parent;
+                }
+            } else {
+                return self::$return_null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$offset}");
+            }
+        }
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        $block = function(PhpEcho $p): self {
+            $this->has_children = true;
+            $p->parent = $this;
+
+            return $p;
+        };
+
+        $for_array = function(array $p) use (&$for_array, $block): array {
+            $data = [];
+            foreach ($p as $k => $v) {
+                if ($v instanceof PhpEcho) {
+                    $data[$k] = $block($v);
+                } elseif (is_array($v)) {
+                    $data[$k] = $for_array($v);
+                } else {
+                    $data[$k] = $v;
                 }
             }
-        } elseif (array_key_exists($offset, $this->vars)) {
+
+            return $data;
+        };
+
+        if ($value instanceof self) {
+            $this->vars[$offset] = $block($value);
+        } elseif (is_array($value)) {
+            $this->vars[$offset] = $for_array($value);
+        } else {
+            $this->vars[$offset] = $value;
+        }
+    }
+
+    public function offsetUnset(mixed $offset): void
+    {
+        if (array_key_exists($offset, $this->vars)) {
             unset($this->vars[$offset]);
         } else {
             throw new InvalidArgumentException("unknown.offset.{$offset}");
@@ -652,18 +529,14 @@ implements ArrayAccess
     //endregion ARRAY ACCESS
 
     //region HELPER ZONE
-    /**
-     * @param int $length min = 12 chars
-     * @return string
-     */
-    public static function getToken(int $length = self::TOKEN_MIN_LENGTH): string
+    public static function getToken(int $length = 16): string
     {
-        $length = max(self::TOKEN_MIN_LENGTH, $length);
+        $length = max(16, $length);
         do {
-            $token = substr(str_shuffle(self::ALPHA_NUM.mt_rand(100000000, 999999999)), 0, $length);
-        } while (isset(self::$tokens[$token]));
+            $token = substr(str_shuffle('abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'.mt_rand(100000000, 999999999)), 0, $length);
+        } while (isset(self::$used_tokens[$token]));
 
-        self::$tokens[$token] = true;
+        self::$used_tokens[$token] = true;
 
         return $token;
     }
@@ -687,11 +560,6 @@ implements ArrayAccess
         }
     }
 
-    /**
-     * @param string $name
-     * @param Closure $helper
-     * @param bool $result_escaped
-     */
     public static function addHelper(string $name, Closure $helper, bool $result_escaped = false): void
     {
         self::$helpers[$name] = $helper;
@@ -700,11 +568,6 @@ implements ArrayAccess
         }
     }
 
-    /**
-     * @param string $name
-     * @param Closure $helper
-     * @param bool $result_escaped
-     */
     public static function addBindableHelper(string $name, Closure $helper, bool $result_escaped = false): void
     {
         self::$helpers[$name] = $helper;
@@ -716,9 +579,6 @@ implements ArrayAccess
 
     /**
      * Return the helper closure (already bound to the current instance if bindable) otherwise the base closure
-     *
-     * @param string $name
-     * @return Closure
      * @throws InvalidArgumentException
      */
     public function getHelper(string $name): Closure
@@ -738,8 +598,6 @@ implements ArrayAccess
     }
 
     /**
-     * @param string $name
-     * @return Closure
      * @throws InvalidArgumentException
      */
     public static function getHelperBase(string $name): Closure
@@ -748,8 +606,7 @@ implements ArrayAccess
     }
 
     /**
-     * @param string $name
-     * @return array [name, helper, bindable, escaped]
+     * @return array{ name:string, closure:Closure, bindable:bool, escaped:bool }
      * @throws InvalidArgumentException
      */
     protected static function getHelperDetails(string $name): array
@@ -769,25 +626,19 @@ implements ArrayAccess
     }
 
     /**
-     * @return array [name => closure]
+     * @return array<string, Closure> [name => closure]
      */
     public static function getHelpers(): array
     {
         return self::$helpers;
     }
 
-    /**
-     * @param string $name
-     * @return bool
-     */
     public static function isHelper(string $name): bool
     {
         return isset(self::$helpers[$name]);
     }
 
     /**
-     * @param string $name
-     * @return bool
      * @throws InvalidArgumentException
      */
     public static function isHelperResultEscaped(string $name): bool
@@ -796,10 +647,6 @@ implements ArrayAccess
     }
 
     /**
-     * Check if the helper must be bound to a class instance
-     *
-     * @param string $name
-     * @return bool
      * @throws InvalidArgumentException
      */
     public static function isHelperBindable(string $name): bool
@@ -809,9 +656,6 @@ implements ArrayAccess
 
     /**
      * Change the helper's binding context to the given one in parameter
-     * Only for helpers bound to a class instance
-     *
-     * @param object $p
      */
     private function bindHelpersTo(object $p): void
     {
@@ -824,10 +668,6 @@ implements ArrayAccess
     }
     //endregion HELPER ZONE
 
-    /**
-     * @param mixed $p
-     * @return bool
-     */
     private function isArrayOfPhpEchoBlocks(mixed $p): bool
     {
         if (is_array($p) && ($p !== [])) {
@@ -844,14 +684,14 @@ implements ArrayAccess
     }
 
     /**
-     * @param string $p The path to the root directory of the view files
+     * The full path to the root directory of the view files
      */
-    public static function setTemplateDirRoot(string $p): void
+    public static function setTemplateDirRoot(string $full_path): void
     {
         if (DIRECTORY_SEPARATOR !== '/') {
-            self::$template_dir_root = str_replace('/', DIRECTORY_SEPARATOR, $p);
+            self::$template_dir_root = str_replace('/', DIRECTORY_SEPARATOR, $full_path);
         } else {
-            self::$template_dir_root = $p;
+            self::$template_dir_root = $full_path;
         }
     }
 
@@ -866,8 +706,6 @@ implements ArrayAccess
      *  - become "www\user\view\login.php"  if DIRECTORY_SEPARATOR = '\'
      *
      * File inclusion remove the inline code
-     *
-     * @param string $path
      */
     public function setFile(string $path): void
     {
@@ -882,8 +720,6 @@ implements ArrayAccess
      * be absolutely sure that the values are already defined before, otherwise you will only have empty strings
      *
      * Inline code remove the included file
-     *
-     * @param string $code
      */
     public function setCode(string $code): void
     {
@@ -893,7 +729,6 @@ implements ArrayAccess
 
     /**
      * Indicates if the current instance contains in its vars other PhpEcho instance(s)
-     * @return bool
      */
     public function hasChildren(): bool
     {
@@ -905,29 +740,16 @@ implements ArrayAccess
      * You must never use a space in any part of the real file path: space is read as DIRECTORY_SEPARATOR
      *
      * If a template dir root is defined then the path is automatically prepend with
-     *
-     * @param string $var_name the var used in the current template targeting the child block
-     * @param string $path path from template dir root
-     * @param array|null $vars if null then the parent transfers its internal vars to the child
-     * @param string $id
-     * @return self
      */
     public function addBlock(string $var_name, string $path, ?array $vars = null, string $id = ''): self
     {
         $block = new PhpEcho($path, $vars ?? $this->vars, $id);
-        $block->parent = $this;
-        $this->has_children = true;
-        $this->vars[$var_name] = $block;
+        $this->offsetSet($var_name, $block);
 
         return $block;
     }
 
     /**
-     * @param string $var_name
-     * @param string $path path from template dir root
-     * @param array|null $vars
-     * @param string $id
-     * @return self
      * @throws InvalidArgumentException
      */
     public function renderByDefault(string $var_name, string $path, ?array $vars = null, string $id = ''): self
@@ -946,20 +768,12 @@ implements ArrayAccess
     /**
      * Same as addBlock() but without having a $var_name to define
      * The block is not accessible using a variable
-     *
-     * @param string $path
-     * @param array|null $vars
-     * @param string $id
-     * @return self
      */
     public function renderBlock(string $path, ?array $vars = null, string $id = ''): self
     {
         return $this->addBlock(self::getToken(), $path, $vars, $id);
     }
 
-    /**
-     * @return bool
-     */
     public function hasParent(): bool
     {
         return isset($this->parent);
@@ -968,7 +782,6 @@ implements ArrayAccess
     /**
      * If 1 arg => plain html code (string or array of html code)
      * If more or equal 2 args => first=helper + the rest=helper's params
-     * @param mixed ...$args
      */
     public function addHead(mixed ...$args): void
     {
@@ -984,15 +797,12 @@ implements ArrayAccess
         } elseif ($nb >= 2) {
             // the first param should be a helper
             $helper = array_shift($args);
-            if (self::isHelper($helper, true)) {
+            if (self::isHelper($helper)) {
                 $root->head[] = $this($helper, ...$args);
             }
         }
     }
 
-    /**
-     * @return string
-     */
     public function getHead(): string
     {
         // generate a token that will be replaced after rendering the whole HTML
@@ -1014,7 +824,7 @@ implements ArrayAccess
                     include $path;
                     $this->code = ob_get_clean();
                 } else {
-                    throw new BadMethodCallException("unknown.view.file.{$this->file}");
+                    throw new BadMethodCallException("unknown.view.file.'{$this->file}'");
                 }
             } else {
                 throw new BadMethodCallException('no.view.to.render');

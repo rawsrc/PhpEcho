@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 use Exacodis\Pilot;
 use rawsrc\PhpEcho\PhpEcho;
@@ -48,10 +46,10 @@ $block['foo bar'] = 'xyz';
 $pilot->run(
     id: 'core_005',
     test: fn() => $block['foo'],
-    description: 'using space notation by default, check auto creation of sub-arrays'
+    description: 'try to use removed feature: space notation, check auto creation of sub-arrays'
 );
-$pilot->assertIsArray();
-$pilot->assertEqual(['bar' => 'xyz']);
+$pilot->assertIsString();
+$pilot->assertEqual('abc &quot; &lt; &gt;');
 
 $pilot->run(
     id: 'core_006',
@@ -61,12 +59,11 @@ $pilot->run(
 $pilot->assertIsString();
 $pilot->assertEqual('xyz');
 
-PhpEcho::setUseSpaceNotation(false);
 $block['foo bar'] = 'xxx';
 $pilot->run(
     id: 'core_007',
     test: fn() => $block['foo bar'],
-    description: 'space notation disabled, check if key with space is preserved'
+    description: 'space notation removed, check if key with space is preserved'
 );
 $pilot->assertIsString();
 $pilot->assertEqual('xxx');

@@ -6,9 +6,6 @@ use rawsrc\PhpEcho\PhpEcho;
 //region is_scalar
 /**
  * This is a standalone helper
- *
- * @param mixed $p
- * @return bool
  */
 $is_scalar = function(mixed $p): bool {
     return is_scalar($p) || (is_object($p) && method_exists($p, '__toString'));
@@ -19,9 +16,6 @@ PhpEcho::addHelper('isScalar', $is_scalar, true);
 //region to_escape
 /**
  * Check if the value in parameter should be escaped or not
- *
- * @param mixed $p
- * @return bool
  */
 $to_escape = function(mixed $p): bool  {
     if (is_string($p)) {
@@ -46,9 +40,6 @@ PhpEcho::addHelper('toEscape', $to_escape, true);
  *
  * This is a standalone helper that is not directly accessible
  * Use instead the common helper 'hsc' which is compatible with arrays
- *
- * @param array $part
- * @return array
  */
 $hsc_array = function(array $part) use (&$hsc_array, $to_escape): array {
     $data = [];
@@ -79,9 +70,6 @@ $hsc_array = function(array $part) use (&$hsc_array, $to_escape): array {
  * - true bool, true int, true float, PhpEcho instance, object without __toString()
  *
  * Otherwise, the value is cast to string and escaped
- *
- * @param mixed $p
- * @return array|string
  */
 $hsc = function(mixed $p) use ($hsc_array, $is_scalar): array|string {
     if ($p instanceof PhpEcho) {
@@ -110,8 +98,6 @@ PhpEcho::addHelper('hsc', $hsc, true);
  * if $key = 'abc def' then the engine will search for
  * the value as $vars['abc']['def']
  *
- * @param string $key
- * @return mixed
  * @throws InvalidArgumentException
  */
 $raw = function(string $key): mixed {
@@ -122,11 +108,6 @@ PhpEcho::addBindableHelper('raw', $raw, true);
 //endregion raw
 
 //region render_if_not_set
-/**
- * @param string $key
- * @param mixed $default_value
- * @return mixed
- */
 $render_if_not_set = function(string $key, mixed $default_value) use ($hsc): mixed {
     /** @var PhpEcho $this */
     try {
@@ -149,9 +130,6 @@ PhpEcho::addBindableHelper('renderIfNotSet', $render_if_not_set, true);
  * If $strict_match === false then if the current key is not found in the parent block, then the search will continue
  * until reaching the root or stop at the first match
  *
- * @param string|array $keys
- * @param bool $strict_match
- * @return mixed
  * @throws InvalidArgumentException If not found
  */
 $key_up = function(array|string $keys, bool $strict_match = true) use ($to_escape, $hsc): mixed {
@@ -189,9 +167,6 @@ PhpEcho::addBindableHelper('keyUp', $key_up, true);
 //endregion key_up
 
 //region root
-/**
- * @return PhpEcho
- */
 $root = function(): PhpEcho {
     // climbing to the root
     /** @var PhpEcho $block */
@@ -213,9 +188,7 @@ PhpEcho::addBindableHelper('root', $root);
  * A string will be split in parts using the space for delimiter
  * If one of the keys contains a space, use an array of keys instead
  *
- * @param array|string $keys
- * @return mixed
- * @throws InvalidArgumentException If not found
+ * @throws InvalidArgumentException
  */
 $root_var = function(array|string $keys) use ($to_escape, $hsc): mixed {
     /** @var PhpEcho $this */
@@ -250,8 +223,6 @@ PhpEcho::addBindableHelper('rootVar', $root_var, true);
 /**
  * Seek the parameter from the current block to the root
  *
- * @param string $name
- * @return null
  * @throws InvalidArgumentException If not found
  */
 $seek_param = function(string $name): mixed {
@@ -276,10 +247,6 @@ PhpEcho::addBindableHelper('seekParam', $seek_param, true);
 /**
  * Return the html attribute "selected" if $p == $ref
  * This is a standalone helper
- *
- * @param mixed $p scalar value to check
- * @param mixed $ref scalar value ref
- * @return string
  */
 $selected = function(mixed $p, mixed $ref) use ($is_scalar): string {
     return $is_scalar($p) && $is_scalar($ref) && ((string)$p === (string)$ref) ? ' selected ' : '';

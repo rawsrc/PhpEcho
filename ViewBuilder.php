@@ -36,61 +36,36 @@ abstract
 class ViewBuilder
 implements ArrayAccess
 {
-    /**
-     * @return PhpEcho
-     */
     abstract public function build(): PhpEcho;
 
     public array $data = [];
 
-    /**
-     * @return array
-     */
     public function getData(): array
     {
         return $this->data;
     }
 
-    /**
-     * @return string
-     */
     public function __toString(): string
     {
         return (string)$this->build();
     }
 
-    //region ARRAY ACCESS
-    /**
-     * @param mixed $offset
-     * @param mixed $value
-     */
+    //region ARRAY ACCESS INTERFACE
     public function offsetSet(mixed $offset, mixed $value): void
     {
         $this->data[$offset] = $value;
     }
 
-    /**
-     * @param mixed $offset
-     * @return mixed
-     */
     public function offsetGet(mixed $offset): mixed
     {
         return $this->data[$offset];
     }
 
-    /**
-     * @param $offset
-     * @return bool
-     */
     public function offsetExists($offset): bool
     {
         return array_key_exists($offset, $this->data);
     }
 
-    /**
-     * @param mixed $offset
-     * @return void
-     */
     public function offsetUnset(mixed $offset): void
     {
         unset ($this->data[$offset]);
