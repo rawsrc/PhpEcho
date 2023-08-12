@@ -1,6 +1,4 @@
-<?php
-
-declare(strict_types=1);
+<?php declare(strict_types=1);
 
 use Exacodis\Pilot;
 use rawsrc\PhpEcho\PhpEcho;

@@ -1,4 +1,4 @@
-<?php
+<?php declare(strict_types=1);
 
 /**
  * TESTS ARE WRITTEN FOR EXACODIS PHP TEST ENGINE
@@ -7,8 +7,7 @@
  * To run the tests, you must only define a db user granted with all privileges
  */
 
-declare(strict_types=1);
-
+$a = 1;
 //region setup test environment
 include_once '../vendor/exacodis/Pilot.php';
 include_once '../vendor/exacodis/Report.php';
@@ -18,7 +17,7 @@ include_once '../ViewBuilder.php';
 
 use Exacodis\Pilot;
 
-$pilot = new Pilot('PhpEcho - A native PHP template engine - v.5.4.2');
+$pilot = new Pilot('PhpEcho - A native PHP template engine - v.6.0.0');
 $pilot->injectStandardHelpers();
 
 include 'filepath.php';
@@ -26,6 +25,7 @@ include 'params.php';
 include 'helpers.php';
 include 'stdHelpers.php';
 include 'core.php';
+include 'autowire.php';
 include 'view.php';
 include 'heredoc.php';
 include 'viewBuilder.php';
