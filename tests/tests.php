@@ -17,7 +17,7 @@ include_once '../ViewBuilder.php';
 
 use Exacodis\Pilot;
 
-$pilot = new Pilot('PhpEcho - A native PHP template engine - v.6.0.0');
+$pilot = new Pilot('PhpEcho - A native PHP template engine - v.6.0.1');
 $pilot->injectStandardHelpers();
 
 include 'filepath.php';
