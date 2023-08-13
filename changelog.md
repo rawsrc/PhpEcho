@@ -1,5 +1,8 @@
 # **PhpEcho**
 
+**Changelog 6.0.1**<br>
+1. Minor bugfix in `addBlock()`
+
 **Changelog 6.0.0**<br>
 1. Code refactoring
 2. As PHP is now a pretty self-describing and self-documenting language, the quantity of PHPDoc is now heavily reduced
