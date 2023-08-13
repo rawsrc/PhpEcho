@@ -743,7 +743,7 @@ implements ArrayAccess
      */
     public function addBlock(string $var_name, string $path, ?array $vars = null, string $id = ''): self
     {
-        $block = new PhpEcho($path, $vars ?? $this->vars, $id);
+        $block = new PhpEcho($path, $vars ?? [], $id);
         $this->offsetSet($var_name, $block);
 
         return $block;
