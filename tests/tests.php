@@ -29,5 +29,6 @@ include 'autowire.php';
 include 'view.php';
 include 'heredoc.php';
 include 'viewBuilder.php';
+include 'infinite_loop.php';
 
 $pilot->createReport();

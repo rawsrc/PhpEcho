@@ -7,6 +7,7 @@ use BadMethodCallException;
 use Closure;
 use InvalidArgumentException;
 
+use function array_intersect;
 use function array_key_exists;
 use function array_push;
 use function array_shift;
@@ -80,6 +81,8 @@ implements ArrayAccess
     private string $id = '';
     private array $vars = [];
     private array $params = [];
+    /** @var array<PhpEcho> */
+    private array $children = [];
     private array $head = [];
     private string $head_token = '';
     /**
@@ -91,11 +94,8 @@ implements ArrayAccess
      * @var array<string, Closure> [helper's id => bound closure]
      */
     private array $bound_helpers = [];
-    /**
-     * Indicates if the current instance contains in its vars other PhpEcho instance(s)
-     */
-    private bool $has_children = false;
     private PhpEcho $parent;
+    private PhpEcho $root;
     private static string $template_dir_root = '';
     /**
      * @var array<string, Closure> [helper's name => closure]
@@ -126,6 +126,8 @@ implements ArrayAccess
         if (self::$std_helpers_injected === false) {
             self::injectStandardHelpers();
         }
+
+        $this->root = $this;
 
         if ($file !== '') {
             $this->setFile($file);
@@ -186,9 +188,12 @@ implements ArrayAccess
         }
     }
 
+    /**
+     * @throws BadMethodCallException
+     */
     public function __clone(): void
     {
-        unset($this->parent);
+        throw new BadMethodCallException('cloning.a.phpecho.instance.is.not.permitted');
     }
     //endregion
 
@@ -385,8 +390,10 @@ implements ArrayAccess
      */
     public function setVars(array $vars): void
     {
-        $this->has_children = false;
         if ($vars === []) {
+            foreach ($this->children as $v) {
+                $this->unsetChild($v);
+            }
             $this->vars = [];
         } else {
             foreach ($vars as $k => $v) {
@@ -395,15 +402,24 @@ implements ArrayAccess
         }
     }
 
+    public function getVars(): array
+    {
+        return $this->vars;
+    }
+
+    public function getRoot(): self
+    {
+        return $this->root;
+    }
+
     /**
      * Values available for the whole tree of blocks
      */
     public function injectVars(array $vars): void
     {
         /** @var PhpEcho $root */
-        $root = $this('root');
         foreach ($vars as $k => $v) {
-            $root->offsetSet($k, $v);
+            $this->root->offsetSet($k, $v);
         }
     }
 
@@ -411,6 +427,34 @@ implements ArrayAccess
     public function offsetExists(mixed $offset): bool
     {
         return array_key_exists($offset, $this->vars);
+    }
+
+    public function offsetSet(mixed $offset, mixed $value): void
+    {
+        $for_array = function(array $p) use (&$for_array): array {
+            $data = [];
+            foreach ($p as $k => $v) {
+                if ($v instanceof PhpEcho) {
+                    $this->addChild($v);
+                    $data[$k] = $v;
+                } elseif (is_array($v)) {
+                    $data[$k] = $for_array($v);
+                } else {
+                    $data[$k] = $v;
+                }
+            }
+
+            return $data;
+        };
+
+        if ($value instanceof self) {
+            $this->addChild($value);
+            $this->vars[$offset] = $value;
+        } elseif (is_array($value)) {
+            $this->vars[$offset] = $for_array($value);
+        } else {
+            $this->vars[$offset] = $value;
+        }
     }
 
     /**
@@ -463,70 +507,107 @@ implements ArrayAccess
     }
 
     /**
-     * @throws InvalidArgumentException only if $return_null_if_not_exist is set to false
+     * Only local value
      */
-    private function getOffsetRawValue(mixed $offset): mixed
-    {
-        if (array_key_exists($offset, $this->vars)) {
-            return $this->vars[$offset];
-        }
-
-        $block = $this;
-        while (true) {
-            if (isset($block->parent)) {
-                if (array_key_exists($offset, $block->parent->vars)) {
-                    return $block->parent->vars[$offset];
-                } else {
-                    $block = $block->parent;
-                }
-            } else {
-                return self::$return_null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$offset}");
-            }
-        }
-    }
-
-    public function offsetSet(mixed $offset, mixed $value): void
-    {
-        $block = function(PhpEcho $p): self {
-            $this->has_children = true;
-            $p->parent = $this;
-
-            return $p;
-        };
-
-        $for_array = function(array $p) use (&$for_array, $block): array {
-            $data = [];
-            foreach ($p as $k => $v) {
-                if ($v instanceof PhpEcho) {
-                    $data[$k] = $block($v);
-                } elseif (is_array($v)) {
-                    $data[$k] = $for_array($v);
-                } else {
-                    $data[$k] = $v;
-                }
-            }
-
-            return $data;
-        };
-
-        if ($value instanceof self) {
-            $this->vars[$offset] = $block($value);
-        } elseif (is_array($value)) {
-            $this->vars[$offset] = $for_array($value);
-        } else {
-            $this->vars[$offset] = $value;
-        }
-    }
-
     public function offsetUnset(mixed $offset): void
     {
         if (array_key_exists($offset, $this->vars)) {
+            if ($this->vars[$offset] instanceof self) {
+                $this->unsetChild($offset);
+            }
             unset($this->vars[$offset]);
         } else {
             throw new InvalidArgumentException("unknown.offset.{$offset}");
         }
     }
     //endregion ARRAY ACCESS
+
+    /**
+     * @throws InvalidArgumentException only if $return_null_if_not_exist is set to false
+     */
+    private function getOffsetRawValue(mixed $offset): mixed
+    {
+        if (array_key_exists($offset, $this->vars)) {
+            return $this->vars[$offset];
+        } elseif (array_key_exists($offset, $this->root->vars)) {
+            return $this->root->vars[$offset];
+        } else {
+            return self::$return_null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$offset}");
+        }
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getParentsId(): array
+    {
+        $data = [];
+        $block = $this;
+        while (isset($block->parent)) {
+            $data[] = $block->parent->id;
+            $block = $block->parent;
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getChildrenId(): array
+    {
+        $data = [];
+        foreach ($this->children as $v) {
+            $data[] = $v->id;
+            array_push($data, ...$v->getChildrenId());
+        }
+
+        return $data;
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     */
+    private function addChild(PhpEcho $p): void
+    {
+        $this->children[] = $p;
+        $this->detectInfiniteLoop();
+        if ($p->isRoot()) {
+            $this->injectVars($p->getVars());
+        } elseif ($this->root !== $p->root) {
+            $this->injectVars($p->root->getVars());
+        }
+        $p->root = $this->root;
+        $p->parent = $this;
+        // the root is propagated to children
+        foreach ($p->children as $v) {
+            $v->root = $this->root;
+        }
+    }
+
+    private function unsetChild(mixed $offset): void
+    {
+        /** @var PhpEcho $block */
+        $block = $this->vars[$offset];
+        unset($this->children[$offset]);
+        // as the block is now orphan, the new children's root block is the block itself
+        $block->parent = $block;
+        foreach ($block->children as $v) {
+            $v->root = $block;
+        }
+    }
+
+    /**
+     * @throws InvalidArgumentException
+     */
+    private function detectInfiniteLoop(): void
+    {
+        // the current block and its childs must not refer one of their parents
+        $ids = [$this->id, ...$this->getChildrenId()];
+        if (array_intersect($ids, $this->getParentsId()) !== []) {
+            throw new InvalidArgumentException('infinite.loop.detected');
+        }
+    }
 
     //region HELPER ZONE
     public static function getToken(int $length = 16): string
@@ -732,7 +813,7 @@ implements ArrayAccess
      */
     public function hasChildren(): bool
     {
-        return $this->has_children;
+        return $this->children !== [];
     }
 
     /**
@@ -772,6 +853,11 @@ implements ArrayAccess
     public function renderBlock(string $path, ?array $vars = null, string $id = ''): self
     {
         return $this->addBlock(self::getToken(), $path, $vars, $id);
+    }
+
+    public function isRoot(): bool
+    {
+        return $this->root === $this;
     }
 
     public function hasParent(): bool
