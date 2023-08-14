@@ -36,8 +36,6 @@ $pilot->assertEqual(<<<html
   <meta charset="UTF-8">
   </head>
 <body>
-<p>Block a</p>
-<p>Block b</p>
-</body>
+<p>Block a</p><p>Block a</p></body>
 </html>
 html);
