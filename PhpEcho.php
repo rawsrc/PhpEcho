@@ -530,7 +530,12 @@ implements ArrayAccess
         if (array_key_exists($offset, $this->vars)) {
             return $this->vars[$offset];
         } elseif (array_key_exists($offset, $this->root->vars)) {
-            return $this->root->vars[$offset];
+            $v = $this->root->vars[$offset];
+            if ($v instanceof self) {
+                $this->offsetSet($offset, $v);
+            }
+
+            return $v;
         } else {
             return self::$return_null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$offset}");
         }
