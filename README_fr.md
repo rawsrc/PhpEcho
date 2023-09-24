@@ -2,7 +2,7 @@
 
 `2023-09-24` `PHP 8.0+` `6.1.0`
 
-## **Un moteur de rendu en PHP natif : Une classe pour les dominer tous**
+## **Un moteur de rendu en PHP natif : Une classe pour les gouverner tous**
 ## **UNIQUEMENT POUR PHP VERSION 8 ET SUPÉRIEURE**
 
 Quand vous codez une application web, le rendu des vues peut être un véritable défi surtout si vous souhaitez 
@@ -90,7 +90,7 @@ n'est pas trouvée, il grimpe tous les blocs parents jusqu'à la racine.
 Veuillez noter que la recherche n'est limitée qu'au premier niveau de chaque 
 tableau de valeurs.
 
-Suite: [User values](#user-values)
+Suite: [Valeurs utilisateur](#valeurs-utilisateur)
 
 ## **PARAMÈTRES**
 

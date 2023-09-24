@@ -5,5 +5,5 @@
 ## **A native PHP template engine : One class to rule them all**
 ## **IS ONLY FOR PHP 8 AND ABOVE**
 
-[English version](README_en.md)
-[Version française](README_fr.md)
+-[English version](README_en.md)
+-[Version française](README_fr.md)
