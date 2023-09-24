@@ -145,3 +145,82 @@ $pilot->runClassMethod(
 );
 $pilot->assertIsBool();
 $pilot->assertEqual(false);
+
+
+PhpEcho::setTemplateDirRoot(__DIR__.DIRECTORY_SEPARATOR.'view');
+
+$data = [
+    'abc' => new PhpEcho('block/block_02.php', ['block_02_text' => 'abc'], 'block_abc'),
+    'def' => new PhpEcho('block/block_02.php', ['block_02_text' => 'def'], 'block_def'),
+    'ghi' => new PhpEcho('block/block_02.php', [
+        'jkl' => new PhpEcho('block/block_02.php', ['block_02_text' => 'jkl'], 'block_jkl'),
+        'block_02_text' => 'ghi',
+    ], 'block_ghi'),
+    'mno' => new PhpEcho('block/block_02.php', ['block_02_text' => 'mno'], 'block_mno'),
+    'pqr' => new PhpEcho('block/block_02.php', ['block_02_text' => 'pqr'], 'block_pqr'),
+];
+
+$root = new PhpEcho(id: 'root');
+
+$pilot->runClassMethod(
+    id: 'core_015',
+    class: $root,
+    description: 'check isArrayOfPhpEchoBlocks with a recursive array',
+    method: 'isArrayOfPhpEchoBlocks',
+    params: [$data],
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(true);
+
+$data['xyz'] = 'break php echo array';
+
+$pilot->runClassMethod(
+    id: 'core_016',
+    class: $root,
+    description: 'check isArrayOfPhpEchoBlocks with a recursive array',
+    method: 'isArrayOfPhpEchoBlocks',
+    params: [$data],
+);
+$pilot->assertIsBool();
+$pilot->assertEqual(false);
+
+$data = [
+    'abc' => new PhpEcho('block/block_02.php', ['block_02_text' => 'abc'], 'block_abc'),
+    'def' => new PhpEcho('block/block_02.php', ['block_02_text' => 'def'], 'block_def'),
+    'ghi' => new PhpEcho('block/block_02.php', [
+        'block_02_text' => [
+            new PhpEcho('block/block_02.php', ['block_02_text' => 'ghi555'], 'block_555'),
+            new PhpEcho('block/block_02.php', ['block_02_text' => 'ghi666'], 'block_666')],
+    ], 'block_ghi'),
+    'mno' => new PhpEcho('block/block_02.php', ['block_02_text' => 'mno'], 'block_mno'),
+    'pqr' => new PhpEcho('block/block_02.php', ['block_02_text' => 'pqr'], 'block_pqr'),
+];
+
+$root = new PhpEcho(file: 'layout_01.php', vars: ['body' => $data], id: 'root');
+
+ob_start();
+echo $root;
+$html = ob_get_clean();
+$pilot->run(
+    id : 'core_017',
+    test : fn() => $html,
+    description : 'recursive array of php echo block rendering'
+);
+$pilot->assertEqual(<<<html
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  </head>
+<body>
+<p>abc</p>
+<p>def</p>
+<p><p>ghi555</p>
+<p>ghi666</p>
+</p>
+<p>mno</p>
+<p>pqr</p>
+</body>
+</html>
+html);
+

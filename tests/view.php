@@ -220,6 +220,8 @@ $pilot->assertEqual(<<<html
 html);
 
 
+PhpEcho::setSeekValueMode('parents');
+
 $layout = new PhpEcho('layout_06.php');
 $layout['block_03_text'] = 'foo_text';
 $layout->addBlock('block', 'block/block_03.php'); // bloc_03 expects to have a value for 'block_03_text' which is defined in the layout

@@ -1,5 +1,13 @@
 # **PhpEcho**
 
+**Changelog 6.1.0**<br>
+1. New options to parameter the engine values extractor using `setSeekValueMode(string $mode)`, `$mode` among `current|parents|root`
+2. If the current block is not able to provide a value to be rendered then the engine will automatically seek for it using the `seekValueMode` parameter
+3. Detect an infinite loop when building a view
+4. Allowing the render of recursive arrays of PhpEcho blocks
+5. Cloning a `PhpEcho` block is now forbidden, the engine will throw an `BadMethodCallException`
+6. Tests are updated
+
 **Changelog 6.0.1**<br>
 1. Minor bugfix in `addBlock()`
 
@@ -7,13 +15,13 @@
 1. Code refactoring
 2. As PHP is now a pretty self-describing and self-documenting language, the quantity of PHPDoc is now heavily reduced
 3. Removed feature: space notation for arrays. Any space in a key is now preserved, the engine doesn't interpret them as sub-arrays anymore  
-5. New feature: management of local and global vars, please note that the local always override the global ones
-3. New feature: defining global values that will be available through the whole tree of blocks using: `injectVars(array $vars)`
-4. New feature: defining local values after instantiating a `PhpEcho` block at once using: `setVars(array $p)`
-6. Internal heavy change: there's no more copy of variables between blocks (reduce the memory footprint and increase the global performance)
-7. If the current block is not able to provide a value to be rendered then the engine will automatically seek for it in the root of the tree 
-8. Better management of values composed of nested array
-9. Cloning a `PhpEcho` block is now possible, the cloned value keeps everything but the link to its parent block. The new one is orphan
+4. New feature: management of local and global vars, please note that the local always override the global ones
+5. New feature: defining global values that will be available through the whole tree of blocks using: `injectVars(array $vars)`
+6. New feature: defining local values after instantiating a `PhpEcho` block at once using: `setVars(array $p)`
+7. Internal heavy change: there's no more copy of variables between blocks (reduce the memory footprint and increase the global performance)
+8. If the current block is not able to provide a value to be rendered then the engine will automatically seek for it in the root of the tree 
+9. Better management of values composed of nested array
+10. Cloning a `PhpEcho` block is now possible, the cloned value keeps everything but the link to its parent block. The new one is orphan
 
 **Changelog 5.4.1:**<br>
 1. Minor bugfix in method `isArrayOfPhpEchoBlocks(mixed $p)` when `$p` is an empty array
@@ -32,7 +40,7 @@
 3. You can now define the seek order to get the first value either
    from the `local` or `global` context using `getAnyParam(string $name, string $seek_order = 'local'): mixed`
 4. It's possible to set at once a parameter into the local and global context using `setAnyParam(string $name, mixed $value)`
-4. It's possible to unset at once a parameter from the local and the global context using `unsetAnyParam(string $name)`<br>
+5. It's possible to unset at once a parameter from the local and the global context using `unsetAnyParam(string $name)`<br>
    Test files are updated
 
 **Changelog 5.2.1:**<br>
@@ -65,12 +73,12 @@
 1. Removing th constant `HELPER_BOUND_TO_CLASS_INSTANCE`, it's replaced by `PhpEcho::addBindableHelper`
 2. Removing the constant `HELPER_RETURN_ESCAPED_DATA`. Now, the engine is able to check when data must
    be escaped and preserve the native datatype when it's safe in HTML context
-2. Instead of dying silently with `null` or empty string, the engine now throws in all case an `Exception`
+3. Instead of dying silently with `null` or empty string, the engine now throws in all case an `Exception`
    You must produce a better code as it will crash on each low quality segment.
-3. Add new method `renderBlock()` to link easily a child block to its parent
-4. Many code improvements
-5. Fully tested: the core and all helpers have been fully tested
-6. Add new helper to the standard library `renderIfNotSet()` that render a default value instead
+4. Add new method `renderBlock()` to link easily a child block to its parent
+5. Many code improvements
+6. Fully tested: the core and all helpers have been fully tested
+7. Add new helper to the standard library `renderIfNotSet()` that render a default value instead
    of throwing an `Exception` for any missing key in the stored key-value pairs
 
 **Changelog 5.0.0:**<br>
