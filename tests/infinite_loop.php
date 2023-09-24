@@ -13,6 +13,7 @@ $a->setCode('<p>Block a</p>');
 $b = new PhpEcho(id: 'b');
 $b->setCode('<p>Block b</p>');
 
+
 $layout['a'] = $a;
 $layout['b'] = $b;
 
@@ -26,7 +27,7 @@ $html = ob_get_clean();
 $pilot->run(
     id: 'infinite_loop_01',
     test: fn() => $html,
-    description: 'infinite loop, multiple usage of the same block'
+    description: 'multiple usage of the same block, no infinite loop'
 );
 $pilot->assertIsString();
 $pilot->assertEqual(<<<html
@@ -39,3 +40,14 @@ $pilot->assertEqual(<<<html
 <p>Block a</p><p>Block a</p></body>
 </html>
 html);
+
+
+$layout = new PhpEcho(file: 'layout_07.php', id: 'root');
+$layout['block'] = new PhpEcho(file: 'block/block_07.php');
+
+$pilot->run(
+    id: 'infinite_loop_02',
+    test: fn() => (string)$layout,
+    description: 'infinite loop, block calling each others'
+);
+$pilot->assertException(InvalidArgumentException::class);

@@ -10,11 +10,14 @@ use InvalidArgumentException;
 use function array_intersect;
 use function array_key_exists;
 use function array_push;
+use function array_reduce;
 use function array_shift;
+use function array_walk_recursive;
 use function bin2hex;
 use function chr;
 use function count;
 use function implode;
+use function in_array;
 use function is_array;
 use function is_file;
 use function is_string;
@@ -27,6 +30,7 @@ use function str_replace;
 use function str_shuffle;
 use function substr;
 
+use const COUNT_RECURSIVE;
 use const DIRECTORY_SEPARATOR;
 
 /**
@@ -56,7 +60,7 @@ use const DIRECTORY_SEPARATOR;
  *              SOFTWARE.
  *
  * PhpEcho HELPERS
- * @method mixed raw(string $key) Return the raw value from a PhpEcho block
+ * @method mixed raw(string $key) // Return the raw value from a PhpEcho block
  * @method bool isScalar(mixed $p)
  * @method mixed keyUp(array|string $keys, bool $strict_match) // Climb the tree of PhpEcho instances while keys match
  * @method mixed rootVar(array|string $keys) // Extract the value from the top level PhpEcho block (the root)
@@ -95,7 +99,6 @@ implements ArrayAccess
      */
     private array $bound_helpers = [];
     private PhpEcho $parent;
-    private PhpEcho $root;
     private static string $template_dir_root = '';
     /**
      * @var array<string, Closure> [helper's name => closure]
@@ -115,7 +118,8 @@ implements ArrayAccess
     private static array $used_tokens = [];
     private static array $global_params = [];
     private static bool $std_helpers_injected = false;
-    private static bool $return_null_if_not_exist = false;
+    private static bool $opt_return_null_if_not_exist = false;
+    private static string $opt_seek_value_mode = 'parents'; // parents | root
 
     //region MAGIC METHODS
     /**
@@ -126,8 +130,6 @@ implements ArrayAccess
         if (self::$std_helpers_injected === false) {
             self::injectStandardHelpers();
         }
-
-        $this->root = $this;
 
         if ($file !== '') {
             $this->setFile($file);
@@ -145,7 +147,7 @@ implements ArrayAccess
     }
 
     /**
-     * This function call a helper defined elsewhere or dynamically
+     * This function calls a helper defined elsewhere or dynamically
      * Auto-escape if necessary
      *
      * @throws InvalidArgumentException
@@ -368,13 +370,29 @@ implements ArrayAccess
     }
     //endregion PARAMETERS
 
+    //region OPTIONS
     /**
      * If a key is not defined then return null instead of throwing an Exception
      */
     public static function setNullIfNotExists(bool $p): void
     {
-        self::$return_null_if_not_exist = $p;
+        self::$opt_return_null_if_not_exist = $p;
     }
+
+    /**
+     * 3 modes
+     * @param string $mode among current|parents|root
+     * @throws InvalidArgumentException
+     */
+    public static function setSeekValueMode(string $mode): void
+    {
+        if (in_array($mode, ['current', 'parents', 'root'])) {
+            self::$opt_seek_value_mode = $mode;
+        } else {
+            throw new InvalidArgumentException("unknown.seek.mode.value.{$mode}");
+        }
+    }
+    //endregion OPTIONS
 
     /**
      * Generate a unique execution id based on random_bytes()
@@ -402,24 +420,22 @@ implements ArrayAccess
         }
     }
 
+    /**
+     * Local values only
+     */
     public function getVars(): array
     {
         return $this->vars;
     }
 
-    public function getRoot(): self
-    {
-        return $this->root;
-    }
-
     /**
-     * Values available for the whole tree of blocks
+     * Values are stored ine the root of the tree
      */
     public function injectVars(array $vars): void
     {
-        /** @var PhpEcho $root */
+        $root = $this('root');
         foreach ($vars as $k => $v) {
-            $this->root->offsetSet($k, $v);
+            $root->offsetSet($k, $v);
         }
     }
 
@@ -493,15 +509,37 @@ implements ArrayAccess
             return $data;
         };
 
+        $recursive_array_of_blocks = function(array $p) use (&$recursive_array_of_blocks, $get_escaped): string {
+            $data = [];
+            foreach ($p as $k => $z) {
+                if (is_array($z) && ($z !== [])) {
+                    $data[$get_escaped($k)] = $recursive_array_of_blocks($z);
+                } else {
+                    $data[$get_escaped($k)] = (string)$z;
+                }
+            }
+
+            $str = '';
+            array_reduce($data, function($str, $v) { $str .= $v; return $str; }, '');
+
+            return $str;
+        };
+
         if ($v === null) {
             return null;
         } elseif (is_array($v)) {
             if ($this->isArrayOfPhpEchoBlocks($v)) {
-                return implode('', $for_array($v));
+                // simple array of PhpEcho blocks (one level)
+                if (count($v) === count($v, COUNT_RECURSIVE)) {
+                    return implode('', $v);
+                } else {
+                    // recursive array of PhpEcho blocks
+                    return $recursive_array_of_blocks($v);
+                }
             } else {
                 return $for_array($v);
             }
-        } else{
+        } else {
             return $get_escaped($v);
         }
     }
@@ -529,16 +567,27 @@ implements ArrayAccess
     {
         if (array_key_exists($offset, $this->vars)) {
             return $this->vars[$offset];
-        } elseif (array_key_exists($offset, $this->root->vars)) {
-            $v = $this->root->vars[$offset];
-            if ($v instanceof self) {
-                $this->offsetSet($offset, $v);
+        } elseif (self::$opt_seek_value_mode === 'parents') {
+            $block = $this;
+            while (isset($block->parent)) {
+                if (array_key_exists($offset, $block->vars)) {
+                    return $block->vars[$offset];
+                }
+                $block = $block->parent;
             }
-
-            return $v;
-        } else {
-            return self::$return_null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$offset}");
+            if (array_key_exists($offset, $block->vars)) {
+                return $block->vars[$offset];
+            }
+        } elseif (self::$opt_seek_value_mode === 'root') {
+            $root = $this('root');
+            if ($root !== $this) {
+                if (array_key_exists($offset, $root->vars)) {
+                    return $root->vars[$offset];
+                }
+            }
         }
+
+        return self::$opt_return_null_if_not_exist ? null : throw new InvalidArgumentException("unknown.offset.{$offset}");
     }
 
     /**
@@ -548,8 +597,25 @@ implements ArrayAccess
     {
         $data = [];
         $block = $this;
-        while (isset($block->parent)) {
+        while (isset($block->parent) && ($block->parent !== $this)) {
             $data[] = $block->parent->id;
+            $block = $block->parent;
+        }
+
+        return $data;
+    }
+
+    /**
+     * @return array<string>
+     */
+    private function getParentsFilepath(): array
+    {
+        $data = [];
+        $block = $this;
+        while (isset($block->parent) && ($block->parent !== $this)) {
+            if ($block->parent->file !== '') {
+                $data[] = $block->parent->file;
+            }
             $block = $block->parent;
         }
 
@@ -576,18 +642,8 @@ implements ArrayAccess
     private function addChild(PhpEcho $p): void
     {
         $this->children[] = $p;
-        $this->detectInfiniteLoop();
-        if ($p->isRoot()) {
-            $this->injectVars($p->getVars());
-        } elseif ($this->root !== $p->root) {
-            $this->injectVars($p->root->getVars());
-        }
-        $p->root = $this->root;
         $p->parent = $this;
-        // the root is propagated to children
-        foreach ($p->children as $v) {
-            $v->root = $this->root;
-        }
+        $this->detectInfiniteLoop();
     }
 
     private function unsetChild(mixed $offset): void
@@ -595,11 +651,7 @@ implements ArrayAccess
         /** @var PhpEcho $block */
         $block = $this->vars[$offset];
         unset($this->children[$offset]);
-        // as the block is now orphan, the new children's root block is the block itself
-        $block->parent = $block;
-        foreach ($block->children as $v) {
-            $v->root = $block;
-        }
+        $block->parent = $block;  // the block is now orphan
     }
 
     /**
@@ -607,7 +659,13 @@ implements ArrayAccess
      */
     private function detectInfiniteLoop(): void
     {
-        // the current block and its childs must not refer one of their parents
+        if ($this->file !== '') {
+            if (in_array($this->file, $this->getParentsFilepath(), true)) {
+                throw new InvalidArgumentException('infinite.loop.detected');
+            }
+        }
+
+        // the current block and its childs must not refer one of their parents id
         $ids = [$this->id, ...$this->getChildrenId()];
         if (array_intersect($ids, $this->getParentsId()) !== []) {
             throw new InvalidArgumentException('infinite.loop.detected');
@@ -757,13 +815,16 @@ implements ArrayAccess
     private function isArrayOfPhpEchoBlocks(mixed $p): bool
     {
         if (is_array($p) && ($p !== [])) {
-            foreach ($p as $v) {
-                if ( ! ($v instanceof self)) {
-                    return false;
+            $status = true;
+            array_walk_recursive($p, function($v) use (&$status) {
+                if ($status) {
+                    if ( ! $v instanceof PhpEcho) {
+                        $status = false;
+                    }
                 }
-            }
+            });
 
-            return true;
+            return $status;
         } else {
             return false;
         }
@@ -858,11 +919,6 @@ implements ArrayAccess
     public function renderBlock(string $path, ?array $vars = null, string $id = ''): self
     {
         return $this->addBlock(self::getToken(), $path, $vars, $id);
-    }
-
-    public function isRoot(): bool
-    {
-        return $this->root === $this;
     }
 
     public function hasParent(): bool
