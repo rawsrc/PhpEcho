@@ -55,7 +55,7 @@ let your IDE list all your helpers natively just using PHPDoc syntax.
 11. [Using a default view](#using-a-default-view)
 12. [Use HEREDEOC for HTML](#use-heredoc-for-html)
 13. [Use the auto-generated block's id](#use-the-auto-generated-blocks-id)
-14. [Use the component `ViewBuilder](#use-the-component-viewbuilder) 
+14. [Use the component `ViewBuilder`](#use-the-component-viewbuilder) 
 15. [Advance use: create your own helpers](#advance-use-create-your-own-helpers)
     1. [Helpers](#helpers) 
     2. [Study: standalone helper `$checked`](#study-standalone-helper-checked)

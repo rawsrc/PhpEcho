@@ -55,13 +55,13 @@ tout en laissant votre EDI les lister rien qu'en utilisant la syntaxe PHPDoc.
 11. [Utilisation d'une vue par défaut](#utilisation-dune-vue-par-défaut)
 12. [HTML au format HEREDOC](#html-au-format-heredoc)
 13. [Utilisation de l'id de bloc auto-généré](#utilisation-de-lid-de-bloc-auto-généré)
-14. [Utilisation du composant `ViewBuilder](#utilisation-du-composant-viewbuilder)
+14. [Utilisation du composant `ViewBuilder`](#utilisation-du-composant-viewbuilder)
 15. [Utilisation avancée : création de ses propres assistants](#utilisation-avancée-création-de-ses-propres-assistants)
     1. [Assistants](#assistants)
     2. [Étude : l'assistant autonome `$checked`](#étude--lassistant-autonome-checked)
     3. [Étude : l'assistant lié `$raw`](#étude--lassistant-lié-raw)
     4. [Création d'un assistant et liaison complexe](#création-dun-assistant-et-liaison-complexe)
-16. [Voyons quelques assistants](#voyons-quelques-assistants)
+16. [Étudions quelques assistants](#étudions-quelques-assistants)
 
 ## **INSTALLATION**
 ```bash
@@ -739,7 +739,7 @@ que les deux assistants partagent le même contexte, vous devez utiliser cette s
 `$existing_helper = $this->bound_helpers['$existing_helper_name'];`<br>
 Reportez-vous à l'assistant `$root_var` (regardez comment le lien vers un autre assistant lié `$root` est créé).
 
-## **VOYONS QUELQUES ASSISTANTS**
+## **ÉTUDIONS QUELQUES ASSISTANTS**
 
 Comme annoncé ci-dessus, la bibliothèque standard `stdPhpEchoHelpers.php` contient des assistants 
 pour le traitement des données ainsi que pour la génération du HTML. Comme les assistants sont des petits
