@@ -24,6 +24,8 @@ ob_start();
 echo $layout;
 $html = ob_get_clean();
 
+PhpEcho::setDetectInfiniteLoop(true);
+
 $pilot->run(
     id: 'infinite_loop_01',
     test: fn() => $html,
@@ -48,6 +50,20 @@ $layout['block'] = new PhpEcho(file: 'block/block_07.php');
 $pilot->run(
     id: 'infinite_loop_02',
     test: fn() => (string)$layout,
-    description: 'infinite loop, block calling each others'
+    description: 'infinite loop, block calling each others, infinite loop detection is on',
 );
 $pilot->assertException(InvalidArgumentException::class);
+
+
+/* SERVER CRASH: INFINITE LOOP IS NOT DETECTED
+PhpEcho::setDetectInfiniteLoop(false);
+$layout = new PhpEcho(file: 'layout_07.php', id: 'root');
+$layout['block'] = new PhpEcho(file: 'block/block_07.php');
+
+$pilot->run(
+    id: 'infinite_loop_03',
+    test: fn() => (string)$layout,
+    description: 'infinite loop, block calling each others, infinite loop detection is off',
+);
+$pilot->assertException(InvalidArgumentException::class);
+*/

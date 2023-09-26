@@ -36,6 +36,7 @@ let your IDE list all your helpers natively just using PHPDoc syntax.
 2. [Configuration](#configuration)
    1. [View root dir](#view-root-dir)
    2. [Seek option](#seek-option)
+   3. [Detect infinite loop](#detect-infinite-loops)
 3. [Parameters](#parameters)
 4. [Principles and overview](#principles-and-overview)
 5. [Let's start](#lets-start)
@@ -89,6 +90,20 @@ parent blocks until it reaches the root of the tree. The seek is only made at th
 first level of the array of vars attached to any `PhpEcho` block.
 
 More: [User values](#user-values)
+
+### **DETECT INFINITE LOOPS**
+By default, the engine is in production mode and does not intercept the infinite loops
+that may be caused by the mechanism of blocks inclusion. If you want the engine to detect that,
+just set the option:
+```php
+<?php
+
+use rawsrc\PhpEcho\PhpEcho;
+
+PhpEcho::setDetectInfiniteLoop(true);
+```
+Remember, the detection of infinite loops is time-consuming and grab a part of server resources.
+This option should be deactivated in production and only used in development mode.
 
 ## **PARAMETERS**
 

@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2023-09-24` `PHP 8.0+` `6.1.0`
+`2023-09-26` `PHP 8.0+` `6.1.1`
 
 ## **Un moteur de rendu en PHP natif : Une classe pour les gouverner tous**
 ## **UNIQUEMENT POUR PHP VERSION 8 ET SUPÉRIEURE**
@@ -27,29 +27,30 @@ La classe gère :
 * la possibilité d'écrire directement du code HTML au lieu de passer par des inclusions de fichier
 * la gestion et le rendu de toutes les instances de classe implémentant la fonction magique `__toString()`
 * l'accès à la balise globale `<head></head>` de n'importe quel bloc enfant
-* détection d'inclusion infinie
+* détection d'inclusion infinie sur option
 
 Vous serez également en mesure d'étendre les fonctionnalités du moteur en créant vos propres assistants
 tout en laissant votre EDI les lister rien qu'en utilisant la syntaxe PHPDoc.  
 
 1. [Installation](#installation)
 2. [Configuration](#configuration)
-    1. [Répertoire racine de toutes les vues](#répertoire-racine-de-toutes-les-vues)
-    2. [recherche des valeurs](#recherche-des-valeurs)
+   1. [Répertoire racine de toutes les vues](#répertoire-racine-de-toutes-les-vues)
+   2. [Recherche des valeurs](#recherche-des-valeurs)
+   3. [Détection des boucles d'inclusions infinies](#détection-des-boucles-dinclusions-infinies)
 3. [Paramètres](#paramètres)
 4. [Principes and généralités](#principes-et-généralités)
 5. [Démarrage](#démarrage)
-    1. [Exemple rapide](#exemple-rapide)
-    2. [Codage standard](#codage-standard)
-    3. [Contexte HTML](#contexte-html)
-        1. [Mise en page - Layout](#mise-en-page---layout)
-        2. [Formulaire](#formulaire)
-        3. [Page](#page)
+   1. [Exemple rapide](#exemple-rapide)
+   2. [Codage standard](#codage-standard)
+   3. [Contexte HTML](#contexte-html)
+      1. [Mise en page - Layout](#mise-en-page---layout)
+      2. [Formulaire](#formulaire)
+      3. [Page](#page)
 6. [Blocs enfants](#blocs-enfants)
 7. [Accès à la balise HEAD](#accès-à-la-balise-head)
 8. [Valeurs utilisateurs](#valeurs-utilisateur)
-    1. [Recherche de clés](#recherche-de-clés)
-    2. [Clé non trouvée](#clé-non-trouvée)
+   1. [Recherche de clés](#recherche-de-clés)
+   2. [Clé non trouvée](#clé-non-trouvée)
 9. [Échappement automatique des valeurs](#échappement-automatique-des-valeurs)
 10. [Tableau d'instances de PhpEcho](#tableau-dinstances-de-phpecho)
 11. [Utilisation d'une vue par défaut](#utilisation-dune-vue-par-défaut)
@@ -90,7 +91,21 @@ n'est pas trouvée, il grimpe tous les blocs parents jusqu'à la racine.
 Veuillez noter que la recherche n'est limitée qu'au premier niveau de chaque 
 tableau de valeurs.
 
-Suite: [Valeurs utilisateur](#valeurs-utilisateur)
+Suite : [Valeurs utilisateur](#valeurs-utilisateur)
+
+### **DÉTECTION DES BOUCLES D'INCLUSIONS INFINIES**
+Par défaut le moteur est en mode production et n'interceptera pas les boucles infinies
+d'inclusion de blocs vues. Si vous souhaitez détecter la présence de ces boucles, il suffit
+de définir l'option ainsi : 
+```php
+<?php
+
+use rawsrc\PhpEcho\PhpEcho;
+
+PhpEcho::setDetectInfiniteLoop(true);
+```
+La détection de ces boucles consomme du temps et des ressources serveur, cette option
+n'est à utiliser qu'en mode développement et doit être désactivée en production.
 
 ## **PARAMÈTRES**
 

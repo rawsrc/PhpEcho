@@ -34,7 +34,7 @@ use const COUNT_RECURSIVE;
 use const DIRECTORY_SEPARATOR;
 
 /**
- * PhpEcho : Native PHP Template engine: One class to rule them all ;-)
+ * PhpEcho: Native PHP Template engine: One class to rule them all ;-)
  *
  * @author      rawsrc
  * @copyright   MIT License
@@ -120,6 +120,7 @@ implements ArrayAccess
     private static bool $std_helpers_injected = false;
     private static bool $opt_return_null_if_not_exist = false;
     private static string $opt_seek_value_mode = 'parents'; // parents | root
+    private static bool $opt_detect_infinite_loop = false;
 
     //region MAGIC METHODS
     /**
@@ -392,6 +393,14 @@ implements ArrayAccess
             throw new InvalidArgumentException("unknown.seek.mode.value.{$mode}");
         }
     }
+
+    /**
+     * To be deactivated in production, time-consuming routine
+     */
+    public static function setDetectInfiniteLoop(bool $p): void
+    {
+        self::$opt_detect_infinite_loop = $p;
+    }
     //endregion OPTIONS
 
     /**
@@ -476,7 +485,7 @@ implements ArrayAccess
     /**
      * The returned value is escaped
      *
-     * Some types are preserved : true bool, true int, true float, PhpEcho instance, object without __toString()
+     * Some types are preserved: true bool, true int, true float, PhpEcho instance, object without __toString()
      * For array of PhpEcho blocks, the array is imploded and the blocks are rendered int the order they appear
      * Otherwise, the value is cast to a string and escaped
      *
@@ -643,7 +652,9 @@ implements ArrayAccess
     {
         $this->children[] = $p;
         $p->parent = $this;
-        $this->detectInfiniteLoop();
+        if (self::$opt_detect_infinite_loop) {
+            $this->detectInfiniteLoop();
+        }
     }
 
     private function unsetChild(mixed $offset): void

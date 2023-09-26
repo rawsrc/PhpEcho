@@ -1,5 +1,8 @@
 # **PhpEcho**
 
+**Changelog 6.1.1**<br>
+1. New option to enable the infinite loop detection `setDetectInfiniteLoop(bool $p)`, disabled by default
+
 **Changelog 6.1.0**<br>
 1. New options to parameter the engine values extractor using `setSeekValueMode(string $mode)`, `$mode` among `current|parents|root`
 2. If the current block is not able to provide a value to be rendered then the engine will automatically seek for it using the `seekValueMode` parameter
