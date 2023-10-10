@@ -354,7 +354,6 @@ Vous ne devez jamais déclarer un bloc totalement indépendant au sein d'un autr
 Ceci n'est pas autorisé :<br> 
 ```php
 <?php /** @var rawsrc\PhpEcho\PhpEcho $this */ ?>
-use rawsrc\PhpEcho\PhpEcho; // LOGIN FORM BLOCK ?>
 <p>Please login : </p>
 <form method=post action="<?= $this['url_submit'] ?>">
     <label>User</label>
