@@ -353,7 +353,7 @@ Notez bien encore que la vue complète doit être perçue comme un énorme arbre
 Vous ne devez jamais déclarer un bloc totalement indépendant au sein d'un autre bloc.
 Ceci n'est pas autorisé :<br> 
 ```php
-<?php /** @var rawsrc\PhpEcho\PhpEcho $this */
+<?php /** @var rawsrc\PhpEcho\PhpEcho $this */ ?>
 use rawsrc\PhpEcho\PhpEcho; // LOGIN FORM BLOCK ?>
 <p>Please login : </p>
 <form method=post action="<?= $this['url_submit'] ?>">

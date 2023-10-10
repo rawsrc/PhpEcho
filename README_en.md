@@ -346,7 +346,7 @@ I repeat, please note, that the whole view must be seen as a huge tree and the b
 You must never declare a totally independent block into another.
 This is not allowed:<br>
 ```php
-<?php /** @var rawsrc\PhpEcho\PhpEcho $this */
+<?php /** @var rawsrc\PhpEcho\PhpEcho $this */ ?>
 use rawsrc\PhpEcho\PhpEcho; // LOGIN FORM BLOCK ?>
 <p>Please login : </p>
 <form method=post action="<?= $this['url_submit'] ?>">
