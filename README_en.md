@@ -304,7 +304,7 @@ we inject the body part using a `PhpEcho` block `block/login.php`.<br>
 
 use rawsrc\PhpEcho\PhpEcho;
 
-echo new PhpEcho('layout main.php', [
+echo new PhpEcho('layout/main.php', [
     'title' => 'My first use case of PhpEcho',
     'description' => 'PhpEcho, PHP template engine, easy to learn and use',
     'body' => new PhpEcho('block/login.php', [
@@ -344,7 +344,7 @@ with the same name, then the engine will render the default block as specified i
 <br>
 I repeat, please note, that the whole view must be seen as a huge tree and the blocks are linked all together.
 You must never declare a totally independent block into another.
-This is not allowed:
+This is not allowed:<br>
 ```php
 <?php /** @var rawsrc\PhpEcho\PhpEcho $this */
 use rawsrc\PhpEcho\PhpEcho; // LOGIN FORM BLOCK ?>
@@ -357,7 +357,7 @@ use rawsrc\PhpEcho\PhpEcho; // LOGIN FORM BLOCK ?>
     <input type="submit" name="submit" value="CONNECT">
 </form>
 ```
-it must be replaced with one of the methods described just above:
+it must be replaced with one of the methods described just above:<br>
 ```php
 <?php /** @var rawsrc\PhpEcho\PhpEcho $this */ // LOGIN FORM BLOCK ?>
 <p>Please login : </p>

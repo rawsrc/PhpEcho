@@ -310,7 +310,7 @@ le corps de la page en utilisant le bloc `block/login.php`.<br>
 
 use rawsrc\PhpEcho\PhpEcho;
 
-echo new PhpEcho('layout main.php', [
+echo new PhpEcho('layout/main.php', [
     'title' => 'My first use case of PhpEcho',
     'description' => 'PhpEcho, PHP template engine, easy to learn and use',
     'body' => new PhpEcho('block/login.php', [
@@ -351,7 +351,7 @@ alors le moteur utilisera celui défini par défaut
 
 Notez bien encore que la vue complète doit être perçue comme un énorme arbre et que tous les blocs sont tous reliés entre eux.
 Vous ne devez jamais déclarer un bloc totalement indépendant au sein d'un autre bloc.
-Ceci n'est pas autorisé : 
+Ceci n'est pas autorisé :<br> 
 ```php
 <?php /** @var rawsrc\PhpEcho\PhpEcho $this */
 use rawsrc\PhpEcho\PhpEcho; // LOGIN FORM BLOCK ?>
@@ -364,7 +364,7 @@ use rawsrc\PhpEcho\PhpEcho; // LOGIN FORM BLOCK ?>
     <input type="submit" name="submit" value="CONNECT">
 </form>
 ```
-cela doit être remplacé par une des méthodes décrites ci-dessus :
+cela doit être remplacé par une des méthodes décrites ci-dessus :<br>
 ```php
 <?php /** @var rawsrc\PhpEcho\PhpEcho $this */ // LOGIN FORM BLOCK ?>
 <p>Please login : </p>
