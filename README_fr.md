@@ -351,13 +351,14 @@ alors le moteur utilisera celui défini par défaut
 
 Notez bien encore que la vue complète doit être perçue comme un énorme arbre et que tous les blocs sont tous reliés entre eux.
 Vous ne devez jamais déclarer un bloc totalement indépendant au sein d'un autre bloc.
-Ceci n'est pas autorisé :<br> 
+Ceci n'est pas autorisé :<br>
+
 ```php
 <?php /** @var rawsrc\PhpEcho\PhpEcho $this */ ?>
 <p>Please login : </p>
 <form method=post action="<?= $this['url_submit'] ?>">
     <label>User</label>
-    <input type="text" name="login" value="<?= new PhpEcho('block/login_input_text.php') ?>"><br>
+    <input type="text" name="login" value="<?= new rawsrc\PhpEcho\PhpEcho('block/login_input_text.php') ?>"><br>
     <label>Password</label>
     <input type="password" name="pwd" value=""><br>
     <input type="submit" name="submit" value="CONNECT">
@@ -365,7 +366,7 @@ Ceci n'est pas autorisé :<br>
 ```
 cela doit être remplacé par une des méthodes décrites ci-dessus :<br>
 ```php
-<?php /** @var rawsrc\PhpEcho\PhpEcho $this */ // LOGIN FORM BLOCK ?>
+<?php /** @var rawsrc\PhpEcho\PhpEcho $this */ ?>
 <p>Please login : </p>
 <form method=post action="<?= $this['url_submit'] ?>">
     <label>User</label>

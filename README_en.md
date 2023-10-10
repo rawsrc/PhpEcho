@@ -350,7 +350,7 @@ This is not allowed:<br>
 <p>Please login : </p>
 <form method=post action="<?= $this['url_submit'] ?>">
     <label>User</label>
-    <input type="text" name="login" value="<?= new PhpEcho('block/login_input_text.php') ?>"><br>
+    <input type="text" name="login" value="<?= new rawsrc\PhpEcho\PhpEcho('block/login_input_text.php') ?>"><br>
     <label>Password</label>
     <input type="password" name="pwd" value=""><br>
     <input type="submit" name="submit" value="CONNECT">
@@ -358,7 +358,7 @@ This is not allowed:<br>
 ```
 it must be replaced with one of the methods described just above:<br>
 ```php
-<?php /** @var rawsrc\PhpEcho\PhpEcho $this */ // LOGIN FORM BLOCK ?>
+<?php /** @var rawsrc\PhpEcho\PhpEcho $this */ ?>
 <p>Please login : </p>
 <form method=post action="<?= $this['url_submit'] ?>">
     <label>User</label>
