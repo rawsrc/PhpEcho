@@ -1,6 +1,6 @@
 # **PhpEcho**
 
-`2023-09-24` `PHP 8.0+` `6.1.0`
+`2024-01-16` `PHP 8.0+` `6.1.1`
 
 ## **A native PHP template engine : One class to rule them all**
 ## **IS ONLY FOR PHP 8 AND ABOVE**
@@ -48,7 +48,7 @@ let your IDE list all your helpers natively just using PHPDoc syntax.
       3. [Page](#page)
 6. [Child blocks](#child-blocks)
 7. [Manipulating and Access to the head tag](#manipulating-and-access-to-the-head-tag)
-8. [User values](#user-values)
+8. [User values](#manipulating-and-access-to-the-head-tag)
    1. [Seeking the keys](#seeking-the-keys)
    2. [Not found key](#not-found-key)
 9. [Auto escaping vars](#auto-escaping-vars)
