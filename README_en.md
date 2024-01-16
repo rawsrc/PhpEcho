@@ -345,6 +345,7 @@ with the same name, then the engine will render the default block as specified i
 I repeat, please note, that the whole view must be seen as a huge tree and the blocks are linked all together.
 You must never declare a totally independent block into another.
 This is not allowed:<br>
+
 ```php
 <?php /** @var rawsrc\PhpEcho\PhpEcho $this */ ?>
 <p>Please login : </p>
